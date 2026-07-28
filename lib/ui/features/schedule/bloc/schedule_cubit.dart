@@ -110,12 +110,13 @@ class ScheduleCubit extends Cubit<ScheduleState> {
     }
   }
 
-  Future<void> bookSlot(String slotId) async {
+  Future<void> bookSlot(String slotId, {String? customerPhone}) async {
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
       final ScheduleSlotItem bookedItem = await _repository.bookSlot(
         turfId: state.turf?.id ?? 'turf-a',
         slotId: slotId,
+        customerPhone: customerPhone,
       );
 
       final List<ScheduleSlotItem> updatedSlots = state.slots.map((item) {

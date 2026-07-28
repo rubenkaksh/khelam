@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart' as m;
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../common/bottom_sheet.dart';
 import '../../../common/feedback.dart';
 import '../bloc/schedule_cubit.dart';
 import '../widgets/booking_timeline.dart';
+import '../widgets/booking_confirmation_sheet.dart';
 import '../widgets/date_strip.dart';
 import '../widgets/day_stats_section.dart';
 import '../widgets/turf_header.dart';
@@ -71,8 +73,15 @@ class _ScheduleViewState extends m.State<ScheduleView> {
           ),
         BookingTimeline(
           items: state.slots,
-          onAvailableSlotTap: (item) {
-            context.read<ScheduleCubit>().bookSlot(item.slot.id);
+          onAvailableSlotTap: (item) async {
+            final ScheduleCubit cubit = context.read<ScheduleCubit>();
+            final BookingResult? result = await showFormBottomSheet<BookingResult>(
+              context: context,
+              builder: (_) => BookingConfirmationSheet(slot: item.slot),
+            );
+            if (result case final result?) {
+              cubit.bookSlot(item.slot.id, customerPhone: result.customerPhone);
+            }
           },
         ),
         if (state.slots.isNotEmpty)
