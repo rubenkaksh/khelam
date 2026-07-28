@@ -5,6 +5,7 @@ import 'di/app_dependencies.dart';
 import 'ui/core/app_theme.dart';
 import 'ui/features/auth/bloc/auth_cubit.dart';
 import 'ui/features/home/bloc/home_cubit.dart';
+import 'ui/features/schedule/bloc/schedule_cubit.dart';
 
 class KhelamApp extends StatelessWidget {
   const KhelamApp({super.key, required this.dependencies});
@@ -17,6 +18,7 @@ class KhelamApp extends StatelessWidget {
       providers: <BlocProvider>[
         BlocProvider<AuthCubit>.value(value: dependencies.authCubit),
         BlocProvider<HomeCubit>.value(value: dependencies.homeCubit),
+        BlocProvider<ScheduleCubit>.value(value: dependencies.scheduleCubit),
       ],
       child: MaterialApp.router(
         title: 'Khelam Flutter Template',

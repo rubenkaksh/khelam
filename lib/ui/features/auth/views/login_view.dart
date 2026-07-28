@@ -161,7 +161,8 @@ class _LoginViewState extends State<LoginView> {
     if (state.isLoading) {
       return;
     }
-    if (!_formKey.currentState!.validate()) {
+    final FormState? formState = _formKey.currentState;
+    if (formState == null || !formState.validate()) {
       return;
     }
 

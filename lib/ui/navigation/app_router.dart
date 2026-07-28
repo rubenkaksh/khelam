@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/auth/views/login_view.dart';
 import '../features/home/views/home_view.dart';
+import '../features/schedule/views/schedule_view.dart';
 import '../features/theme_preview/views/theme_preview_view.dart';
 import 'app_routes.dart';
 
@@ -13,12 +14,13 @@ class AppRouter {
   final bool Function() _isAuthenticated;
 
   late final GoRouter router = GoRouter(
-    initialLocation: AppRoutes.loginPath,
+    initialLocation: AppRoutes.schedulePath,
     redirect: (BuildContext context, GoRouterState state) {
       final bool loggedIn = _isAuthenticated();
-      final bool isProtected = state.matchedLocation != AppRoutes.loginPath;
+      final bool isPublic = state.matchedLocation == AppRoutes.loginPath ||
+          state.matchedLocation == AppRoutes.schedulePath;
 
-      if (!loggedIn && isProtected) {
+      if (!loggedIn && !isPublic) {
         return AppRoutes.loginPath;
       }
       return null;
@@ -39,12 +41,20 @@ class AppRouter {
         },
       ),
       GoRoute(
+        path: AppRoutes.schedulePath,
+        name: AppRoutes.schedule,
+        builder: (BuildContext context, GoRouterState state) {
+          return const ScheduleView();
+        },
+      ),
+      GoRoute(
         path: AppRoutes.themePreviewPath,
         name: AppRoutes.themePreview,
         builder: (BuildContext context, GoRouterState state) {
-          final Brightness brightness = state.extra is Brightness
-              ? state.extra! as Brightness
-              : Theme.of(context).brightness;
+          final Brightness brightness = switch (state.extra) {
+            final Brightness b => b,
+            _ => Theme.of(context).brightness,
+          };
           return ThemePreviewView(brightness: brightness);
         },
       ),
