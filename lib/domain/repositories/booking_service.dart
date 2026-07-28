@@ -10,5 +10,6 @@ abstract interface class BookingService {
   Future<ScheduleSlotItem> bookSlot({
     required String turfId,
     required String slotId,
+    String? customerPhone,
   });
 }

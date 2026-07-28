@@ -22,7 +22,8 @@ class BookingRepository {
   Future<ScheduleSlotItem> bookSlot({
     required String turfId,
     required String slotId,
+    String? customerPhone,
   }) {
-    return _service.bookSlot(turfId: turfId, slotId: slotId);
+    return _service.bookSlot(turfId: turfId, slotId: slotId, customerPhone: customerPhone);
   }
 }

@@ -39,6 +39,7 @@ class FakeBookingRepository implements BookingRepository {
   Future<ScheduleSlotItem> bookSlot({
     required String turfId,
     required String slotId,
+    String? customerPhone,
   }) async {
     if (shouldThrow) throw Exception('Network error');
     final Slot slot = Slot(
@@ -59,6 +60,7 @@ class FakeBookingRepository implements BookingRepository {
       advanceAmount: 50.0,
       remainingAmount: 50.0,
       status: BookingStatus.confirmed,
+      customerPhone: customerPhone,
     );
     return ScheduleSlotItem(slot: slot, booking: booking, customerName: 'You');
   }
@@ -220,6 +222,7 @@ class _TestBookingService implements svc.BookingService {
   Future<ScheduleSlotItem> bookSlot({
     required String turfId,
     required String slotId,
+    String? customerPhone,
   }) async {
     final Slot slot = Slot(
       id: slotId,
@@ -239,6 +242,7 @@ class _TestBookingService implements svc.BookingService {
       advanceAmount: 50.0,
       remainingAmount: 50.0,
       status: BookingStatus.confirmed,
+      customerPhone: customerPhone,
     );
     return ScheduleSlotItem(slot: slot, booking: booking, customerName: 'You');
   }

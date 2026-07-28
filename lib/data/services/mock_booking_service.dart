@@ -102,6 +102,7 @@ class MockBookingService implements BookingService {
   Future<ScheduleSlotItem> bookSlot({
     required String turfId,
     required String slotId,
+    String? customerPhone,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 100));
     _extraBookedSlotIds.add(slotId);
@@ -127,7 +128,7 @@ class MockBookingService implements BookingService {
     );
 
     final int customerIndex = hour % _customerNames.length;
-    final String customerName = _customerNames[customerIndex];
+    final String customerName = customerPhone ?? _customerNames[customerIndex];
     final Booking booking = Booking(
       id: 'bk-${DateTime.now().millisecondsSinceEpoch}',
       bookingCode:
@@ -139,6 +140,7 @@ class MockBookingService implements BookingService {
       advanceAmount: 50.0,
       remainingAmount: 50.0,
       status: BookingStatus.confirmed,
+      customerPhone: customerPhone,
     );
 
     return ScheduleSlotItem(slot: slot, booking: booking, customerName: customerName);
