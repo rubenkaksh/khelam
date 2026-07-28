@@ -172,6 +172,28 @@ void main() {
       expect(testCubit.state.dayStats.bookingCount, 1);
       expect(testCubit.state.dayStats.revenue, 250.0);
     });
+
+    test('bookSlot converts available slot to booked', () async {
+      final cubit = ScheduleCubit(repository: mockRepo);
+      await cubit.load();
+
+      // Find first available slot
+      final available = cubit.state.slots.firstWhere(
+        (item) => item.booking == null,
+      );
+
+      await cubit.bookSlot(available.slot.id);
+
+      expect(cubit.state.isLoading, isFalse);
+      expect(cubit.state.errorMessage, isNull);
+
+      final updated = cubit.state.slots.firstWhere(
+        (item) => item.slot.id == available.slot.id,
+      );
+      expect(updated.booking, isNotNull);
+      expect(updated.customerName, isNotNull);
+      expect(updated.slot.status, SlotStatus.booked);
+    });
   });
 }
 
