@@ -312,6 +312,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
+  intl:
+    dependency: "direct main"
+    description:
+      name: intl
+      sha256: "3df61194eb431efc39c4ceba583b95633a403f46c9fd341e550ce0bfa50e9aa5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.20.2"
   io:
     dependency: transitive
     description:
@@ -387,7 +395,7 @@ packages:
   material_3_demo:
     dependency: "direct main"
     description:
-      path: "../flutter_material_3_demo"
+      path: "../../flutter_material_3_demo"
       relative: true
     source: path
     version: "1.0.0+1"

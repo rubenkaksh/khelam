@@ -32,7 +32,13 @@ Status: dev in progress. Buttons (5), Typography (4), Inputs (3), Feedback (4) i
 - [x] **EmptyView** — Empty icon + message + optional action button. `lib/ui/common/feedback.dart`.
 - [x] **StateSwitcher** — Generic state container. `LoadState` enum + 4 builders. Defaults to LoadingView/ErrorView/EmptyView. `lib/ui/common/feedback.dart`.
 
-### Total: 16 widgets
+### Status / Info (3)
+
+- [x] **StatCard** — Compact metric tile (icon + label + value). `lib/ui/common/stat_card.dart`.
+- [x] **SectionHeader** — Row title + trailing chevron/action. `lib/ui/common/section_header.dart`.
+- [x] **StatusBadge** — Small status chip (check + "Booked"). Tone enum: `primary | success | warning | neutral`. `lib/ui/common/status_badge.dart`.
+
+### Total: 19 widgets
 
 _All implemented. Selection widgets (checkbox, switch) cut — revisit later._
 
