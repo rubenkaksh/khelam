@@ -16,6 +16,7 @@ _Booking _$BookingFromJson(Map<String, dynamic> json) => _Booking(
   advanceAmount: (json['advanceAmount'] as num).toDouble(),
   remainingAmount: (json['remainingAmount'] as num).toDouble(),
   status: $enumDecode(_$BookingStatusEnumMap, json['status']),
+  customerPhone: json['customerPhone'] as String?,
 );
 
 Map<String, dynamic> _$BookingToJson(_Booking instance) => <String, dynamic>{
@@ -28,6 +29,7 @@ Map<String, dynamic> _$BookingToJson(_Booking instance) => <String, dynamic>{
   'advanceAmount': instance.advanceAmount,
   'remainingAmount': instance.remainingAmount,
   'status': _$BookingStatusEnumMap[instance.status]!,
+  'customerPhone': instance.customerPhone,
 };
 
 const _$BookingStatusEnumMap = {

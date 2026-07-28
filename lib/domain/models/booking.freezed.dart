@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Booking {
 
- String get id; String get bookingCode; String get userId; String get turfId; String get slotId; double get totalAmount; double get advanceAmount; double get remainingAmount; BookingStatus get status;
+ String get id; String get bookingCode; String get userId; String get turfId; String get slotId; double get totalAmount; double get advanceAmount; double get remainingAmount; BookingStatus get status; String? get customerPhone;
 /// Create a copy of Booking
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $BookingCopyWith<Booking> get copyWith => _$BookingCopyWithImpl<Booking>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Booking&&(identical(other.id, id) || other.id == id)&&(identical(other.bookingCode, bookingCode) || other.bookingCode == bookingCode)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.turfId, turfId) || other.turfId == turfId)&&(identical(other.slotId, slotId) || other.slotId == slotId)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&(identical(other.advanceAmount, advanceAmount) || other.advanceAmount == advanceAmount)&&(identical(other.remainingAmount, remainingAmount) || other.remainingAmount == remainingAmount)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Booking&&(identical(other.id, id) || other.id == id)&&(identical(other.bookingCode, bookingCode) || other.bookingCode == bookingCode)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.turfId, turfId) || other.turfId == turfId)&&(identical(other.slotId, slotId) || other.slotId == slotId)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&(identical(other.advanceAmount, advanceAmount) || other.advanceAmount == advanceAmount)&&(identical(other.remainingAmount, remainingAmount) || other.remainingAmount == remainingAmount)&&(identical(other.status, status) || other.status == status)&&(identical(other.customerPhone, customerPhone) || other.customerPhone == customerPhone));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,bookingCode,userId,turfId,slotId,totalAmount,advanceAmount,remainingAmount,status);
+int get hashCode => Object.hash(runtimeType,id,bookingCode,userId,turfId,slotId,totalAmount,advanceAmount,remainingAmount,status,customerPhone);
 
 @override
 String toString() {
-  return 'Booking(id: $id, bookingCode: $bookingCode, userId: $userId, turfId: $turfId, slotId: $slotId, totalAmount: $totalAmount, advanceAmount: $advanceAmount, remainingAmount: $remainingAmount, status: $status)';
+  return 'Booking(id: $id, bookingCode: $bookingCode, userId: $userId, turfId: $turfId, slotId: $slotId, totalAmount: $totalAmount, advanceAmount: $advanceAmount, remainingAmount: $remainingAmount, status: $status, customerPhone: $customerPhone)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $BookingCopyWith<$Res>  {
   factory $BookingCopyWith(Booking value, $Res Function(Booking) _then) = _$BookingCopyWithImpl;
 @useResult
 $Res call({
- String id, String bookingCode, String userId, String turfId, String slotId, double totalAmount, double advanceAmount, double remainingAmount, BookingStatus status
+ String id, String bookingCode, String userId, String turfId, String slotId, double totalAmount, double advanceAmount, double remainingAmount, BookingStatus status, String? customerPhone
 });
 
 
@@ -65,7 +65,7 @@ class _$BookingCopyWithImpl<$Res>
 
 /// Create a copy of Booking
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? bookingCode = null,Object? userId = null,Object? turfId = null,Object? slotId = null,Object? totalAmount = null,Object? advanceAmount = null,Object? remainingAmount = null,Object? status = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? bookingCode = null,Object? userId = null,Object? turfId = null,Object? slotId = null,Object? totalAmount = null,Object? advanceAmount = null,Object? remainingAmount = null,Object? status = null,Object? customerPhone = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,bookingCode: null == bookingCode ? _self.bookingCode : bookingCode // ignore: cast_nullable_to_non_nullable
@@ -76,7 +76,8 @@ as String,totalAmount: null == totalAmount ? _self.totalAmount : totalAmount // 
 as double,advanceAmount: null == advanceAmount ? _self.advanceAmount : advanceAmount // ignore: cast_nullable_to_non_nullable
 as double,remainingAmount: null == remainingAmount ? _self.remainingAmount : remainingAmount // ignore: cast_nullable_to_non_nullable
 as double,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as BookingStatus,
+as BookingStatus,customerPhone: freezed == customerPhone ? _self.customerPhone : customerPhone // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -161,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String bookingCode,  String userId,  String turfId,  String slotId,  double totalAmount,  double advanceAmount,  double remainingAmount,  BookingStatus status)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String bookingCode,  String userId,  String turfId,  String slotId,  double totalAmount,  double advanceAmount,  double remainingAmount,  BookingStatus status,  String? customerPhone)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Booking() when $default != null:
-return $default(_that.id,_that.bookingCode,_that.userId,_that.turfId,_that.slotId,_that.totalAmount,_that.advanceAmount,_that.remainingAmount,_that.status);case _:
+return $default(_that.id,_that.bookingCode,_that.userId,_that.turfId,_that.slotId,_that.totalAmount,_that.advanceAmount,_that.remainingAmount,_that.status,_that.customerPhone);case _:
   return orElse();
 
 }
@@ -182,10 +183,10 @@ return $default(_that.id,_that.bookingCode,_that.userId,_that.turfId,_that.slotI
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String bookingCode,  String userId,  String turfId,  String slotId,  double totalAmount,  double advanceAmount,  double remainingAmount,  BookingStatus status)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String bookingCode,  String userId,  String turfId,  String slotId,  double totalAmount,  double advanceAmount,  double remainingAmount,  BookingStatus status,  String? customerPhone)  $default,) {final _that = this;
 switch (_that) {
 case _Booking():
-return $default(_that.id,_that.bookingCode,_that.userId,_that.turfId,_that.slotId,_that.totalAmount,_that.advanceAmount,_that.remainingAmount,_that.status);case _:
+return $default(_that.id,_that.bookingCode,_that.userId,_that.turfId,_that.slotId,_that.totalAmount,_that.advanceAmount,_that.remainingAmount,_that.status,_that.customerPhone);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -202,10 +203,10 @@ return $default(_that.id,_that.bookingCode,_that.userId,_that.turfId,_that.slotI
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String bookingCode,  String userId,  String turfId,  String slotId,  double totalAmount,  double advanceAmount,  double remainingAmount,  BookingStatus status)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String bookingCode,  String userId,  String turfId,  String slotId,  double totalAmount,  double advanceAmount,  double remainingAmount,  BookingStatus status,  String? customerPhone)?  $default,) {final _that = this;
 switch (_that) {
 case _Booking() when $default != null:
-return $default(_that.id,_that.bookingCode,_that.userId,_that.turfId,_that.slotId,_that.totalAmount,_that.advanceAmount,_that.remainingAmount,_that.status);case _:
+return $default(_that.id,_that.bookingCode,_that.userId,_that.turfId,_that.slotId,_that.totalAmount,_that.advanceAmount,_that.remainingAmount,_that.status,_that.customerPhone);case _:
   return null;
 
 }
@@ -217,7 +218,7 @@ return $default(_that.id,_that.bookingCode,_that.userId,_that.turfId,_that.slotI
 @JsonSerializable()
 
 class _Booking implements Booking {
-  const _Booking({required this.id, required this.bookingCode, required this.userId, required this.turfId, required this.slotId, required this.totalAmount, required this.advanceAmount, required this.remainingAmount, required this.status});
+  const _Booking({required this.id, required this.bookingCode, required this.userId, required this.turfId, required this.slotId, required this.totalAmount, required this.advanceAmount, required this.remainingAmount, required this.status, this.customerPhone});
   factory _Booking.fromJson(Map<String, dynamic> json) => _$BookingFromJson(json);
 
 @override final  String id;
@@ -229,6 +230,7 @@ class _Booking implements Booking {
 @override final  double advanceAmount;
 @override final  double remainingAmount;
 @override final  BookingStatus status;
+@override final  String? customerPhone;
 
 /// Create a copy of Booking
 /// with the given fields replaced by the non-null parameter values.
@@ -243,16 +245,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Booking&&(identical(other.id, id) || other.id == id)&&(identical(other.bookingCode, bookingCode) || other.bookingCode == bookingCode)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.turfId, turfId) || other.turfId == turfId)&&(identical(other.slotId, slotId) || other.slotId == slotId)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&(identical(other.advanceAmount, advanceAmount) || other.advanceAmount == advanceAmount)&&(identical(other.remainingAmount, remainingAmount) || other.remainingAmount == remainingAmount)&&(identical(other.status, status) || other.status == status));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Booking&&(identical(other.id, id) || other.id == id)&&(identical(other.bookingCode, bookingCode) || other.bookingCode == bookingCode)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.turfId, turfId) || other.turfId == turfId)&&(identical(other.slotId, slotId) || other.slotId == slotId)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&(identical(other.advanceAmount, advanceAmount) || other.advanceAmount == advanceAmount)&&(identical(other.remainingAmount, remainingAmount) || other.remainingAmount == remainingAmount)&&(identical(other.status, status) || other.status == status)&&(identical(other.customerPhone, customerPhone) || other.customerPhone == customerPhone));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,bookingCode,userId,turfId,slotId,totalAmount,advanceAmount,remainingAmount,status);
+int get hashCode => Object.hash(runtimeType,id,bookingCode,userId,turfId,slotId,totalAmount,advanceAmount,remainingAmount,status,customerPhone);
 
 @override
 String toString() {
-  return 'Booking(id: $id, bookingCode: $bookingCode, userId: $userId, turfId: $turfId, slotId: $slotId, totalAmount: $totalAmount, advanceAmount: $advanceAmount, remainingAmount: $remainingAmount, status: $status)';
+  return 'Booking(id: $id, bookingCode: $bookingCode, userId: $userId, turfId: $turfId, slotId: $slotId, totalAmount: $totalAmount, advanceAmount: $advanceAmount, remainingAmount: $remainingAmount, status: $status, customerPhone: $customerPhone)';
 }
 
 
@@ -263,7 +265,7 @@ abstract mixin class _$BookingCopyWith<$Res> implements $BookingCopyWith<$Res> {
   factory _$BookingCopyWith(_Booking value, $Res Function(_Booking) _then) = __$BookingCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String bookingCode, String userId, String turfId, String slotId, double totalAmount, double advanceAmount, double remainingAmount, BookingStatus status
+ String id, String bookingCode, String userId, String turfId, String slotId, double totalAmount, double advanceAmount, double remainingAmount, BookingStatus status, String? customerPhone
 });
 
 
@@ -280,7 +282,7 @@ class __$BookingCopyWithImpl<$Res>
 
 /// Create a copy of Booking
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? bookingCode = null,Object? userId = null,Object? turfId = null,Object? slotId = null,Object? totalAmount = null,Object? advanceAmount = null,Object? remainingAmount = null,Object? status = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? bookingCode = null,Object? userId = null,Object? turfId = null,Object? slotId = null,Object? totalAmount = null,Object? advanceAmount = null,Object? remainingAmount = null,Object? status = null,Object? customerPhone = freezed,}) {
   return _then(_Booking(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,bookingCode: null == bookingCode ? _self.bookingCode : bookingCode // ignore: cast_nullable_to_non_nullable
@@ -291,7 +293,8 @@ as String,totalAmount: null == totalAmount ? _self.totalAmount : totalAmount // 
 as double,advanceAmount: null == advanceAmount ? _self.advanceAmount : advanceAmount // ignore: cast_nullable_to_non_nullable
 as double,remainingAmount: null == remainingAmount ? _self.remainingAmount : remainingAmount // ignore: cast_nullable_to_non_nullable
 as double,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as BookingStatus,
+as BookingStatus,customerPhone: freezed == customerPhone ? _self.customerPhone : customerPhone // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

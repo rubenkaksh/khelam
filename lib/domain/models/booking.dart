@@ -17,6 +17,7 @@ abstract class Booking with _$Booking {
     required double advanceAmount,
     required double remainingAmount,
     required BookingStatus status,
+    String? customerPhone,
   }) = _Booking;
 
   factory Booking.fromJson(Map<String, dynamic> json) => _$BookingFromJson(json);
