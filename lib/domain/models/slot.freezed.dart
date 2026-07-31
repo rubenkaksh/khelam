@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Slot {
 
- String get id; String get turfId; DateTime get slotDate; DateTime get startTime; DateTime get endTime; SlotStatus get status; String? get lockedBy; DateTime? get lockedAt;
+ String get id;@JsonKey(name: 'turf_id') String get turfId;@JsonKey(name: 'slot_date') DateTime get slotDate;@JsonKey(name: 'start_time') DateTime get startTime;@JsonKey(name: 'end_time') DateTime get endTime; SlotStatus get status; String? get lockedBy; DateTime? get lockedAt;
 /// Create a copy of Slot
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $SlotCopyWith<$Res>  {
   factory $SlotCopyWith(Slot value, $Res Function(Slot) _then) = _$SlotCopyWithImpl;
 @useResult
 $Res call({
- String id, String turfId, DateTime slotDate, DateTime startTime, DateTime endTime, SlotStatus status, String? lockedBy, DateTime? lockedAt
+ String id,@JsonKey(name: 'turf_id') String turfId,@JsonKey(name: 'slot_date') DateTime slotDate,@JsonKey(name: 'start_time') DateTime startTime,@JsonKey(name: 'end_time') DateTime endTime, SlotStatus status, String? lockedBy, DateTime? lockedAt
 });
 
 
@@ -160,7 +160,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String turfId,  DateTime slotDate,  DateTime startTime,  DateTime endTime,  SlotStatus status,  String? lockedBy,  DateTime? lockedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'turf_id')  String turfId, @JsonKey(name: 'slot_date')  DateTime slotDate, @JsonKey(name: 'start_time')  DateTime startTime, @JsonKey(name: 'end_time')  DateTime endTime,  SlotStatus status,  String? lockedBy,  DateTime? lockedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Slot() when $default != null:
 return $default(_that.id,_that.turfId,_that.slotDate,_that.startTime,_that.endTime,_that.status,_that.lockedBy,_that.lockedAt);case _:
@@ -181,7 +181,7 @@ return $default(_that.id,_that.turfId,_that.slotDate,_that.startTime,_that.endTi
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String turfId,  DateTime slotDate,  DateTime startTime,  DateTime endTime,  SlotStatus status,  String? lockedBy,  DateTime? lockedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'turf_id')  String turfId, @JsonKey(name: 'slot_date')  DateTime slotDate, @JsonKey(name: 'start_time')  DateTime startTime, @JsonKey(name: 'end_time')  DateTime endTime,  SlotStatus status,  String? lockedBy,  DateTime? lockedAt)  $default,) {final _that = this;
 switch (_that) {
 case _Slot():
 return $default(_that.id,_that.turfId,_that.slotDate,_that.startTime,_that.endTime,_that.status,_that.lockedBy,_that.lockedAt);case _:
@@ -201,7 +201,7 @@ return $default(_that.id,_that.turfId,_that.slotDate,_that.startTime,_that.endTi
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String turfId,  DateTime slotDate,  DateTime startTime,  DateTime endTime,  SlotStatus status,  String? lockedBy,  DateTime? lockedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'turf_id')  String turfId, @JsonKey(name: 'slot_date')  DateTime slotDate, @JsonKey(name: 'start_time')  DateTime startTime, @JsonKey(name: 'end_time')  DateTime endTime,  SlotStatus status,  String? lockedBy,  DateTime? lockedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Slot() when $default != null:
 return $default(_that.id,_that.turfId,_that.slotDate,_that.startTime,_that.endTime,_that.status,_that.lockedBy,_that.lockedAt);case _:
@@ -216,14 +216,14 @@ return $default(_that.id,_that.turfId,_that.slotDate,_that.startTime,_that.endTi
 @JsonSerializable()
 
 class _Slot implements Slot {
-  const _Slot({required this.id, required this.turfId, required this.slotDate, required this.startTime, required this.endTime, required this.status, this.lockedBy, this.lockedAt});
+  const _Slot({required this.id, @JsonKey(name: 'turf_id') required this.turfId, @JsonKey(name: 'slot_date') required this.slotDate, @JsonKey(name: 'start_time') required this.startTime, @JsonKey(name: 'end_time') required this.endTime, required this.status, this.lockedBy, this.lockedAt});
   factory _Slot.fromJson(Map<String, dynamic> json) => _$SlotFromJson(json);
 
 @override final  String id;
-@override final  String turfId;
-@override final  DateTime slotDate;
-@override final  DateTime startTime;
-@override final  DateTime endTime;
+@override@JsonKey(name: 'turf_id') final  String turfId;
+@override@JsonKey(name: 'slot_date') final  DateTime slotDate;
+@override@JsonKey(name: 'start_time') final  DateTime startTime;
+@override@JsonKey(name: 'end_time') final  DateTime endTime;
 @override final  SlotStatus status;
 @override final  String? lockedBy;
 @override final  DateTime? lockedAt;
@@ -261,7 +261,7 @@ abstract mixin class _$SlotCopyWith<$Res> implements $SlotCopyWith<$Res> {
   factory _$SlotCopyWith(_Slot value, $Res Function(_Slot) _then) = __$SlotCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String turfId, DateTime slotDate, DateTime startTime, DateTime endTime, SlotStatus status, String? lockedBy, DateTime? lockedAt
+ String id,@JsonKey(name: 'turf_id') String turfId,@JsonKey(name: 'slot_date') DateTime slotDate,@JsonKey(name: 'start_time') DateTime startTime,@JsonKey(name: 'end_time') DateTime endTime, SlotStatus status, String? lockedBy, DateTime? lockedAt
 });
 
 

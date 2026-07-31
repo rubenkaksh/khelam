@@ -1,12 +1,10 @@
 import 'package:intl/intl.dart';
 
-import '../models/slot_dto.dart';
-import '../services/dio_api_client.dart';
 import '../../domain/models/schedule_slot_item.dart';
 import '../../domain/models/slot.dart';
-import '../../domain/models/slot_status.dart';
 import '../../domain/models/turf_summary.dart';
 import '../../domain/repositories/booking_service.dart';
+import '../services/dio_api_client.dart';
 
 /// Real API implementation of [BookingService] backed by the NestJS
 /// `rms-futsal-backend`.
@@ -14,6 +12,10 @@ import '../../domain/repositories/booking_service.dart';
 /// Endpoints:
 /// - `GET /slots?turfId=:turfId&date=YYYY-MM-DD` (public)
 /// - `POST /slots/:id/book` (requires JWT — not wired yet, will 401)
+///
+/// JSON responses are parsed with the domain models' generated `fromJson`
+/// (`Slot`, `Booking`), following the app's freezed + json_serializable
+/// convention.
 class BookingApiService implements BookingService {
   BookingApiService({required DioApiClient apiClient}) : _apiClient = apiClient;
 
@@ -49,7 +51,7 @@ class BookingApiService implements BookingService {
 
     return jsonList
         .map((Map<String, dynamic> json) =>
-            _toScheduleSlotItem(SlotDto.fromJson(json), turfId))
+            _toScheduleSlotItem(json, turfId))
         .toList();
   }
 
@@ -62,50 +64,38 @@ class BookingApiService implements BookingService {
     // The backend identifies the booker via the JWT (not yet wired in the
     // app), so customerPhone is intentionally not sent. Requires a bearer
     // token via DioApiClient.setBearerToken; without one the call returns 401.
+    // The response booking/slot is not used: the cubit refetches the schedule.
     await _apiClient.postJson('/slots/$slotId/book');
   }
 
-  /// Maps an API slot row into the domain [Slot] + [ScheduleSlotItem].
+  /// Parses an API slot row into the domain [Slot] and wraps it in a
+  /// [ScheduleSlotItem].
   ///
-  /// The backend encodes the time-of-day with a dummy date (`1970-01-01`),
-  /// so the slot's calendar date comes from `slot_date` and the clock time
-  /// from `start_time`/`end_time`, combined into a local [DateTime].
-  ScheduleSlotItem _toScheduleSlotItem(SlotDto dto, String turfId) {
-    final DateTime utcDate = dto.slotDate.toUtc();
-    final DateTime date = DateTime(utcDate.year, utcDate.month, utcDate.day);
-
-    final DateTime utcStart = dto.startTime.toUtc();
-    final DateTime startTime = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      utcStart.hour,
-      utcStart.minute,
-      utcStart.second,
-    );
-    final DateTime utcEnd = dto.endTime.toUtc();
-    final DateTime endTime = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      utcEnd.hour,
-      utcEnd.minute,
-      utcEnd.second,
-    );
+  /// The list endpoint omits `turf_id` per row (it is implied by the query),
+  /// so it is completed here before the generated parser runs. The backend
+  /// encodes the time-of-day with a dummy date (`1970-01-01`), so the slot's
+  /// calendar date comes from `slot_date` and the clock time from
+  /// `start_time`/`end_time`, combined into a local [DateTime].
+  ScheduleSlotItem _toScheduleSlotItem(
+    Map<String, dynamic> json,
+    String turfId,
+  ) {
+    final Slot slot = Slot.fromJson(<String, dynamic>{...json, 'turf_id': turfId});
+    final DateTime date = DateTime(slot.slotDate.year, slot.slotDate.month, slot.slotDate.day);
 
     return ScheduleSlotItem(
-      slot: Slot(
-        id: dto.id,
-        turfId: turfId,
+      slot: slot.copyWith(
         slotDate: date,
-        startTime: startTime,
-        endTime: endTime,
-        status: SlotStatus.values.byName(dto.status),
+        startTime: _timeOnDate(slot.startTime, date),
+        endTime: _timeOnDate(slot.endTime, date),
       ),
       // The slots list endpoint returns no booking details; the booker's
       // display name arrives as `bookedBy`.
       booking: null,
-      customerName: dto.bookedBy,
+      customerName: json['bookedBy'] as String?,
     );
   }
+
+  DateTime _timeOnDate(DateTime time, DateTime date) =>
+      DateTime(date.year, date.month, date.day, time.hour, time.minute, time.second);
 }

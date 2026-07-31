@@ -1,3 +1,7 @@
+// JsonKey on freezed constructor parameters is copied onto the generated
+// fields; the analyzer flags the source annotation target (see freezed docs).
+// ignore_for_file: invalid_annotation_target
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'slot_status.dart';
@@ -9,10 +13,10 @@ part 'slot.g.dart';
 abstract class Slot with _$Slot {
   const factory Slot({
     required String id,
-    required String turfId,
-    required DateTime slotDate,
-    required DateTime startTime,
-    required DateTime endTime,
+    @JsonKey(name: 'turf_id') required String turfId,
+    @JsonKey(name: 'slot_date') required DateTime slotDate,
+    @JsonKey(name: 'start_time') required DateTime startTime,
+    @JsonKey(name: 'end_time') required DateTime endTime,
     required SlotStatus status,
     String? lockedBy,
     DateTime? lockedAt,

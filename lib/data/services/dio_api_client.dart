@@ -35,23 +35,27 @@ class DioApiClient {
     String path, {
     Map<String, dynamic>? queryParameters,
   }) async {
-    final Response<dynamic> response = await _dio.get<dynamic>(
-      path,
-      queryParameters: queryParameters,
-    );
-    final Object? data = response.data;
-    if (data is List) {
-      final List<Map<String, dynamic>> items = <Map<String, dynamic>>[];
-      for (final Object? item in data) {
-        if (item is Map<String, dynamic>) {
-          items.add(item);
-        } else {
-          throw const ApiClientException('Expected JSON array of objects.');
+    try {
+      final Response<dynamic> response = await _dio.get<dynamic>(
+        path,
+        queryParameters: queryParameters,
+      );
+      final Object? data = response.data;
+      if (data is List) {
+        final List<Map<String, dynamic>> items = <Map<String, dynamic>>[];
+        for (final Object? item in data) {
+          if (item is Map<String, dynamic>) {
+            items.add(item);
+          } else {
+            throw const ApiClientException('Expected JSON array of objects.');
+          }
         }
+        return items;
       }
-      return items;
+      throw const ApiClientException('Expected JSON array response.');
+    } catch (e) {
+      throw ApiClientException('Error getting JSON list: $e');
     }
-    throw const ApiClientException('Expected JSON array response.');
   }
 
   /// POST a JSON body and return the JSON object response.
@@ -59,7 +63,10 @@ class DioApiClient {
     String path, {
     Map<String, dynamic>? body,
   }) async {
-    final Response<dynamic> response = await _dio.post<dynamic>(path, data: body);
+    final Response<dynamic> response = await _dio.post<dynamic>(
+      path,
+      data: body,
+    );
     return _expectObject(response.data);
   }
 

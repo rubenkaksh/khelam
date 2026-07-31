@@ -15,7 +15,9 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Booking {
 
- String get id; String get bookingCode; String get userId; String get turfId; String get slotId; double get totalAmount; double get advanceAmount; double get remainingAmount; BookingStatus get status; String? get customerPhone;
+ String get id;@JsonKey(name: 'booking_code') String get bookingCode;@JsonKey(name: 'user_id') String get userId;@JsonKey(name: 'turf_id') String get turfId;@JsonKey(name: 'slot_id') String get slotId;// Money fields are Prisma `Decimal`s which serialize as JSON strings
+// (e.g. `"1000.00"`); [_amountToDouble] accepts both string and number.
+@JsonKey(name: 'total_amount', fromJson: _amountToDouble) double get totalAmount;@JsonKey(name: 'advance_amount', fromJson: _amountToDouble) double get advanceAmount;@JsonKey(name: 'remaining_amount', fromJson: _amountToDouble) double get remainingAmount; BookingStatus get status; String? get customerPhone;
 /// Create a copy of Booking
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +50,7 @@ abstract mixin class $BookingCopyWith<$Res>  {
   factory $BookingCopyWith(Booking value, $Res Function(Booking) _then) = _$BookingCopyWithImpl;
 @useResult
 $Res call({
- String id, String bookingCode, String userId, String turfId, String slotId, double totalAmount, double advanceAmount, double remainingAmount, BookingStatus status, String? customerPhone
+ String id,@JsonKey(name: 'booking_code') String bookingCode,@JsonKey(name: 'user_id') String userId,@JsonKey(name: 'turf_id') String turfId,@JsonKey(name: 'slot_id') String slotId,@JsonKey(name: 'total_amount', fromJson: _amountToDouble) double totalAmount,@JsonKey(name: 'advance_amount', fromJson: _amountToDouble) double advanceAmount,@JsonKey(name: 'remaining_amount', fromJson: _amountToDouble) double remainingAmount, BookingStatus status, String? customerPhone
 });
 
 
@@ -162,7 +164,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String bookingCode,  String userId,  String turfId,  String slotId,  double totalAmount,  double advanceAmount,  double remainingAmount,  BookingStatus status,  String? customerPhone)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'booking_code')  String bookingCode, @JsonKey(name: 'user_id')  String userId, @JsonKey(name: 'turf_id')  String turfId, @JsonKey(name: 'slot_id')  String slotId, @JsonKey(name: 'total_amount', fromJson: _amountToDouble)  double totalAmount, @JsonKey(name: 'advance_amount', fromJson: _amountToDouble)  double advanceAmount, @JsonKey(name: 'remaining_amount', fromJson: _amountToDouble)  double remainingAmount,  BookingStatus status,  String? customerPhone)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Booking() when $default != null:
 return $default(_that.id,_that.bookingCode,_that.userId,_that.turfId,_that.slotId,_that.totalAmount,_that.advanceAmount,_that.remainingAmount,_that.status,_that.customerPhone);case _:
@@ -183,7 +185,7 @@ return $default(_that.id,_that.bookingCode,_that.userId,_that.turfId,_that.slotI
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String bookingCode,  String userId,  String turfId,  String slotId,  double totalAmount,  double advanceAmount,  double remainingAmount,  BookingStatus status,  String? customerPhone)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'booking_code')  String bookingCode, @JsonKey(name: 'user_id')  String userId, @JsonKey(name: 'turf_id')  String turfId, @JsonKey(name: 'slot_id')  String slotId, @JsonKey(name: 'total_amount', fromJson: _amountToDouble)  double totalAmount, @JsonKey(name: 'advance_amount', fromJson: _amountToDouble)  double advanceAmount, @JsonKey(name: 'remaining_amount', fromJson: _amountToDouble)  double remainingAmount,  BookingStatus status,  String? customerPhone)  $default,) {final _that = this;
 switch (_that) {
 case _Booking():
 return $default(_that.id,_that.bookingCode,_that.userId,_that.turfId,_that.slotId,_that.totalAmount,_that.advanceAmount,_that.remainingAmount,_that.status,_that.customerPhone);case _:
@@ -203,7 +205,7 @@ return $default(_that.id,_that.bookingCode,_that.userId,_that.turfId,_that.slotI
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String bookingCode,  String userId,  String turfId,  String slotId,  double totalAmount,  double advanceAmount,  double remainingAmount,  BookingStatus status,  String? customerPhone)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'booking_code')  String bookingCode, @JsonKey(name: 'user_id')  String userId, @JsonKey(name: 'turf_id')  String turfId, @JsonKey(name: 'slot_id')  String slotId, @JsonKey(name: 'total_amount', fromJson: _amountToDouble)  double totalAmount, @JsonKey(name: 'advance_amount', fromJson: _amountToDouble)  double advanceAmount, @JsonKey(name: 'remaining_amount', fromJson: _amountToDouble)  double remainingAmount,  BookingStatus status,  String? customerPhone)?  $default,) {final _that = this;
 switch (_that) {
 case _Booking() when $default != null:
 return $default(_that.id,_that.bookingCode,_that.userId,_that.turfId,_that.slotId,_that.totalAmount,_that.advanceAmount,_that.remainingAmount,_that.status,_that.customerPhone);case _:
@@ -218,17 +220,19 @@ return $default(_that.id,_that.bookingCode,_that.userId,_that.turfId,_that.slotI
 @JsonSerializable()
 
 class _Booking implements Booking {
-  const _Booking({required this.id, required this.bookingCode, required this.userId, required this.turfId, required this.slotId, required this.totalAmount, required this.advanceAmount, required this.remainingAmount, required this.status, this.customerPhone});
+  const _Booking({required this.id, @JsonKey(name: 'booking_code') required this.bookingCode, @JsonKey(name: 'user_id') required this.userId, @JsonKey(name: 'turf_id') required this.turfId, @JsonKey(name: 'slot_id') required this.slotId, @JsonKey(name: 'total_amount', fromJson: _amountToDouble) required this.totalAmount, @JsonKey(name: 'advance_amount', fromJson: _amountToDouble) required this.advanceAmount, @JsonKey(name: 'remaining_amount', fromJson: _amountToDouble) required this.remainingAmount, required this.status, this.customerPhone});
   factory _Booking.fromJson(Map<String, dynamic> json) => _$BookingFromJson(json);
 
 @override final  String id;
-@override final  String bookingCode;
-@override final  String userId;
-@override final  String turfId;
-@override final  String slotId;
-@override final  double totalAmount;
-@override final  double advanceAmount;
-@override final  double remainingAmount;
+@override@JsonKey(name: 'booking_code') final  String bookingCode;
+@override@JsonKey(name: 'user_id') final  String userId;
+@override@JsonKey(name: 'turf_id') final  String turfId;
+@override@JsonKey(name: 'slot_id') final  String slotId;
+// Money fields are Prisma `Decimal`s which serialize as JSON strings
+// (e.g. `"1000.00"`); [_amountToDouble] accepts both string and number.
+@override@JsonKey(name: 'total_amount', fromJson: _amountToDouble) final  double totalAmount;
+@override@JsonKey(name: 'advance_amount', fromJson: _amountToDouble) final  double advanceAmount;
+@override@JsonKey(name: 'remaining_amount', fromJson: _amountToDouble) final  double remainingAmount;
 @override final  BookingStatus status;
 @override final  String? customerPhone;
 
@@ -265,7 +269,7 @@ abstract mixin class _$BookingCopyWith<$Res> implements $BookingCopyWith<$Res> {
   factory _$BookingCopyWith(_Booking value, $Res Function(_Booking) _then) = __$BookingCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String bookingCode, String userId, String turfId, String slotId, double totalAmount, double advanceAmount, double remainingAmount, BookingStatus status, String? customerPhone
+ String id,@JsonKey(name: 'booking_code') String bookingCode,@JsonKey(name: 'user_id') String userId,@JsonKey(name: 'turf_id') String turfId,@JsonKey(name: 'slot_id') String slotId,@JsonKey(name: 'total_amount', fromJson: _amountToDouble) double totalAmount,@JsonKey(name: 'advance_amount', fromJson: _amountToDouble) double advanceAmount,@JsonKey(name: 'remaining_amount', fromJson: _amountToDouble) double remainingAmount, BookingStatus status, String? customerPhone
 });
 
 
