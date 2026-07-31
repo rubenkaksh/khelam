@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' as m;
 
 import '../../../../domain/models/schedule_slot_item.dart';
+import '../../../../domain/models/slot_status.dart';
 import 'available_slot_card.dart';
 import 'booked_slot_card.dart';
 import 'timeline_hour_label.dart';
@@ -59,7 +60,12 @@ class BookingTimeline extends m.StatelessWidget {
   }
 
   m.Widget _buildCard(ScheduleSlotItem item) {
-    if (item.booking != null) {
+    // Booked is decided by slot status so API data (no booking object on
+    // list slots) renders booked slots correctly; booking presence is kept
+    // as a fallback for mocks/legacy data.
+    final bool isBooked =
+        item.booking != null || item.slot.status == SlotStatus.booked;
+    if (isBooked) {
       return BookedSlotCard(
         item: item,
         onTap: onBookedSlotTap != null

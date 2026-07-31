@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../data/repositories/booking_repository.dart';
 import '../../../../domain/models/schedule_slot_item.dart';
+import '../../../../domain/models/slot_status.dart';
 import '../../../../domain/models/turf_summary.dart';
 import '../widgets/day_stats_section.dart';
 
@@ -47,6 +48,12 @@ class ScheduleCubit extends Cubit<ScheduleState> {
     : _repository = repository,
       super(const ScheduleState());
 
+  /// Default turf used before the turf is loaded from the service.
+  ///
+  /// TODO: remove once a turfs endpoint exists and the turf id comes from
+  /// navigation/selection instead of a hardcoded dev value.
+  static const String _defaultTurfId = '44444444-4444-4444-4444-444444444441';
+
   final BookingRepository _repository;
 
   Future<void> load({String? turfId}) async {
@@ -54,7 +61,7 @@ class ScheduleCubit extends Cubit<ScheduleState> {
 
     try {
       final TurfSummary turf = await _repository.getTurf(
-        turfId ?? 'turf-a',
+        turfId ?? _defaultTurfId,
       );
       final DateTime today = DateTime.now();
       final DateTime normalizedDate = DateTime(today.year, today.month, today.day);
@@ -90,7 +97,7 @@ class ScheduleCubit extends Cubit<ScheduleState> {
 
     try {
       final List<ScheduleSlotItem> slots = await _repository.getSchedule(
-        turfId: state.turf?.id ?? 'turf-a',
+        turfId: state.turf?.id ?? _defaultTurfId,
         date: normalizedDate,
       );
       emit(
@@ -113,16 +120,19 @@ class ScheduleCubit extends Cubit<ScheduleState> {
   Future<void> bookSlot(String slotId, {String? customerPhone}) async {
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
-      final ScheduleSlotItem bookedItem = await _repository.bookSlot(
-        turfId: state.turf?.id ?? 'turf-a',
+      await _repository.bookSlot(
+        turfId: state.turf?.id ?? _defaultTurfId,
         slotId: slotId,
         customerPhone: customerPhone,
       );
 
-      final List<ScheduleSlotItem> updatedSlots = state.slots.map((item) {
-        if (item.slot.id == slotId) return bookedItem;
-        return item;
-      }).toList();
+      // The server is the source of truth: re-fetch the schedule so the
+      // booked slot (and its booker name) comes back from the API.
+      final DateTime date = state.selectedDate ?? DateTime.now();
+      final List<ScheduleSlotItem> updatedSlots = await _repository.getSchedule(
+        turfId: state.turf?.id ?? _defaultTurfId,
+        date: date,
+      );
 
       emit(state.copyWith(
         slots: updatedSlots,
@@ -142,9 +152,11 @@ class ScheduleCubit extends Cubit<ScheduleState> {
     int count = 0;
     double revenue = 0.0;
     for (final ScheduleSlotItem item in items) {
-      if (item.booking != null) {
+      // Count by slot status so API data (which has no booking object on
+      // list slots) is counted too.
+      if (item.slot.status == SlotStatus.booked) {
         count++;
-        revenue += item.booking!.totalAmount;
+        revenue += item.booking?.totalAmount ?? 0;
       }
     }
     return DayStats(bookingCount: count, revenue: revenue);

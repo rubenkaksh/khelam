@@ -12,6 +12,10 @@ import 'package:khelam/ui/features/schedule/bloc/schedule_cubit.dart';
 class FakeBookingRepository implements BookingRepository {
   bool shouldThrow = false;
 
+  /// Slot ids that were booked; `getSchedule` reflects them so the cubit's
+  /// post-book refetch sees the slot as booked (server-as-source-of-truth).
+  final Set<String> bookedSlotIds = <String>{};
+
   @override
   Future<TurfSummary> getTurf(String turfId) async {
     if (shouldThrow) throw Exception('Network error');
@@ -30,39 +34,37 @@ class FakeBookingRepository implements BookingRepository {
       slotDate: date,
       startTime: date.add(const Duration(hours: 7)),
       endTime: date.add(const Duration(hours: 8)),
-      status: SlotStatus.available,
+      status: bookedSlotIds.contains('s1')
+          ? SlotStatus.booked
+          : SlotStatus.available,
     );
+    if (slot.status == SlotStatus.booked) {
+      final Booking booking = Booking(
+        id: 'b-new',
+        bookingCode: 'BK-NEW',
+        userId: 'user-1',
+        turfId: turfId,
+        slotId: slot.id,
+        totalAmount: 100.0,
+        advanceAmount: 50.0,
+        remainingAmount: 50.0,
+        status: BookingStatus.confirmed,
+      );
+      return <ScheduleSlotItem>[
+        ScheduleSlotItem(slot: slot, booking: booking, customerName: 'You'),
+      ];
+    }
     return <ScheduleSlotItem>[ScheduleSlotItem(slot: slot)];
   }
 
   @override
-  Future<ScheduleSlotItem> bookSlot({
+  Future<void> bookSlot({
     required String turfId,
     required String slotId,
     String? customerPhone,
   }) async {
     if (shouldThrow) throw Exception('Network error');
-    final Slot slot = Slot(
-      id: slotId,
-      turfId: turfId,
-      slotDate: DateTime.now(),
-      startTime: DateTime.now(),
-      endTime: DateTime.now().add(const Duration(hours: 1)),
-      status: SlotStatus.booked,
-    );
-    final Booking booking = Booking(
-      id: 'b-new',
-      bookingCode: 'BK-NEW',
-      userId: 'user-1',
-      turfId: turfId,
-      slotId: slotId,
-      totalAmount: 100.0,
-      advanceAmount: 50.0,
-      remainingAmount: 50.0,
-      status: BookingStatus.confirmed,
-      customerPhone: customerPhone,
-    );
-    return ScheduleSlotItem(slot: slot, booking: booking, customerName: 'You');
+    bookedSlotIds.add(slotId);
   }
 }
 
@@ -219,31 +221,12 @@ class _TestBookingService implements svc.BookingService {
   }
 
   @override
-  Future<ScheduleSlotItem> bookSlot({
+  Future<void> bookSlot({
     required String turfId,
     required String slotId,
     String? customerPhone,
   }) async {
-    final Slot slot = Slot(
-      id: slotId,
-      turfId: turfId,
-      slotDate: DateTime.now(),
-      startTime: DateTime.now(),
-      endTime: DateTime.now().add(const Duration(hours: 1)),
-      status: SlotStatus.booked,
-    );
-    final Booking booking = Booking(
-      id: 'b-new',
-      bookingCode: 'BK-NEW',
-      userId: 'user-1',
-      turfId: turfId,
-      slotId: slotId,
-      totalAmount: 100.0,
-      advanceAmount: 50.0,
-      remainingAmount: 50.0,
-      status: BookingStatus.confirmed,
-      customerPhone: customerPhone,
-    );
-    return ScheduleSlotItem(slot: slot, booking: booking, customerName: 'You');
+    // Never called by the tests that use this service (dayStats only);
+    // the static slot list is returned unchanged on refetch.
   }
 }

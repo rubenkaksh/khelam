@@ -99,51 +99,13 @@ class MockBookingService implements BookingService {
   }
 
   @override
-  Future<ScheduleSlotItem> bookSlot({
+  Future<void> bookSlot({
     required String turfId,
     required String slotId,
     String? customerPhone,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 100));
     _extraBookedSlotIds.add(slotId);
-
-    // Parse date info from slot ID: "slot-YYYY-M-D-H"
-    final List<String> parts = slotId.split('-');
-    final int year = int.parse(parts[1]);
-    final int month = int.parse(parts[2]);
-    final int day = int.parse(parts[3]);
-    final int hour = int.parse(parts[4]);
-
-    final DateTime normalizedDate = DateTime(year, month, day);
-    final DateTime startTime = normalizedDate.add(Duration(hours: hour));
-    final DateTime endTime = normalizedDate.add(Duration(hours: hour + 1));
-
-    final Slot slot = Slot(
-      id: slotId,
-      turfId: turfId,
-      slotDate: normalizedDate,
-      startTime: startTime,
-      endTime: endTime,
-      status: SlotStatus.booked,
-    );
-
-    final int customerIndex = hour % _customerNames.length;
-    final String customerName = customerPhone ?? _customerNames[customerIndex];
-    final Booking booking = Booking(
-      id: 'bk-${DateTime.now().millisecondsSinceEpoch}',
-      bookingCode:
-          'BK-${normalizedDate.month.toString().padLeft(2, '0')}${normalizedDate.day.toString().padLeft(2, '0')}-${hour.toString().padLeft(2, '0')}',
-      userId: 'user-1',
-      turfId: turfId,
-      slotId: slotId,
-      totalAmount: 100.0,
-      advanceAmount: 50.0,
-      remainingAmount: 50.0,
-      status: BookingStatus.confirmed,
-      customerPhone: customerPhone,
-    );
-
-    return ScheduleSlotItem(slot: slot, booking: booking, customerName: customerName);
   }
 
   bool _isSlotBooked(int hour, DateTime date) {

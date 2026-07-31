@@ -6,11 +6,14 @@ import '../data/services/dio_api_client.dart';
 import '../data/services/local_sample_storage_service.dart';
 import '../data/services/sample_api_service.dart';
 import '../domain/repositories/sample_service.dart';
+import 'env_config.dart';
 
 abstract final class DataDependencies {
   static void register(GetIt locator) {
     locator.registerLazySingleton<DioApiClient>(
-      () => DioApiClient(baseUrl: 'https://example.invalid'),
+      () => DioApiClient(
+        baseUrl: envValue('API_BASE_URL') ?? 'https://example.invalid',
+      ),
     );
 
     locator.registerLazySingleton<SampleService>(

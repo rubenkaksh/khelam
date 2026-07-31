@@ -27,7 +27,43 @@ class DioApiClient {
 
   Future<Map<String, dynamic>> getJson(String path) async {
     final Response<dynamic> response = await _dio.get<dynamic>(path);
+    return _expectObject(response.data);
+  }
+
+  /// GET a JSON array of objects, e.g. list endpoints.
+  Future<List<Map<String, dynamic>>> getJsonList(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    final Response<dynamic> response = await _dio.get<dynamic>(
+      path,
+      queryParameters: queryParameters,
+    );
     final Object? data = response.data;
+    if (data is List) {
+      final List<Map<String, dynamic>> items = <Map<String, dynamic>>[];
+      for (final Object? item in data) {
+        if (item is Map<String, dynamic>) {
+          items.add(item);
+        } else {
+          throw const ApiClientException('Expected JSON array of objects.');
+        }
+      }
+      return items;
+    }
+    throw const ApiClientException('Expected JSON array response.');
+  }
+
+  /// POST a JSON body and return the JSON object response.
+  Future<Map<String, dynamic>> postJson(
+    String path, {
+    Map<String, dynamic>? body,
+  }) async {
+    final Response<dynamic> response = await _dio.post<dynamic>(path, data: body);
+    return _expectObject(response.data);
+  }
+
+  Map<String, dynamic> _expectObject(Object? data) {
     if (data is Map<String, dynamic>) {
       return data;
     }

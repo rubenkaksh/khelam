@@ -7,7 +7,13 @@ abstract interface class BookingService {
     required String turfId,
     required DateTime date,
   });
-  Future<ScheduleSlotItem> bookSlot({
+
+  /// Books a slot on the server.
+  ///
+  /// Returns void: the server is the source of truth, so callers should
+  /// re-fetch the schedule after booking instead of relying on the response
+  /// carrying full slot details.
+  Future<void> bookSlot({
     required String turfId,
     required String slotId,
     String? customerPhone,

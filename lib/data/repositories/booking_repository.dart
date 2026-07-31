@@ -19,11 +19,15 @@ class BookingRepository {
     return _service.getSchedule(turfId: turfId, date: date);
   }
 
-  Future<ScheduleSlotItem> bookSlot({
+  Future<void> bookSlot({
     required String turfId,
     required String slotId,
     String? customerPhone,
   }) {
-    return _service.bookSlot(turfId: turfId, slotId: slotId, customerPhone: customerPhone);
+    return _service.bookSlot(
+      turfId: turfId,
+      slotId: slotId,
+      customerPhone: customerPhone,
+    );
   }
 }
