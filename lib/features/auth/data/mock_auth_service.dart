@@ -30,4 +30,7 @@ class MockAuthException implements Exception {
   const MockAuthException(this.message);
 
   final String message;
+
+  @override
+  String toString() => message;
 }

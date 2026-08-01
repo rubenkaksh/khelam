@@ -55,11 +55,11 @@ class AuthCubit extends Cubit<AuthState> {
           clearError: true,
         ),
       );
-    } catch (_) {
+    } catch (e) {
       emit(
         state.copyWith(
           status: AuthStatus.failure,
-          errorMessage: 'Use demo@khelam.dev and password123.',
+          errorMessage: e.toString(),
         ),
       );
     }
