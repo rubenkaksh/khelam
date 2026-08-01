@@ -34,7 +34,7 @@ class _LoginViewState extends m.State<LoginView> {
     return LoginScreen(
       displayTexts: const LoginStringsImpl(),
       asyncData: _asyncData,
-      callbacks: const LoginServiceCallbacksImpl(),
+      callbacks: LoginServiceCallbacksImpl(),
     );
   }
 }

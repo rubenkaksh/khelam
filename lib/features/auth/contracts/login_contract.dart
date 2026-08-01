@@ -33,6 +33,9 @@ class LoginStringsImpl implements LoginStrings {
   String get submitLabel => 'Sign in';
 
   @override
+  String get googleSignInLabel => 'Continue with Google';
+
+  @override
   String get fillDemoLabel => 'Fill demo credentials';
 
   @override
@@ -102,9 +105,11 @@ class LoginAsyncDataImpl implements LoginAsyncData {
 }
 
 /// App-owned behaviour: submit through the shared [AuthCubit] and navigate
-/// to home once authenticated.
-class LoginServiceCallbacksImpl implements LoginServiceCallbacks {
-  const LoginServiceCallbacksImpl();
+/// to home once authenticated. Extends (not implements) so the commons
+/// opt-out default for [LoginServiceCallbacks.googleSignIn] is inherited
+/// until Google sign-in is enabled for this app.
+class LoginServiceCallbacksImpl extends LoginServiceCallbacks {
+  LoginServiceCallbacksImpl();
 
   @override
   Future<void> login({
