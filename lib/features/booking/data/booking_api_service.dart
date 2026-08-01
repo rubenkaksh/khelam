@@ -1,6 +1,6 @@
 import 'package:intl/intl.dart';
 
-import '../../../core/network/dio_api_client.dart';
+import 'package:commons/commons.dart';
 import '../booking_service.dart';
 import '../models/schedule_slot_item.dart';
 import '../models/slot.dart';

@@ -1,6 +1,6 @@
 import 'package:get_it/get_it.dart';
 
-import '../../../core/network/dio_api_client.dart';
+import 'package:commons/commons.dart';
 import '../../../di/env_config.dart';
 import '../bloc/schedule_cubit.dart';
 import '../booking_service.dart';

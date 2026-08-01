@@ -1,6 +1,6 @@
 import 'package:get_it/get_it.dart';
 
-import '../core/network/dio_api_client.dart';
+import 'package:commons/commons.dart';
 import '../features/auth/bloc/auth_cubit.dart';
 import '../features/auth/di/auth_dependencies.dart';
 import '../features/booking/bloc/schedule_cubit.dart';
