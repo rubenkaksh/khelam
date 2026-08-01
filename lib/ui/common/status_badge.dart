@@ -20,9 +20,18 @@ class StatusBadge extends m.StatelessWidget {
 
     final (m.Color bg, m.Color fg) = switch (tone) {
       BadgeTone.primary => (colors.primaryContainer, colors.onPrimaryContainer),
-      BadgeTone.success => (colors.secondaryContainer, colors.onSecondaryContainer),
-      BadgeTone.warning => (colors.tertiaryContainer, colors.onTertiaryContainer),
-      BadgeTone.neutral => (colors.surfaceContainerHighest, colors.onSurfaceVariant),
+      BadgeTone.success => (
+        colors.secondaryContainer,
+        colors.onSecondaryContainer,
+      ),
+      BadgeTone.warning => (
+        colors.tertiaryContainer,
+        colors.onTertiaryContainer,
+      ),
+      BadgeTone.neutral => (
+        colors.surfaceContainerHighest,
+        colors.onSurfaceVariant,
+      ),
     };
 
     return m.Container(
@@ -34,8 +43,11 @@ class StatusBadge extends m.StatelessWidget {
       child: m.Row(
         mainAxisSize: m.MainAxisSize.min,
         children: <m.Widget>[
-          if (icon != null) ...[
-            m.IconTheme(data: m.IconThemeData(size: 14, color: fg), child: icon!),
+          if (icon case final m.Widget iconWidget) ...[
+            m.IconTheme(
+              data: m.IconThemeData(size: 14, color: fg),
+              child: iconWidget,
+            ),
             const m.SizedBox(width: 4),
           ],
           m.Text(

@@ -1,11 +1,12 @@
 import 'package:get_it/get_it.dart';
 
-import '../ui/features/auth/bloc/auth_cubit.dart';
-import '../ui/features/auth/di/auth_dependencies.dart';
-import '../ui/features/home/di/home_dependencies.dart';
-import '../ui/features/schedule/di/schedule_dependencies.dart';
+import '../core/network/dio_api_client.dart';
+import '../features/auth/bloc/auth_cubit.dart';
+import '../features/auth/di/auth_dependencies.dart';
+import '../features/booking/bloc/schedule_cubit.dart';
+import '../features/booking/di/booking_dependencies.dart';
 import '../ui/navigation/app_router.dart';
-import 'data_dependencies.dart';
+import 'env_config.dart';
 
 final GetIt serviceLocator = GetIt.instance;
 
@@ -15,12 +16,22 @@ void configureDependencies({GetIt? getIt}) {
     return;
   }
 
+  // Shared infrastructure.
+  locator.registerLazySingleton<DioApiClient>(
+    () => DioApiClient(
+      baseUrl: envValue('API_BASE_URL') ?? 'https://example.invalid',
+    ),
+  );
+
+  // Per-feature registries (ADR-0003): each feature wires its own chain.
   AuthDependencies.register(locator);
-  HomeDependencies.register(locator);
-  ScheduleDependencies.register(locator);
-  DataDependencies.register(locator);
+  BookingDependencies.register(locator);
 
   locator.registerLazySingleton<AppRouter>(
-    () => AppRouter(isAuthenticated: () => locator<AuthCubit>().state.isAuthenticated),
+    () => AppRouter(
+      isAuthenticated: () => locator<AuthCubit>().state.isAuthenticated,
+      authCubit: () => locator<AuthCubit>(),
+      scheduleCubit: () => locator<ScheduleCubit>(),
+    ),
   );
 }

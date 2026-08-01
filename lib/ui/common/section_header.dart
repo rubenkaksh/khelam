@@ -17,15 +17,15 @@ class SectionHeader extends m.StatelessWidget {
     final m.ColorScheme colors = m.Theme.of(context).colorScheme;
     return m.Row(
       children: <m.Widget>[
-        if (leadingIcon != null) ...[
-          leadingIcon!,
+        if (leadingIcon case final m.Widget icon) ...[
+          icon,
           const m.SizedBox(width: 8),
         ],
         m.Text(
           title,
-          style: m.Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: m.FontWeight.w600,
-          ),
+          style: m.Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: m.FontWeight.w600),
         ),
         const m.Spacer(),
         if (onTap != null)

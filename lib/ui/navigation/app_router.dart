@@ -1,23 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../features/auth/views/login_view.dart';
-import '../features/home/views/home_view.dart';
-import '../features/schedule/views/schedule_view.dart';
-import '../features/theme_preview/views/theme_preview_view.dart';
+import '../../features/auth/bloc/auth_cubit.dart';
+import '../../features/auth/views/login_view.dart';
+import '../../features/booking/bloc/schedule_cubit.dart';
+import '../../features/booking/views/schedule_view.dart';
+import '../../features/home/views/home_view.dart';
+import '../../features/theme_preview/views/theme_preview_view.dart';
 import 'app_routes.dart';
 
 class AppRouter {
-  AppRouter({required bool Function() isAuthenticated})
-    : _isAuthenticated = isAuthenticated;
+  AppRouter({
+    required bool Function() isAuthenticated,
+    required AuthCubit Function() authCubit,
+    required ScheduleCubit Function() scheduleCubit,
+  }) : _isAuthenticated = isAuthenticated,
+       _authCubit = authCubit,
+       _scheduleCubit = scheduleCubit;
 
   final bool Function() _isAuthenticated;
+  final AuthCubit Function() _authCubit;
+  final ScheduleCubit Function() _scheduleCubit;
 
   late final GoRouter router = GoRouter(
     initialLocation: AppRoutes.schedulePath,
     redirect: (BuildContext context, GoRouterState state) {
       final bool loggedIn = _isAuthenticated();
-      final bool isPublic = state.matchedLocation == AppRoutes.loginPath ||
+      final bool isPublic =
+          state.matchedLocation == AppRoutes.loginPath ||
           state.matchedLocation == AppRoutes.schedulePath;
 
       if (!loggedIn && !isPublic) {
@@ -30,7 +41,10 @@ class AppRouter {
         path: AppRoutes.loginPath,
         name: AppRoutes.login,
         builder: (BuildContext context, GoRouterState state) {
-          return const LoginView();
+          return BlocProvider<AuthCubit>.value(
+            value: _authCubit(),
+            child: const LoginView(),
+          );
         },
       ),
       GoRoute(
@@ -44,7 +58,10 @@ class AppRouter {
         path: AppRoutes.schedulePath,
         name: AppRoutes.schedule,
         builder: (BuildContext context, GoRouterState state) {
-          return const ScheduleView();
+          return BlocProvider<ScheduleCubit>(
+            create: (BuildContext context) => _scheduleCubit(),
+            child: const ScheduleView(),
+          );
         },
       ),
       GoRoute(

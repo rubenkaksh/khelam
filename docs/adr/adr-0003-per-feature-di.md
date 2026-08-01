@@ -53,6 +53,13 @@ void configureDependencies({GetIt? getIt}) {
 - **Non-UI dependencies** (sample, local_sample) remain in a shared `DataDependencies` class in `lib/di/`
 - **ADR compliance**: every new feature MUST register its dependencies in its own DI file, not in the central aggregator
 
+## Superseded in part
+
+**ADR-0004** (2026-08-01) relocated feature DI from `lib/ui/features/<feature>/di/`
+to `lib/features/<feature>/di/` (the feature module owns its whole slice), and
+removed the shared `DataDependencies` class. The pattern here — per-feature DI
+registries + a thin central aggregator — remains the rule.
+
 ## Related
 
 - ADR-0001: No shallow use-case layer

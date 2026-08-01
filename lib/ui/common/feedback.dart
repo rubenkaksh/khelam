@@ -12,9 +12,9 @@ class LoadingView extends m.StatelessWidget {
         mainAxisSize: m.MainAxisSize.min,
         children: <m.Widget>[
           const m.CircularProgressIndicator(),
-          if (message != null) ...[
+          if (message case final String text) ...[
             const m.SizedBox(height: 16),
-            m.Text(message!),
+            m.Text(text),
           ],
         ],
       ),
@@ -23,11 +23,7 @@ class LoadingView extends m.StatelessWidget {
 }
 
 class ErrorView extends m.StatelessWidget {
-  const ErrorView({
-    super.key,
-    required this.message,
-    this.onRetry,
-  });
+  const ErrorView({super.key, required this.message, this.onRetry});
 
   final String message;
   final m.VoidCallback? onRetry;
@@ -72,13 +68,13 @@ class EmptyView extends m.StatelessWidget {
         mainAxisSize: m.MainAxisSize.min,
         children: <m.Widget>[
           m.Icon(icon ?? m.Icons.inbox_outlined, size: 48),
-          if (message != null) ...[
+          if (message case final String text) ...[
             const m.SizedBox(height: 16),
-            m.Text(message!, textAlign: m.TextAlign.center),
+            m.Text(text, textAlign: m.TextAlign.center),
           ],
-          if (actionLabel != null && onAction != null) ...[
+          if (actionLabel case final String label when onAction != null) ...[
             const m.SizedBox(height: 16),
-            m.ElevatedButton(onPressed: onAction, child: m.Text(actionLabel!)),
+            m.ElevatedButton(onPressed: onAction, child: m.Text(label)),
           ],
         ],
       ),
@@ -112,12 +108,10 @@ class StateSwitcher extends m.StatelessWidget {
       case LoadState.loading:
         return loading ?? const LoadingView();
       case LoadState.error:
-        return error != null
-            ? error!()
-            : ErrorView(
-                message: 'Something went wrong.',
-                onRetry: onRetry,
-              );
+        final m.Widget Function()? errorBuilder = error;
+        return errorBuilder == null
+            ? ErrorView(message: 'Something went wrong.', onRetry: onRetry)
+            : errorBuilder();
       case LoadState.empty:
         return empty ?? const EmptyView();
       case LoadState.data:

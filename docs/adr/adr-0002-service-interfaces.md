@@ -49,6 +49,13 @@ AuthRepository → AuthService (abstract) ← SEAM
 - **Service tests already cover the domain mapping** — no new test surface needed
 - **Future**: every data service MUST implement a domain-level interface
 
+## Superseded in part
+
+**ADR-0004** (2026-08-01) moved service interfaces from `lib/domain/repositories/`
+into their feature modules (`lib/features/<feature>/`). The principle here — data
+services implement domain-level interfaces; the mapping from API response to
+domain model happens inside the adapter — remains the rule.
+
 ## Related
 
 - ADR-0001: No shallow use-case layer
