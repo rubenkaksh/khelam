@@ -16,3 +16,10 @@ Work items not yet scheduled into a plan. Each entry links its source (review/se
 ## Watchpoints (not scheduled)
 
 - **Theme monolith** (`lib/ui/core/theme/app_component_themes.dart`, from the 2026-06-22 review) — if `build()` exceeds ~600 lines or feature-specific theme variants appear, split into per-group builders and keep feature variants at the feature level.
+
+## Commons package follow-ups (from the 2026-08-01 commons migration)
+
+- **[Slice 2] Migrate `DioApiClient` to commons** — `lib/core/network/dio_api_client.dart` (divergent: forkable still has its old copy at `lib/data/services/`). Bump commons to 0.2.0, rewire khelam imports, then delete forkable's copy.
+- **[Slice 3] Migrate theme (`lib/ui/core/`) to commons** — `app_theme.dart` + `theme/{app_palette, app_component_themes, app_typography}.dart` (2 identical, 2 doc-comment divergent). Bump to 0.3.0.
+- **forkable DI modernization** — forkable still runs pre-ADR-0004 layered architecture: `lib/di/data_dependencies.dart`, `lib/data/services/*` (5 services incl. BASE-LEGACY `sample_api_service`, `template_catalog_service`, `local_sample_storage_service`, `mock_auth_service`), repositories, `lib/domain/`. Adopt ADR-0004 feature modules, then delete the BASE-LEGACY services.
+- **Navigation slice (low priority)** — `app_router.dart` + `app_routes.dart` stay in each fork (decision 2026-08-01); revisit only if a shared router skeleton is ever wanted.
