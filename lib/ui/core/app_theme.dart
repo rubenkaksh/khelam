@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'theme/app_component_themes.dart';
+import 'package:commons/commons.dart';
+
 import 'theme/app_palette.dart';
-import 'theme/app_typography.dart';
 
 /// Single source of truth for khelam [ThemeData] and [ColorScheme] values.
 ///
@@ -20,7 +20,7 @@ class AppTheme {
     final ColorScheme colorScheme = colorSchemeFor(brightness);
     final TextTheme textTheme = AppTypography.textTheme(colorScheme);
 
-    return AppComponentThemes.build(
+    return ComponentThemes.build(
       colorScheme: colorScheme,
       textTheme: textTheme,
       brightness: brightness,
@@ -32,11 +32,25 @@ class AppTheme {
     return brightness == Brightness.light ? lightColorScheme : darkColorScheme;
   }
 
-  static ColorScheme get lightColorScheme =>
-      AppComponentThemes.lightColorScheme();
+  /// Builds the light [ColorScheme] from the khelam brand seeds.
+  static ColorScheme get lightColorScheme => ColorScheme.fromSeed(
+        seedColor: AppPalette.seed,
+        brightness: Brightness.light,
+        primary: AppPalette.seed,
+        secondary: AppPalette.secondarySeed,
+        tertiary: AppPalette.tertiarySeed,
+        error: AppPalette.error,
+      );
 
-  static ColorScheme get darkColorScheme =>
-      AppComponentThemes.darkColorScheme();
+  /// Builds the dark [ColorScheme] from the khelam brand seeds.
+  static ColorScheme get darkColorScheme => ColorScheme.fromSeed(
+        seedColor: AppPalette.seed,
+        brightness: Brightness.dark,
+        primary: AppPalette.surfaceTintDark,
+        secondary: AppPalette.secondarySeed,
+        tertiary: AppPalette.tertiarySeed,
+        error: AppPalette.errorDark,
+      );
 
   /// Brand seed colors used to generate [ColorScheme] values.
   static Color get seedColor => AppPalette.seed;
