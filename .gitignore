@@ -46,3 +46,5 @@ app.*.map.json
 .aider*
 /node_modules
 /.understand-anything
+# Local overrides (personal, never committed)
+pubspec_overrides.yaml

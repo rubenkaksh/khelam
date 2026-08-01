@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart' as m;
 import 'package:intl/intl.dart';
 
-import '../../../ui/common/bottom_sheet.dart';
-import '../../../ui/common/phone_input.dart';
+import 'package:commons/commons.dart';
 import '../models/slot.dart';
 
 /// Result returned when the user confirms a booking via [BookingConfirmationSheet].

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart' as m;
 
-import '../../../ui/common/status_badge.dart';
+import 'package:commons/commons.dart';
 import '../models/schedule_slot_item.dart';
 
 class BookedSlotCard extends m.StatelessWidget {

@@ -137,6 +137,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.19.1"
+  commons:
+    dependency: "direct main"
+    description:
+      path: "/Users/rubenk/projects/commons"
+      relative: false
+    source: path
+    version: "0.1.0"
   convert:
     dependency: transitive
     description:

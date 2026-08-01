@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart' as m;
 
-import '../../../ui/common/section_header.dart';
-import '../../../ui/common/stat_card.dart';
+import 'package:commons/commons.dart';
 import '../bloc/schedule_cubit.dart';
 
 class DayStatsSection extends m.StatelessWidget {
