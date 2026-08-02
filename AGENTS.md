@@ -32,6 +32,16 @@ Template:
 
 - **Never use the null force operator `!`.** Use null-aware patterns instead (`if case final x? = y` or `?.` / `??` operators). This applies everywhere: null assertions, force casts, force unwraps. Prefer pattern matching with `if case` for conditional unwrapping.
 
+## codegraph
+
+This project has a codegraph index at `.codegraph/` for symbol-precise, zero-cost code navigation. Used together with graphify: codegraph for symbol lookups, graphify for semantic questions.
+
+Rules:
+- For **symbol-level questions before edits** ("who calls X", "show me the implementation of Y", "blast radius for refactor Z"), run `codegraph explore "X"` or `codegraph node <file>` FIRST — output is verbatim source + callers/callees, treat it as a Read you've already done. Zero LLM cost.
+- `codegraph sync` keeps the index fresh incrementally; `codegraph status` confirms freshness.
+- codegraph has NO semantic understanding of docs/ADRs/sessions and no community structure — never use it for architectural or "why/how" questions (that is graphify's job).
+- Per-repo only: khelam, commons, forkable each have their own `.codegraph/`; there is no cross-repo query (cross-repo needs graphify `merge-graphs`).
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
