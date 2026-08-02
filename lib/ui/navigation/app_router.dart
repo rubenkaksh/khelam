@@ -27,11 +27,8 @@ class AppRouter {
     initialLocation: AppRoutes.schedulePath,
     redirect: (BuildContext context, GoRouterState state) {
       final bool loggedIn = _isAuthenticated();
-      final bool isPublic =
-          state.matchedLocation == AppRoutes.loginPath ||
-          state.matchedLocation == AppRoutes.schedulePath;
 
-      if (!loggedIn && !isPublic) {
+      if (!loggedIn) {
         return AppRoutes.loginPath;
       }
       return null;
