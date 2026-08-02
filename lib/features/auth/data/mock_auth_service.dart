@@ -1,4 +1,7 @@
+import 'package:commons/commons.dart';
+
 import '../auth_service.dart';
+import '../models/auth_session.dart';
 import '../models/auth_user.dart';
 
 class MockAuthService implements AuthService {
@@ -23,6 +26,26 @@ class MockAuthService implements AuthService {
       email: demoEmail,
       displayName: 'Khelam Demo',
     );
+  }
+
+  @override
+  Future<AuthSession> googleLogin(GoogleSignInResult result) async {
+    // Dev mode: no backend involved; build the session from the Google
+    // result exactly like the pre-backend flow did.
+    return AuthSession(
+      accessToken: 'mock-token',
+      user: AuthUser(
+        id: 'google:${result.email}',
+        email: result.email,
+        displayName: result.displayName ?? result.email.split('@').first,
+      ),
+    );
+  }
+
+  @override
+  Future<AuthUser?> init() async {
+    // Mock mode stores nothing, so there is nothing to restore.
+    return null;
   }
 }
 

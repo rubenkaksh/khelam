@@ -25,6 +25,7 @@ dependencies:
   material_3_demo:
     path: ../../flutter_material_3_demo
   flutter_dotenv: ^6.0.1
+  flutter_secure_storage: ^10.3.1
 
 dev_dependencies:
   flutter_test:
