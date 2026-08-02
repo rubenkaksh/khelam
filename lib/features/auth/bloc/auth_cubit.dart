@@ -1,3 +1,4 @@
+import 'package:commons/commons.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../auth_service.dart';
@@ -34,11 +35,15 @@ class AuthState {
 }
 
 class AuthCubit extends Cubit<AuthState> {
-  AuthCubit({required AuthService service})
-    : _service = service,
-      super(const AuthState());
+  AuthCubit({
+    required AuthService service,
+    required GoogleSignInService googleService,
+  }) : _service = service,
+       _googleService = googleService,
+       super(const AuthState());
 
   final AuthService _service;
+  final GoogleSignInService _googleService;
 
   Future<void> login({required String email, required String password}) async {
     emit(state.copyWith(status: AuthStatus.loading, clearError: true));
@@ -52,6 +57,38 @@ class AuthCubit extends Cubit<AuthState> {
         state.copyWith(
           status: AuthStatus.authenticated,
           user: user,
+          clearError: true,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: AuthStatus.failure,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
+  }
+
+  /// Signs in with Google. A canceled flow returns to the initial state
+  /// silently; any other failure surfaces as an error message.
+  Future<void> googleSignIn() async {
+    emit(state.copyWith(status: AuthStatus.loading, clearError: true));
+
+    try {
+      final GoogleSignInResult? result = await _googleService.signIn();
+      if (result == null) {
+        emit(state.copyWith(status: AuthStatus.initial, clearError: true));
+        return;
+      }
+      emit(
+        state.copyWith(
+          status: AuthStatus.authenticated,
+          user: AuthUser(
+            id: 'google:${result.email}',
+            email: result.email,
+            displayName: result.displayName ?? result.email.split('@').first,
+          ),
           clearError: true,
         ),
       );

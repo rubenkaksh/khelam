@@ -105,9 +105,8 @@ class LoginAsyncDataImpl implements LoginAsyncData {
 }
 
 /// App-owned behaviour: submit through the shared [AuthCubit] and navigate
-/// to home once authenticated. Extends (not implements) so the commons
-/// opt-out default for [LoginServiceCallbacks.googleSignIn] is inherited
-/// until Google sign-in is enabled for this app.
+/// to home once authenticated. Google sign-in is wired through the cubit's
+/// [AuthCubit.googleSignIn].
 class LoginServiceCallbacksImpl extends LoginServiceCallbacks {
   LoginServiceCallbacksImpl();
 
@@ -117,6 +116,11 @@ class LoginServiceCallbacksImpl extends LoginServiceCallbacks {
     required String password,
   }) async {
     await serviceLocator<AuthCubit>().login(email: email, password: password);
+  }
+
+  @override
+  Future<void> googleSignIn() async {
+    await serviceLocator<AuthCubit>().googleSignIn();
   }
 
   @override

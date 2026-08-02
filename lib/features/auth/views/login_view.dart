@@ -35,6 +35,7 @@ class _LoginViewState extends m.State<LoginView> {
       displayTexts: const LoginStringsImpl(),
       asyncData: _asyncData,
       callbacks: LoginServiceCallbacksImpl(),
+      enableGoogleSignIn: true,
     );
   }
 }
