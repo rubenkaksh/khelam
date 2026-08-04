@@ -93,7 +93,7 @@ class ScheduleCubit extends Cubit<ScheduleState> {
           clearError: true,
         ),
       );
-    } catch (_) {
+    } catch (e) {
       emit(
         state.copyWith(
           isLoading: false,
