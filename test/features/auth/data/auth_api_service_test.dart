@@ -167,6 +167,183 @@ void main() {
       expect(restored, isNull);
     });
   });
+
+  group('AuthApiService.phoneLogin', () {
+    final Map<String, dynamic> phoneSessionJson = <String, dynamic>{
+      'accessToken': 'phone-token',
+      'user': <String, dynamic>{
+        'id': 'u-phone-1',
+        'full_name': 'Phone Player',
+        'email': null,
+        'avatar_url': null,
+        'phone_number': '9801237986',
+        'is_active': true,
+        'created_at': '2026-08-03T09:54:11.902Z',
+        'updated_at': '2026-08-03T09:54:11.902Z',
+      },
+    };
+
+    test('POSTs phone credentials and parses the session', () async {
+      final _RecordingAdapter adapter = _RecordingAdapter(
+        (RequestOptions options) async => _jsonResponse(phoneSessionJson),
+      );
+      final DioApiClient apiClient = _apiClient(adapter);
+      final AuthApiService service = _service(apiClient);
+
+      final AuthSession session = await service.phoneLogin(
+        phoneNumber: '9801237986',
+        password: 'lovesainju',
+      );
+
+      final RequestOptions? request = adapter.lastRequest;
+      expect(request?.method, 'POST');
+      expect(request?.path, '/auth/users/login');
+      expect(
+        request?.data,
+        <String, dynamic>{
+          'phoneNumber': '9801237986',
+          'password': 'lovesainju',
+        },
+      );
+      expect(session.accessToken, 'phone-token');
+      expect(session.user.id, 'u-phone-1');
+      expect(session.user.phoneNumber, '9801237986');
+      expect(session.user.displayName, 'Phone Player');
+    });
+
+    test('attaches the bearer token to the shared client', () async {
+      final _RecordingAdapter adapter = _RecordingAdapter(
+        (RequestOptions options) async => _jsonResponse(phoneSessionJson),
+      );
+      final DioApiClient apiClient = _apiClient(adapter);
+      final AuthApiService service = _service(apiClient);
+
+      await service.phoneLogin(phoneNumber: '9801237986', password: 'x');
+
+      // A follow-up request through the same client carries the header.
+      await apiClient.getJson('/slots');
+      expect(
+        adapter.lastRequest?.headers['Authorization'],
+        'Bearer phone-token',
+      );
+    });
+
+    test('maps 401 to an invalid-credentials message', () async {
+      final _RecordingAdapter adapter = _RecordingAdapter(
+        (RequestOptions options) async => _jsonResponse(
+          <String, dynamic>{'message': 'Invalid credentials'},
+          statusCode: 401,
+        ),
+      );
+      final AuthApiService service = _service(_apiClient(adapter));
+
+      expect(
+        () => service.phoneLogin(phoneNumber: '9801237986', password: 'wrong'),
+        throwsA(
+          isA<AuthException>().having(
+            (AuthException e) => e.message,
+            'message',
+            'Invalid phone number or password.',
+          ),
+        ),
+      );
+    });
+  });
+
+  group('AuthApiService.register', () {
+    final Map<String, dynamic> registeredJson = <String, dynamic>{
+      'accessToken': 'reg-token',
+      'user': <String, dynamic>{
+        'id': 'u-reg-1',
+        'full_name': 'New Player',
+        'email': null,
+        'avatar_url': null,
+        'phone_number': '9800000001',
+        'is_active': true,
+        'created_at': '2026-08-03T09:54:11.902Z',
+        'updated_at': '2026-08-03T09:54:11.902Z',
+      },
+    };
+
+    test('POSTs the registration payload and parses the session', () async {
+      final _RecordingAdapter adapter = _RecordingAdapter(
+        (RequestOptions options) async => _jsonResponse(registeredJson),
+      );
+      final DioApiClient apiClient = _apiClient(adapter);
+      final AuthApiService service = _service(apiClient);
+
+      final AuthSession session = await service.register(
+        phoneNumber: '9800000001',
+        fullName: 'New Player',
+        password: 'khelam123',
+      );
+
+      final RequestOptions? request = adapter.lastRequest;
+      expect(request?.method, 'POST');
+      expect(request?.path, '/auth/users/register');
+      expect(
+        request?.data,
+        <String, dynamic>{
+          'phoneNumber': '9800000001',
+          'fullName': 'New Player',
+          'password': 'khelam123',
+        },
+      );
+      expect(session.accessToken, 'reg-token');
+      expect(session.user.displayName, 'New Player');
+      expect(session.user.phoneNumber, '9800000001');
+    });
+
+    test('maps 409 to an already-registered message', () async {
+      final _RecordingAdapter adapter = _RecordingAdapter(
+        (RequestOptions options) async => _jsonResponse(
+          <String, dynamic>{'message': 'Phone number already registered'},
+          statusCode: 409,
+        ),
+      );
+      final AuthApiService service = _service(_apiClient(adapter));
+
+      expect(
+        () => service.register(
+          phoneNumber: '9800000001',
+          fullName: 'New Player',
+          password: 'khelam123',
+        ),
+        throwsA(
+          isA<AuthException>().having(
+            (AuthException e) => e.message,
+            'message',
+            'Phone number already registered.',
+          ),
+        ),
+      );
+    });
+
+    test('surfaces the backend message on 400', () async {
+      final _RecordingAdapter adapter = _RecordingAdapter(
+        (RequestOptions options) async => _jsonResponse(
+          <String, dynamic>{'message': 'Invalid phone number'},
+          statusCode: 400,
+        ),
+      );
+      final AuthApiService service = _service(_apiClient(adapter));
+
+      expect(
+        () => service.register(
+          phoneNumber: 'abc',
+          fullName: 'New Player',
+          password: 'khelam123',
+        ),
+        throwsA(
+          isA<AuthException>().having(
+            (AuthException e) => e.message,
+            'message',
+            'Invalid phone number',
+          ),
+        ),
+      );
+    });
+  });
 }
 
 AuthApiService _service(DioApiClient apiClient) {

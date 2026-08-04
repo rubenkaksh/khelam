@@ -149,4 +149,60 @@ void main() {
       expect(cubit.state.user?.email, 'a@b.dev');
     });
   });
+
+  group('AuthCubit phone login & register', () {
+    test('phone login authenticates and persists the session', () async {
+      final _RecordingTokenStore store = _RecordingTokenStore();
+      final AuthCubit cubit = AuthCubit(
+        service: const MockAuthService(),
+        googleService: FakeGoogleSignInService(result: null),
+        tokenStore: store,
+      );
+
+      await cubit.login(
+        email: MockAuthService.demoEmail,
+        password: MockAuthService.demoPassword,
+      );
+
+      expect(cubit.state.status, AuthStatus.authenticated);
+      expect(cubit.state.user?.phoneNumber, MockAuthService.demoEmail);
+      expect(cubit.state.user?.displayName, 'Khelam Demo');
+      expect(store.savedSession?.accessToken, 'mock-token');
+      expect(store.savedSession?.user.id, 'demo-user');
+    });
+
+    test('phone login failure surfaces as an error message', () async {
+      final AuthCubit cubit = AuthCubit(
+        service: const MockAuthService(),
+        googleService: FakeGoogleSignInService(result: null),
+        tokenStore: _RecordingTokenStore(),
+      );
+
+      await cubit.login(email: '9800000002', password: 'wrong');
+
+      expect(cubit.state.status, AuthStatus.failure);
+      expect(cubit.state.errorMessage, 'Invalid demo credentials.');
+      expect(cubit.state.isLoading, isFalse);
+    });
+
+    test('register authenticates and persists the session', () async {
+      final _RecordingTokenStore store = _RecordingTokenStore();
+      final AuthCubit cubit = AuthCubit(
+        service: const MockAuthService(),
+        googleService: FakeGoogleSignInService(result: null),
+        tokenStore: store,
+      );
+
+      await cubit.register(
+        phoneNumber: '9801237999',
+        fullName: 'New Player',
+        password: 'khelam123',
+      );
+
+      expect(cubit.state.status, AuthStatus.authenticated);
+      expect(cubit.state.user?.displayName, 'New Player');
+      expect(cubit.state.user?.phoneNumber, '9801237999');
+      expect(store.savedSession?.accessToken, 'mock-token');
+    });
+  });
 }
