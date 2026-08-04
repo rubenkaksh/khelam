@@ -1,0 +1,6 @@
+{
+  // Allow breakpoints in pub packages (commons is a path dep outside the
+  // workspace root, so it counts as an external package). Without this the
+  // Dart extension leaves breakpoints in commons sources unresolved.
+  "dart.debugExternalPackageLibraries": true
+}

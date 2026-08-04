@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "khelam (debug)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [],
+      // External-package breakpoints are enabled workspace-wide via
+      // .vscode/settings.json (dart.debugExternalPackageLibraries), so this
+      // config stays minimal. NOTE: the old key "dart.debugExternalLibraries"
+      // is deprecated and silently ignored by current Dart Code.
+      "flutterMode": "debug"
+    }
+  ]
+}
