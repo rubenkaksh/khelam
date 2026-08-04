@@ -48,3 +48,12 @@ app.*.map.json
 /.understand-anything
 # Local overrides (personal, never committed)
 pubspec_overrides.yaml
+
+# Android Google Services (contains OAuth client secrets)
+android/app/google_services.json
+
+# Generated knowledge graph (auto-built by graphify hooks)
+graphify-out/
+
+# Generated docs
+docs/*.pdf
