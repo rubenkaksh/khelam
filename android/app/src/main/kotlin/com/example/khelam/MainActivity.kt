@@ -1,4 +1,4 @@
-package com.example.khelam
+package com.megamanus.khelam
 
 import io.flutter.embedding.android.FlutterActivity
 
