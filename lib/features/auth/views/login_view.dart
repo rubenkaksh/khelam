@@ -35,7 +35,9 @@ class _LoginViewState extends m.State<LoginView> {
       displayTexts: const LoginStringsImpl(),
       asyncData: _asyncData,
       callbacks: LoginServiceCallbacksImpl(),
-      enableGoogleSignIn: true,
+      // Google sign-in is on hold; the phone + password flow is the entry
+      // for now (see LoginServiceCallbacksImpl.login → phone login).
+      enableGoogleSignIn: false,
     );
   }
 }

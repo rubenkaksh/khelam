@@ -4,11 +4,18 @@ import '../auth_service.dart';
 import '../models/auth_session.dart';
 import '../models/auth_user.dart';
 
+/// In-memory implementation of [AuthService] for dev mode and widget tests.
+///
+/// The phone-number demo credentials mirror the shape the backend expects but
+/// never touch a server. The shared login screen's first field is the phone
+/// number, so the demo "email" value is a phone number even though the
+/// commons contract names it `demoEmail`.
 class MockAuthService implements AuthService {
   const MockAuthService();
 
-  static const String demoEmail = 'demo@khelam.dev';
-  static const String demoPassword = 'password123';
+  /// Demo phone number (the backend login's first field is the phone number).
+  static const String demoEmail = '9800000001';
+  static const String demoPassword = 'khelam123';
 
   @override
   Future<AuthUser> login({
@@ -17,14 +24,56 @@ class MockAuthService implements AuthService {
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 150));
 
-    if (email.trim().toLowerCase() != demoEmail || password != demoPassword) {
+    if (email.trim() != demoEmail || password != demoPassword) {
       throw const MockAuthException('Invalid demo credentials.');
     }
 
     return const AuthUser(
       id: 'demo-user',
+      phoneNumber: demoEmail,
       email: demoEmail,
       displayName: 'Khelam Demo',
+    );
+  }
+
+  @override
+  Future<AuthSession> phoneLogin({
+    required String phoneNumber,
+    required String password,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+
+    if (phoneNumber.trim() != demoEmail || password != demoPassword) {
+      throw const MockAuthException('Invalid demo credentials.');
+    }
+
+    return const AuthSession(
+      accessToken: 'mock-token',
+      user: AuthUser(
+        id: 'demo-user',
+        phoneNumber: demoEmail,
+        email: demoEmail,
+        displayName: 'Khelam Demo',
+      ),
+    );
+  }
+
+  @override
+  Future<AuthSession> register({
+    required String phoneNumber,
+    required String fullName,
+    required String password,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+
+    return AuthSession(
+      accessToken: 'mock-token',
+      user: AuthUser(
+        id: 'demo-user',
+        phoneNumber: phoneNumber,
+        displayName: fullName,
+        email: '',
+      ),
     );
   }
 

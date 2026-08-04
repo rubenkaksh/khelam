@@ -21,10 +21,10 @@ class LoginStringsImpl implements LoginStrings {
 
   @override
   String get description =>
-      'Use the demo account to validate auth, theme, and navigation.';
+      'Sign in with your phone number and password.';
 
   @override
-  String get emailLabel => 'Email';
+  String get emailLabel => 'Phone number';
 
   @override
   String get passwordLabel => 'Password';
@@ -45,25 +45,28 @@ class LoginStringsImpl implements LoginStrings {
   String get demoPassword => MockAuthService.demoPassword;
 
   @override
-  m.FormFieldValidator<String> get emailValidator => _validateEmail;
+  m.FormFieldValidator<String> get emailValidator => _validatePhone;
 
   @override
   m.FormFieldValidator<String> get passwordValidator => _validatePassword;
 
-  String? _validateEmail(String? value) {
-    final String email = value?.trim() ?? '';
-    if (email.isEmpty) {
-      return 'Enter an email address.';
+  /// The shared screen's first field carries the phone number (the backend's
+  /// users login with phone + password).
+  String? _validatePhone(String? value) {
+    final String phone = value?.trim() ?? '';
+    if (phone.isEmpty) {
+      return 'Enter a phone number.';
     }
-    if (!email.contains('@')) {
-      return 'Enter a valid email address.';
+    if (!RegExp(r'^\+?[0-9]{10,15}$').hasMatch(phone)) {
+      return 'Enter a valid phone number (10-15 digits).';
     }
     return null;
   }
 
+  // The backend requires at least 6 characters (MinLength decorator).
   String? _validatePassword(String? value) {
-    if ((value ?? '').length < 8) {
-      return 'Enter at least 8 characters.';
+    if ((value ?? '').length < 6) {
+      return 'Enter at least 6 characters.';
     }
     return null;
   }

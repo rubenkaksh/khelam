@@ -54,14 +54,52 @@ class AuthCubit extends Cubit<AuthState> {
     emit(state.copyWith(status: AuthStatus.loading, clearError: true));
 
     try {
-      final AuthUser user = await _service.login(
-        email: email,
+      // The shared login screen's first field carries the phone number; the
+      // real backend authenticates phone + password and returns a session,
+      // which is persisted so the token survives app restarts.
+      final AuthSession session = await _service.phoneLogin(
+        phoneNumber: email,
         password: password,
       );
+      await _tokenStore.saveSession(session);
       emit(
         state.copyWith(
           status: AuthStatus.authenticated,
-          user: user,
+          user: session.user,
+          clearError: true,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: AuthStatus.failure,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
+  }
+
+  /// Registers a new phone-number account. The backend auto-authenticates
+  /// (reply includes an `accessToken`), so on success the flow behaves
+  /// exactly like sign-in: persist the session, then emit authenticated.
+  Future<void> register({
+    required String phoneNumber,
+    required String fullName,
+    required String password,
+  }) async {
+    emit(state.copyWith(status: AuthStatus.loading, clearError: true));
+
+    try {
+      final AuthSession session = await _service.register(
+        phoneNumber: phoneNumber,
+        fullName: fullName,
+        password: password,
+      );
+      await _tokenStore.saveSession(session);
+      emit(
+        state.copyWith(
+          status: AuthStatus.authenticated,
+          user: session.user,
           clearError: true,
         ),
       );
