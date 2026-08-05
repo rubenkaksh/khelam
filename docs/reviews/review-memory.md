@@ -28,6 +28,7 @@
 | `Cleanup` subsection in session template | `AGENTS.md` template | Prevents temp instrumentation / regen noise in commits |
 | Dependency-constraint check before `flutter pub add` | `AGENTS.md` Cost Discipline | Avoids version-solving failures (samseer 0.1.0 class) |
 | Commons consumer check (analyze both apps when commons changed) | `scripts/weekly_review.sh` | Catches breaking commons changes weekly |
+| Sidetrack guard (global): passive `[nudge]` one-liners on prompt drift, major drift → one question; weekly review audits user prompt drift (category 6) | `~/.config/opencode/AGENTS.md` + `scripts/weekly_review.sh` | Catches user-side scope creep / deferred decisions / missing bars before they cost cycles |
 
 ---
 

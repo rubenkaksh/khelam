@@ -54,6 +54,7 @@ Audit checklist — be specific, quote file names and commit hashes:
 3. Scope back-and-forth: tasks where the requirements, repo scope, or depth changed mid-way; where one upfront question would have saved a whole cycle.
 4. Output waste: huge webfetch dumps read fully, same file read multiple times in one session, verbose logs consumed unnecessarily.
 5. Open Actions from review-memory.md: were any worked on? Close or keep them in your report.
+6. User prompt drift (sidetrack guard): did the user's prompts cause waste this week? Look for the patterns in the global AGENTS.md 'User Prompt Discipline' section (destination layer missing, follow-up scope extensions, deferred decisions, missing acceptance bars, praise-then-scope-creep). Name each instance and the cheaper phrasing. This feeds the guard's pattern list.
 
 Then write $REVIEW_FILE with this exact structure (plain language, under 60 lines):
 # Weekly Review — $REVIEW_DATE
