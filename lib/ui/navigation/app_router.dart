@@ -16,15 +16,19 @@ class AppRouter {
     required bool Function() isAuthenticated,
     required AuthCubit Function() authCubit,
     required ScheduleCubit Function() scheduleCubit,
+    GlobalKey<NavigatorState>? navigatorKey,
   }) : _isAuthenticated = isAuthenticated,
        _authCubit = authCubit,
-       _scheduleCubit = scheduleCubit;
+       _scheduleCubit = scheduleCubit,
+       _navigatorKey = navigatorKey;
 
   final bool Function() _isAuthenticated;
   final AuthCubit Function() _authCubit;
   final ScheduleCubit Function() _scheduleCubit;
+  final GlobalKey<NavigatorState>? _navigatorKey;
 
   late final GoRouter router = GoRouter(
+    navigatorKey: _navigatorKey,
     initialLocation: AppRoutes.schedulePath,
     redirect: (BuildContext context, GoRouterState state) {
       final bool loggedIn = _isAuthenticated();

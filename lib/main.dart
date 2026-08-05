@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:samseer/samseer.dart';
 
 import 'app.dart';
 import 'di/service_locator.dart';
@@ -12,7 +13,14 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(isOptional: true);
 
-  configureDependencies();
+  // HTTP inspector: floating bubble shows the live call count, tap (or
+  // shake) to open the request/response log. Wired into the GoRouter
+  // navigator key and the shared Dio client below.
+  final Samseer samseer = Samseer(
+    configuration: const SamseerConfiguration(showFloatingBubble: true),
+  );
+
+  configureDependencies(samseer: samseer);
 
   // Restore a persisted session (if any): the auth service reads the token
   // from secure storage and re-attaches it to the HTTP client, so protected
@@ -22,5 +30,10 @@ Future<void> main() async {
     serviceLocator<AuthCubit>().restoreSession(restoredUser);
   }
 
-  runApp(KhelamApp(router: serviceLocator<AppRouter>().router));
+  runApp(
+    KhelamApp(
+      router: serviceLocator<AppRouter>().router,
+      samseer: samseer,
+    ),
+  );
 }
