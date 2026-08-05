@@ -18,8 +18,15 @@ REVIEW_DATE="$(date +%F)"
 REVIEW_FILE="$REVIEWS_DIR/$REVIEW_DATE.md"
 mkdir -p "$REVIEWS_DIR"
 
-# Sessions touched in the last 8 days (covers the previous Sunday..now).
-SESSION_FILES="$(find "$SESSION_DIR" -name '*.md' -mtime -8 2>/dev/null | sort | tr '\n' ' ')"
+# Sessions for the last 7 days, selected by FILENAME date (not mtime —
+# editing an old session file would otherwise drag it into a later week).
+CUTOFF="$(date -v-7d +%F)"
+SESSION_FILES="$(find "$SESSION_DIR" -maxdepth 1 -name '*.md' 2>/dev/null | while read -r f; do
+  base="$(basename "$f" .md)"
+  if [[ "$base" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] && [[ "$base" > "$CUTOFF" ]] && [[ "$base" != "$REVIEW_DATE" ]]; then
+    echo "$f"
+  fi
+done | sort | tr '\n' ' ')"
 
 if [ -z "${SESSION_FILES// }" ]; then
   echo "$(date): no session files this week — skipping review" >> "$LOG"
@@ -48,6 +55,8 @@ Inputs (this week's session files): $SESSION_FILES
 
 $(if [ -n "$CONSUMER_NOTE" ]; then echo "Consumer health note (from the script): $CONSUMER_NOTE"; fi)
 
+MECHANICAL CHECK (computed by the script, not by you): $(mechanical_check)
+
 Audit checklist — be specific, quote file names and commit hashes:
 1. Redundant verification: full 'flutter test'/'flutter analyze' runs that were not needed; integration tests re-run without the live path changing; anything re-verified that was already green.
 2. Tooling discipline: for symbol/codebase questions, was 'codegraph explore' / 'codegraph node' / 'graphify query' used, or did the agent grep/read files repeatedly? Scan the session text for 'codegraph'/'graphify' mentions vs grep/read volume. Cite the actual tool calls you find — if the agent never logged any codegraph/graphify call, say so explicitly.
@@ -65,6 +74,22 @@ Then write $REVIEW_FILE with this exact structure (plain language, under 60 line
 ## Memory update (changes to make in docs/reviews/review-memory.md: new review-history row, actions closed or added)
 
 Do NOT commit, push, or modify any file other than $REVIEW_FILE."
+
+# Mechanical codegraph/graphify usage verification: counts actual tool
+# invocations in the week's session files vs grep/read volume. Sessions with
+# zero lookups but heavy grep/read activity are flagged for the review agent
+# (a real check, not just self-report).
+mechanical_check() {
+  local dir="$SESSION_DIR"
+  local calls reads
+  calls="$(rg -l 'codegraph (explore|node|sync|status)|graphify (query|path|explain)' "$dir" 2>/dev/null | wc -l | tr -d ' ')"
+  reads="$(rg -l '\b(rg|grep|find|read)\b' "$dir" 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "${calls:-0}" -eq 0 ] && [ "${reads:-0}" -gt 0 ]; then
+    echo "FAILED: 0 session files log codegraph/graphify usage but $reads log grep/read activity — tooling-discipline rule violated. Investigate and cite it."
+  else
+    echo "OK: $calls session file(s) log codegraph/graphify usage vs $reads with grep/read activity."
+  fi
+}
 
 cd "$REPO"
 opencode run --auto --dir "$REPO" "$PROMPT" >> "$LOG" 2>&1

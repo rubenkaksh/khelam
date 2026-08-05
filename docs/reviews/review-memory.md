@@ -29,6 +29,9 @@
 | Dependency-constraint check before `flutter pub add` | `AGENTS.md` Cost Discipline | Avoids version-solving failures (samseer 0.1.0 class) |
 | Commons consumer check (analyze both apps when commons changed) | `scripts/weekly_review.sh` | Catches breaking commons changes weekly |
 | Sidetrack guard (global): passive `[nudge]` one-liners on prompt drift, major drift → one question; weekly review audits user prompt drift (category 6) | `~/.config/opencode/AGENTS.md` + `scripts/weekly_review.sh` | Catches user-side scope creep / deferred decisions / missing bars before they cost cycles |
+| Hard Rule #2 (Strict Rules with rationale, `as T` covered, generated-code exemption) + precedence chain; review-memory wired into Hard Rule #1; session lifecycle (30-day archive); global-config pointer; symbol-level-edit definition; estimate feedback loop; session-time commons check; read-once carve-out | `AGENTS.md` (audit-driven restructure, 2026-08-05) | Closes the audit's structural + rule-coverage gaps |
+| Mechanical codegraph/graphify tripwire + filename-date session selection | `scripts/weekly_review.sh` (2026-08-05) | Replaces pure self-report with a computed check; kills mtime double-count |
+| Quarterly rule gut-check | `docs/reviews/review-memory.md` How-to-Update | Tracks whether the rule set stays net-positive |
 
 ---
 
@@ -58,3 +61,4 @@ After each weekly review (manual or automated):
 2. Update **Implemented Measures** if new rules/scripts added.
 3. Move closed actions to **Implemented Measures**; add new **Open Actions** from the review's "Top 3 cuts" + any new patterns.
 4. Keep under ~120 lines — prune old detail, keep decisions.
+5. **Quarterly rule gut-check (every 4th review):** for each rule in AGENTS.md Cost Discipline + Hard Rule #2, ask "did this rule cost more than it saved this quarter?" Drop or merge rules not earning their keep; log the decision in the Review History row.
