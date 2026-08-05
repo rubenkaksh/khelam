@@ -21,34 +21,32 @@
 | Weekly review automation (script + launchd Sun 18:00) | `scripts/weekly_review.sh`, `scripts/com.khelam.weekly-review.plist` | Automated audit cadence |
 | Shared `RecordingTokenStore` fake | `test/helpers/recording_token_store.dart` | Widget-test hang, per-file duplication |
 | Review agent reads this memory doc + must cite codegraph/graphify usage | `scripts/weekly_review.sh` prompt | Keeps memory across weeks; dogfoods tooling discipline |
+| Pre-edit rule: every symbol-level edit logs its codegraph/graphify lookup in the Work Log | `AGENTS.md` Cost Discipline | Enforces the tooling rule (0-use week was the top burn) |
+| Pre-commit gate (analyze + full test, blocks on failure; docs-only skip) | `.git/hooks/pre-commit` → `scripts/pre_commit_check.sh` | Enforces "no commits with known failures" mechanically |
+| "Verify current state before debugging" + known-good commands | `AGENTS.md` Cost Discipline | Kills stale-idToken/wrong-port/tsx DI debug cycles |
+| Cost note for >5k-token operations, before starting | `AGENTS.md` Cost Discipline | Makes invisible token spend visible |
+| `Cleanup` subsection in session template | `AGENTS.md` template | Prevents temp instrumentation / regen noise in commits |
+| Dependency-constraint check before `flutter pub add` | `AGENTS.md` Cost Discipline | Avoids version-solving failures (samseer 0.1.0 class) |
+| Commons consumer check (analyze both apps when commons changed) | `scripts/weekly_review.sh` | Catches breaking commons changes weekly |
 
 ---
 
 ## Waste Register Summary (Full Week 07-31 → 08-05)
 
 **Categories with UNCOVERED items** (not fully addressed by implemented measures):
-- Tooling discipline: codegraph/graphify rule exists but **not followed** (0 uses in 08-05 session vs 20+ grep/read round trips)
-- Scope back-and-forth: samseer wired app-side → move to commons; auth slice grilling → scrap → execute
-- Output waste: Graphify 15.5k token build, PDF manual venv, stale debug cycles
-- Diagnosis waste: stale idToken, wrong port (5000 = AirPlay), tsx DI bug, wrong lead on API tests
-- Process gaps: temp instrumentation left in commons, stray files, platform regen noise, dependency constraints (samseer 0.1.0 due to Dart 3.8)
+- Tooling discipline: codegraph/graphify rule exists but **not followed** (0 uses in 08-05 session vs 20+ grep/read round trips) — now enforced via pre-edit Work Log rule (closed 08-05)
+- Scope back-and-forth: samseer wired app-side → move to commons; auth slice grilling → scrap → execute — covered by scope-question rule + user prompting review
+- Output waste: Graphify 15.5k token build, PDF manual venv, stale debug cycles — covered by >5k cost-note + verify-state rules
+- Diagnosis waste: stale idToken, wrong port (5000 = AirPlay), tsx DI bug, wrong lead on API tests — covered by verify-state rule + pre-commit gate
+- Process gaps: temp instrumentation left in commons, stray files, platform regen noise, dependency constraints — covered by Cleanup subsection + dep-check rule
 
-Full register: see librarian audit of all sessions (2026-08-05).
+Full register: `docs/reviews/2026-08-05-full-history-audit.md` (librarian audit, all sessions).
 
 ---
 
 ## Open Actions (Ranked)
 
-| # | Action | Owner | Target |
-|---|--------|-------|--------|
-| 1 | Pre-edit hook: require `codegraph explore`/`graphify query` logged in session before symbol edits | Agent | Next session |
-| 2 | Pre-commit gate: block commit if affected tests fail | Agent | Next session |
-| 3 | Commons consumer check in weekly review script | Agent | Before 2026-08-09 run |
-| 4 | "Verify current state before debugging" rule in Cost Discipline | Agent | Next AGENTS.md edit |
-| 5 | Cost note for >5k token ops in session file | Agent | Next session |
-| 6 | Cleanup subsection in session template (temp logs, instrumentation, regen files) | Agent | Next AGENTS.md edit |
-| 7 | Dependency constraint check before `flutter pub add` | Agent | Next session |
-| 8 | Review agent prompt: require codegraph/graphify citations | Agent | Before 2026-08-09 run |
+None open as of 2026-08-05 — all 8 from the librarian audit implemented (see Implemented Measures). New actions get added here after each weekly review.
 
 ---
 

@@ -24,6 +24,9 @@ Template:
 ## Environment
 (Running services: what is up, on which port, how it was started, log location — so the next session never kills or duplicates it. e.g. "backend on :8000, nohup npm run start:dev, log /tmp/rms-backend.log")
 
+## Cleanup
+(Remove before commit: temp logs, debug instrumentation, stray .code-workspace files, platform regen noise. Verify with `git status`.)
+
 ## Blockers
 (Anything stuck or waiting on)
 
@@ -36,7 +39,10 @@ Template:
 The weekly review (`docs/reviews/`) audits these. Violations are budget burns.
 
 - **Scope question first.** When a task is ambiguous in scope, repo, or depth (e.g. "add X" — dependency only or wired? khelam only or also forkable/commons? unit tests or live verification?), ask ONE question via the question tool with a recommended default before writing code. A 30-second question is cheaper than a full duplicate cycle.
-- **codegraph/graphify BEFORE grep/read** for any symbol or codebase question (see sections below). Grepping for something already indexed is a budget burn.
+- **codegraph/graphify BEFORE grep/read** for any symbol or codebase question (see sections below). Grepping for something already indexed is a budget burn. **Every symbol-level edit must log its `codegraph explore`/`graphify query` lookup in the Work Log** — no lookup logged = rule violated.
+- **Verify current state before debugging.** Confirm the symptom exists on current HEAD + current config (one `flutter test` or curl) before investigating; stale idToken/port/DI-bug debug cycles are the classic waste. Use known-good commands (`npm run start:dev`, not `tsx`).
+- **Check dependency constraints before `flutter pub add`**: compare the package's `environment.sdk` against the project's `dart --version` (e.g. Dart 3.8 caps samseer at 0.1.0); note the result in the session file.
+- **Cost-note large operations**: anything estimated >5k tokens (graph rebuilds, doc dumps, PDFs, big audits) gets a one-line estimated-cost note in the session file BEFORE starting.
 - **Targeted tests during development**: after an edit, run only the affected test files (`flutter test test/features/auth/...`). Full suite + `flutter analyze` once, right before the commit.
 - **Live/integration tests only when the live path changed or the user asks.** Never re-verify something already green — the session file records the last verified state; trust it.
 - **No commits with known failures; no deferred diagnosis.** Read the failing assertion and fix or revert in-session.

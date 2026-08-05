@@ -26,11 +26,27 @@ if [ -z "${SESSION_FILES// }" ]; then
   exit 0
 fi
 
+# Commons consumer check: if commons had commits this week, verify both
+# consumer apps still analyze clean (catches breaking commons changes
+# before they cost a rework cycle).
+CONSUMER_NOTE=""
+COMMONS="/Users/rubenk/projects/commons"
+FORKABLE="/Users/rubenk/projects/forkable"
+if [ -d "$COMMONS/.git" ] && git -C "$COMMONS" log --oneline --since="7 days ago" 2>/dev/null | rg -q .; then
+  CONSUMER_NOTE="Commons had commits this week. Consumer check:"$'\n'
+  CONSUMER_NOTE+="- khelam flutter analyze: $(cd "$REPO" && flutter analyze 2>&1 | tail -1)"$'\n'
+  if [ -d "$FORKABLE/.git" ]; then
+    CONSUMER_NOTE+="- forkable flutter analyze: $(cd "$FORKABLE" && flutter analyze 2>&1 | tail -1)"
+  fi
+fi
+
 PROMPT="Weekly cost review for the khelam project (and sibling repos commons/forkable when mentioned).
 
 Read every session file listed below, plus the persistent review memory at docs/reviews/review-memory.md (its Open Actions table lists what is still outstanding — check each one), plus run 'git log --oneline --since=\"7 days ago\"' in the repo.
 
 Inputs (this week's session files): $SESSION_FILES
+
+$(if [ -n "$CONSUMER_NOTE" ]; then echo "Consumer health note (from the script): $CONSUMER_NOTE"; fi)
 
 Audit checklist — be specific, quote file names and commit hashes:
 1. Redundant verification: full 'flutter test'/'flutter analyze' runs that were not needed; integration tests re-run without the live path changing; anything re-verified that was already green.
