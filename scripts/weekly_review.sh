@@ -28,15 +28,16 @@ fi
 
 PROMPT="Weekly cost review for the khelam project (and sibling repos commons/forkable when mentioned).
 
-Read every session file listed below, plus run 'git log --oneline --since=\"7 days ago\"' in the repo.
+Read every session file listed below, plus the persistent review memory at docs/reviews/review-memory.md (its Open Actions table lists what is still outstanding — check each one), plus run 'git log --oneline --since=\"7 days ago\"' in the repo.
 
 Inputs (this week's session files): $SESSION_FILES
 
 Audit checklist — be specific, quote file names and commit hashes:
 1. Redundant verification: full 'flutter test'/'flutter analyze' runs that were not needed; integration tests re-run without the live path changing; anything re-verified that was already green.
-2. Tooling discipline: for symbol/codebase questions, was 'codegraph explore' / 'codegraph node' / 'graphify query' used, or did the agent grep/read files repeatedly? Scan the session text for 'codegraph'/'graphify' mentions vs grep/read volume.
+2. Tooling discipline: for symbol/codebase questions, was 'codegraph explore' / 'codegraph node' / 'graphify query' used, or did the agent grep/read files repeatedly? Scan the session text for 'codegraph'/'graphify' mentions vs grep/read volume. Cite the actual tool calls you find — if the agent never logged any codegraph/graphify call, say so explicitly.
 3. Scope back-and-forth: tasks where the requirements, repo scope, or depth changed mid-way; where one upfront question would have saved a whole cycle.
 4. Output waste: huge webfetch dumps read fully, same file read multiple times in one session, verbose logs consumed unnecessarily.
+5. Open Actions from review-memory.md: were any worked on? Close or keep them in your report.
 
 Then write $REVIEW_FILE with this exact structure (plain language, under 60 lines):
 # Weekly Review — $REVIEW_DATE
@@ -44,6 +45,7 @@ Then write $REVIEW_FILE with this exact structure (plain language, under 60 line
 ## Waste observed (top items: what happened, why it cost, how to avoid)
 ## Top 3 cuts for next week (concrete and actionable)
 ## One thing that went well
+## Memory update (changes to make in docs/reviews/review-memory.md: new review-history row, actions closed or added)
 
 Do NOT commit, push, or modify any file other than $REVIEW_FILE."
 
