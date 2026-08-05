@@ -2,10 +2,9 @@ import 'dart:async';
 
 import 'package:commons/commons.dart';
 import 'package:flutter/material.dart' as m;
-import 'package:go_router/go_router.dart';
 
 import '../../../di/service_locator.dart';
-import '../../../ui/navigation/app_routes.dart';
+import '../../auth/auth_navigation.dart';
 import '../bloc/auth_cubit.dart';
 import '../data/mock_auth_service.dart';
 
@@ -131,6 +130,8 @@ class LoginServiceCallbacksImpl extends LoginServiceCallbacks {
 
   @override
   void navigateForward(m.BuildContext context) {
-    context.goNamed(AppRoutes.home);
+    // Land back where the user was when the guard redirected to login
+    // (e.g. the schedule screen after tapping a slot), or home by default.
+    goAfterAuth(context);
   }
 }

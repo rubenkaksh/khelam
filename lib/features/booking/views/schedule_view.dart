@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart' as m;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:commons/commons.dart';
+import '../../../di/service_locator.dart';
+import '../../../ui/navigation/app_routes.dart';
+import '../../auth/bloc/auth_cubit.dart';
 import '../bloc/schedule_cubit.dart';
 import '../models/turf_summary.dart';
 import '../widgets/booking_confirmation_sheet.dart';
@@ -71,6 +75,18 @@ class _ScheduleViewState extends m.State<ScheduleView> {
         BookingTimeline(
           items: state.slots,
           onAvailableSlotTap: (item) async {
+            // Booking requires a signed-in user. Send guests to login and
+            // remember the current location so the auth flow lands them back
+            // here (with the guard now passing).
+            if (!serviceLocator<AuthCubit>().state.isAuthenticated) {
+              context.goNamed(
+                AppRoutes.login,
+                queryParameters: <String, String>{
+                  'redirectTo': GoRouterState.of(context).uri.toString(),
+                },
+              );
+              return;
+            }
             final ScheduleCubit cubit = context.read<ScheduleCubit>();
             final BookingResult? result =
                 await showFormBottomSheet<BookingResult>(

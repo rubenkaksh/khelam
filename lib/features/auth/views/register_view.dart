@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../ui/navigation/app_routes.dart';
+import '../auth_navigation.dart';
 import '../bloc/auth_cubit.dart';
 
 /// Registration screen: full name + phone number + password.
@@ -122,7 +123,9 @@ class _RegisterViewState extends m.State<RegisterView> {
                     BlocConsumer<AuthCubit, AuthState>(
                       listener: (m.BuildContext c, AuthState state) {
                         if (state.isAuthenticated) {
-                          c.goNamed(AppRoutes.home);
+                          // Registration auto-authenticates: return to where
+                          // the flow started (booking guard) or go home.
+                          goAfterAuth(c);
                         }
                       },
                       builder: (m.BuildContext c, AuthState state) {

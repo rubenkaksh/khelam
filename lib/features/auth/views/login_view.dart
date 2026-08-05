@@ -41,7 +41,12 @@ class _LoginViewState extends m.State<LoginView> {
       // for now (see LoginServiceCallbacksImpl.login → phone login).
       enableGoogleSignIn: false,
       // Registration lives app-side; the shared screen just hops to it.
-      onRegisterTap: () => context.goNamed(AppRoutes.register),
+      // Carry the query params (e.g. redirectTo from the booking guard) so
+      // registering lands the user back where they started too.
+      onRegisterTap: () => context.goNamed(
+        AppRoutes.register,
+        queryParameters: GoRouterState.of(context).uri.queryParameters,
+      ),
     );
   }
 }
