@@ -31,7 +31,6 @@ class MockAuthService implements AuthService {
     return const AuthUser(
       id: 'demo-user',
       phoneNumber: demoEmail,
-      email: demoEmail,
       displayName: 'Khelam Demo',
     );
   }
@@ -52,7 +51,6 @@ class MockAuthService implements AuthService {
       user: AuthUser(
         id: 'demo-user',
         phoneNumber: demoEmail,
-        email: demoEmail,
         displayName: 'Khelam Demo',
       ),
     );
@@ -72,7 +70,6 @@ class MockAuthService implements AuthService {
         id: 'demo-user',
         phoneNumber: phoneNumber,
         displayName: fullName,
-        email: '',
       ),
     );
   }

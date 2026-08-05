@@ -11,7 +11,10 @@ part 'auth_user.g.dart';
 abstract class AuthUser with _$AuthUser {
   const factory AuthUser({
     required String id,
-    required String email,
+
+    /// Null for phone-number users: the backend only sets an email for
+    /// Google sign-ins.
+    String? email,
     @JsonKey(name: 'full_name') required String displayName,
 
     /// Optional profile fields as returned by the backend's user object
