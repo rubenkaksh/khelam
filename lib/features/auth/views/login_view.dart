@@ -1,7 +1,9 @@
 import 'package:commons/commons.dart';
 import 'package:flutter/material.dart' as m;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../ui/navigation/app_routes.dart';
 import '../bloc/auth_cubit.dart';
 import '../contracts/login_contract.dart';
 
@@ -38,6 +40,8 @@ class _LoginViewState extends m.State<LoginView> {
       // Google sign-in is on hold; the phone + password flow is the entry
       // for now (see LoginServiceCallbacksImpl.login → phone login).
       enableGoogleSignIn: false,
+      // Registration lives app-side; the shared screen just hops to it.
+      onRegisterTap: () => context.goNamed(AppRoutes.register),
     );
   }
 }

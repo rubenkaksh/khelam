@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/bloc/auth_cubit.dart';
 import '../../features/auth/views/login_view.dart';
+import '../../features/auth/views/register_view.dart';
 import '../../features/booking/bloc/schedule_cubit.dart';
 import '../../features/booking/views/schedule_view.dart';
 import '../../features/home/views/home_view.dart';
@@ -27,11 +28,12 @@ class AppRouter {
     initialLocation: AppRoutes.schedulePath,
     redirect: (BuildContext context, GoRouterState state) {
       final bool loggedIn = _isAuthenticated();
-      // Schedule and login stay public: anyone can browse the schedule,
-      // booking and home require authentication.
+      // Schedule, login and registration stay public: anyone can browse the
+      // schedule or sign up; booking and home require authentication.
       final bool isPublic =
           state.matchedLocation == AppRoutes.loginPath ||
-          state.matchedLocation == AppRoutes.schedulePath;
+          state.matchedLocation == AppRoutes.schedulePath ||
+          state.matchedLocation == AppRoutes.registerPath;
 
       if (!loggedIn && !isPublic) {
         return AppRoutes.loginPath;
@@ -46,6 +48,16 @@ class AppRouter {
           return BlocProvider<AuthCubit>.value(
             value: _authCubit(),
             child: const LoginView(),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.registerPath,
+        name: AppRoutes.register,
+        builder: (BuildContext context, GoRouterState state) {
+          return BlocProvider<AuthCubit>.value(
+            value: _authCubit(),
+            child: const RegisterView(),
           );
         },
       ),

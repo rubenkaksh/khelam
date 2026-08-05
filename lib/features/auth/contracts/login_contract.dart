@@ -39,6 +39,9 @@ class LoginStringsImpl implements LoginStrings {
   String get fillDemoLabel => 'Fill demo credentials';
 
   @override
+  String get registerLabel => 'Create an account';
+
+  @override
   String get demoEmail => MockAuthService.demoEmail;
 
   @override
