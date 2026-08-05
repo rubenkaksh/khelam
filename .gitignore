@@ -57,3 +57,4 @@ graphify-out/
 
 # Generated docs
 docs/*.pdf
+*.code-workspace
