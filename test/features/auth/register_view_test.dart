@@ -5,11 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:khelam/features/auth/bloc/auth_cubit.dart';
-import 'package:khelam/features/auth/data/auth_token_store.dart';
 import 'package:khelam/features/auth/data/mock_auth_service.dart';
-import 'package:khelam/features/auth/models/auth_session.dart';
 import 'package:khelam/features/auth/views/register_view.dart';
 import 'package:khelam/ui/navigation/app_routes.dart';
+
+import '../../helpers/recording_token_store.dart';
 
 class FakeGoogleSignInService implements GoogleSignInService {
   @override
@@ -19,28 +19,12 @@ class FakeGoogleSignInService implements GoogleSignInService {
   Future<void> signOut() async {}
 }
 
-/// Records persisted sessions without touching the platform keychain.
-class _RecordingTokenStore extends AuthTokenStore {
-  AuthSession? savedSession;
-
-  @override
-  Future<void> saveSession(AuthSession session) async {
-    savedSession = session;
-  }
-
-  @override
-  Future<AuthSession?> restoreSession() async => null;
-
-  @override
-  Future<void> clear() async {}
-}
-
 void main() {
   late AuthCubit cubit;
-  late _RecordingTokenStore store;
+  late RecordingTokenStore store;
 
   setUp(() {
-    store = _RecordingTokenStore();
+    store = RecordingTokenStore();
     cubit = AuthCubit(
       service: const MockAuthService(),
       googleService: FakeGoogleSignInService(),

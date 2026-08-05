@@ -4,28 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:khelam/app.dart';
 import 'package:khelam/di/service_locator.dart';
 import 'package:khelam/features/auth/data/auth_token_store.dart';
-import 'package:khelam/features/auth/models/auth_session.dart';
 import 'package:khelam/ui/navigation/app_router.dart';
 
-/// Records persisted sessions without touching the platform keychain, which
-/// has no implementation in widget tests (unmocked platform channel futures
-/// never complete, so the login spinner would hang forever).
-class _RecordingTokenStore extends AuthTokenStore {
-  AuthSession? savedSession;
-
-  @override
-  Future<void> saveSession(AuthSession session) async {
-    savedSession = session;
-  }
-
-  @override
-  Future<AuthSession?> restoreSession() async => savedSession;
-
-  @override
-  Future<void> clear() async {
-    savedSession = null;
-  }
-}
+import 'helpers/recording_token_store.dart';
 
 void main() {
   setUp(() {
@@ -39,7 +20,7 @@ void main() {
   void overrideTokenStoreWithFake() {
     serviceLocator.allowReassignment = true;
     serviceLocator.registerLazySingleton<AuthTokenStore>(
-      () => _RecordingTokenStore(),
+      () => RecordingTokenStore(),
     );
   }
 

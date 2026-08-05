@@ -21,12 +21,28 @@ Template:
 ## Decisions
 (Design/architecture decisions made, with rationale)
 
+## Environment
+(Running services: what is up, on which port, how it was started, log location — so the next session never kills or duplicates it. e.g. "backend on :8000, nohup npm run start:dev, log /tmp/rms-backend.log")
+
 ## Blockers
 (Anything stuck or waiting on)
 
 ## Next Steps
 (What comes next — for this session or the next)
 ```
+
+## Cost Discipline (budget rules — audited weekly)
+
+The weekly review (`docs/reviews/`) audits these. Violations are budget burns.
+
+- **Scope question first.** When a task is ambiguous in scope, repo, or depth (e.g. "add X" — dependency only or wired? khelam only or also forkable/commons? unit tests or live verification?), ask ONE question via the question tool with a recommended default before writing code. A 30-second question is cheaper than a full duplicate cycle.
+- **codegraph/graphify BEFORE grep/read** for any symbol or codebase question (see sections below). Grepping for something already indexed is a budget burn.
+- **Targeted tests during development**: after an edit, run only the affected test files (`flutter test test/features/auth/...`). Full suite + `flutter analyze` once, right before the commit.
+- **Live/integration tests only when the live path changed or the user asks.** Never re-verify something already green — the session file records the last verified state; trust it.
+- **No commits with known failures; no deferred diagnosis.** Read the failing assertion and fix or revert in-session.
+- **Check the Blockers section before E2E/live runs** — known-broken endpoints fail predictably; fix (or trim the test) first.
+- **Shared test fakes, not per-file copies**: e.g. the token-store fake lives in `test/helpers/recording_token_store.dart`. A widget test must never hit a real platform channel (those futures never complete in tests).
+- **Read files once per session**; reuse earlier reads instead of re-reading the same file.
 
 ## Strict Rules
 

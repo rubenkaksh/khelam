@@ -2,10 +2,10 @@ import 'package:commons/commons.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:khelam/features/auth/bloc/auth_cubit.dart';
-import 'package:khelam/features/auth/data/auth_token_store.dart';
 import 'package:khelam/features/auth/data/mock_auth_service.dart';
-import 'package:khelam/features/auth/models/auth_session.dart';
 import 'package:khelam/features/auth/models/auth_user.dart';
+
+import '../../helpers/recording_token_store.dart';
 
 class FakeGoogleSignInService implements GoogleSignInService {
   FakeGoogleSignInService({this.result, this.error});
@@ -26,26 +26,6 @@ class FakeGoogleSignInService implements GoogleSignInService {
   Future<void> signOut() async {}
 }
 
-/// Records persisted sessions without touching the platform keychain.
-class _RecordingTokenStore extends AuthTokenStore {
-  AuthSession? savedSession;
-  bool cleared = false;
-
-  @override
-  Future<void> saveSession(AuthSession session) async {
-    savedSession = session;
-  }
-
-  @override
-  Future<AuthSession?> restoreSession() async => null;
-
-  @override
-  Future<void> clear() async {
-    cleared = true;
-    savedSession = null;
-  }
-}
-
 void main() {
   group('AuthCubit.googleSignIn', () {
     test('authenticates with the backend-mapped Google user', () async {
@@ -59,7 +39,7 @@ void main() {
       final AuthCubit cubit = AuthCubit(
         service: const MockAuthService(),
         googleService: fake,
-        tokenStore: _RecordingTokenStore(),
+        tokenStore: RecordingTokenStore(),
       );
 
       await cubit.googleSignIn();
@@ -76,7 +56,7 @@ void main() {
         googleService: FakeGoogleSignInService(
           result: const GoogleSignInResult(email: 'no-name@khelam.dev'),
         ),
-        tokenStore: _RecordingTokenStore(),
+        tokenStore: RecordingTokenStore(),
       );
 
       await cubit.googleSignIn();
@@ -86,7 +66,7 @@ void main() {
     });
 
     test('persists the session after a successful sign-in', () async {
-      final _RecordingTokenStore store = _RecordingTokenStore();
+      final RecordingTokenStore store = RecordingTokenStore();
       final AuthCubit cubit = AuthCubit(
         service: const MockAuthService(),
         googleService: FakeGoogleSignInService(
@@ -105,7 +85,7 @@ void main() {
     });
 
     test('returns to the initial state and saves nothing when canceled', () async {
-      final _RecordingTokenStore store = _RecordingTokenStore();
+      final RecordingTokenStore store = RecordingTokenStore();
       final AuthCubit cubit = AuthCubit(
         service: const MockAuthService(),
         googleService: FakeGoogleSignInService(result: null),
@@ -126,7 +106,7 @@ void main() {
         googleService: FakeGoogleSignInService(
           error: const MockAuthException('Google sign-in failed.'),
         ),
-        tokenStore: _RecordingTokenStore(),
+        tokenStore: RecordingTokenStore(),
       );
 
       await cubit.googleSignIn();
@@ -141,7 +121,7 @@ void main() {
       final AuthCubit cubit = AuthCubit(
         service: const MockAuthService(),
         googleService: FakeGoogleSignInService(result: null),
-        tokenStore: _RecordingTokenStore(),
+        tokenStore: RecordingTokenStore(),
       );
 
       cubit.restoreSession(
@@ -156,7 +136,7 @@ void main() {
 
   group('AuthCubit phone login & register', () {
     test('phone login authenticates and persists the session', () async {
-      final _RecordingTokenStore store = _RecordingTokenStore();
+      final RecordingTokenStore store = RecordingTokenStore();
       final AuthCubit cubit = AuthCubit(
         service: const MockAuthService(),
         googleService: FakeGoogleSignInService(result: null),
@@ -179,7 +159,7 @@ void main() {
       final AuthCubit cubit = AuthCubit(
         service: const MockAuthService(),
         googleService: FakeGoogleSignInService(result: null),
-        tokenStore: _RecordingTokenStore(),
+        tokenStore: RecordingTokenStore(),
       );
 
       await cubit.login(email: '9800000002', password: 'wrong');
@@ -190,7 +170,7 @@ void main() {
     });
 
     test('register authenticates and persists the session', () async {
-      final _RecordingTokenStore store = _RecordingTokenStore();
+      final RecordingTokenStore store = RecordingTokenStore();
       final AuthCubit cubit = AuthCubit(
         service: const MockAuthService(),
         googleService: FakeGoogleSignInService(result: null),
@@ -212,7 +192,7 @@ void main() {
 
   group('AuthCubit.logout', () {
     test('clears the persisted session and returns to the initial state', () async {
-      final _RecordingTokenStore store = _RecordingTokenStore();
+      final RecordingTokenStore store = RecordingTokenStore();
       final AuthCubit cubit = AuthCubit(
         service: const MockAuthService(),
         googleService: FakeGoogleSignInService(result: null),
