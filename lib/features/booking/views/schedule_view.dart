@@ -36,7 +36,24 @@ class _ScheduleViewState extends m.State<ScheduleView> {
     return BlocBuilder<ScheduleCubit, ScheduleState>(
       builder: (m.BuildContext context, ScheduleState state) {
         return m.Scaffold(
-          appBar: m.AppBar(title: const m.Text('Schedule')),
+          appBar: m.AppBar(
+            title: const m.Text('Schedule'),
+            actions: [
+              // Testing aid: sign out and land on the login screen. The
+              // session is also cleared from storage, so the next launch
+              // starts logged out.
+              m.IconButton(
+                tooltip: 'Logout',
+                icon: const m.Icon(m.Icons.logout),
+                onPressed: () async {
+                  await serviceLocator<AuthCubit>().logout();
+                  if (context.mounted) {
+                    context.goNamed(AppRoutes.login);
+                  }
+                },
+              ),
+            ],
+          ),
           body: _buildBody(context, state),
         );
       },

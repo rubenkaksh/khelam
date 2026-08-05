@@ -93,6 +93,11 @@ class MockAuthService implements AuthService {
     // Mock mode stores nothing, so there is nothing to restore.
     return null;
   }
+
+  @override
+  Future<void> logout() async {
+    // Nothing to detach: mock mode keeps no HTTP client state.
+  }
 }
 
 class MockAuthException implements Exception {

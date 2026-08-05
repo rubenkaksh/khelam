@@ -29,6 +29,7 @@ class FakeGoogleSignInService implements GoogleSignInService {
 /// Records persisted sessions without touching the platform keychain.
 class _RecordingTokenStore extends AuthTokenStore {
   AuthSession? savedSession;
+  bool cleared = false;
 
   @override
   Future<void> saveSession(AuthSession session) async {
@@ -39,7 +40,10 @@ class _RecordingTokenStore extends AuthTokenStore {
   Future<AuthSession?> restoreSession() async => null;
 
   @override
-  Future<void> clear() async {}
+  Future<void> clear() async {
+    cleared = true;
+    savedSession = null;
+  }
 }
 
 void main() {
@@ -203,6 +207,31 @@ void main() {
       expect(cubit.state.user?.displayName, 'New Player');
       expect(cubit.state.user?.phoneNumber, '9801237999');
       expect(store.savedSession?.accessToken, 'mock-token');
+    });
+  });
+
+  group('AuthCubit.logout', () {
+    test('clears the persisted session and returns to the initial state', () async {
+      final _RecordingTokenStore store = _RecordingTokenStore();
+      final AuthCubit cubit = AuthCubit(
+        service: const MockAuthService(),
+        googleService: FakeGoogleSignInService(result: null),
+        tokenStore: store,
+      );
+
+      await cubit.login(
+        email: MockAuthService.demoEmail,
+        password: MockAuthService.demoPassword,
+      );
+      expect(cubit.state.isAuthenticated, isTrue);
+      expect(store.savedSession, isNotNull);
+
+      await cubit.logout();
+
+      expect(store.cleared, isTrue);
+      expect(cubit.state.status, AuthStatus.initial);
+      expect(cubit.state.isAuthenticated, isFalse);
+      expect(cubit.state.user, isNull);
     });
   });
 }

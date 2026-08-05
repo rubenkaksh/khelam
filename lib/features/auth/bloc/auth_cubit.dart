@@ -156,4 +156,17 @@ class AuthCubit extends Cubit<AuthState> {
       ),
     );
   }
+
+  /// Signs out: detaches the bearer token from the HTTP client, clears the
+  /// persisted session, and returns to the initial state. Best effort — even
+  /// if storage cleanup fails, the in-memory session is dropped.
+  Future<void> logout() async {
+    try {
+      await _service.logout();
+      await _tokenStore.clear();
+    } catch (_) {
+      // Fall through: the in-memory session must still be dropped.
+    }
+    emit(const AuthState());
+  }
 }

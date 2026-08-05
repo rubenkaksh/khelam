@@ -38,4 +38,8 @@ abstract interface class AuthService {
   ///
   /// Returns the authenticated user, or null when no session was stored.
   Future<AuthUser?> init();
+
+  /// Clears client-side auth state (e.g. the bearer token attached to the
+  /// HTTP client). Persisted sessions are cleared separately by the caller.
+  Future<void> logout();
 }

@@ -108,6 +108,11 @@ class AuthApiService implements AuthService {
     return session.user;
   }
 
+  @override
+  Future<void> logout() async {
+    _apiClient.setBearerToken(null);
+  }
+
   /// POSTs [body] to [path], parses the backend's `{accessToken, user}`
   /// response into an [AuthSession] and attaches the bearer token to the
   /// shared client.
