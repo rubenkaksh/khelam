@@ -1,156 +1,183 @@
-# Design — Task/Ticket Breakdown Dashboard (v0, initial)
+# Design — Task/Ticket Breakdown Dashboard (v1, Supabase pivot)
 
-> Date: 2026-08-06. Status: PROPOSED — awaiting approval. Spec lives at `docs/superpowers/specs/` (not a declared feature; matches the 2026-08-06 screenshot-verification precedent). Implementation target once approved: `lib/features/dashboard/` + a macOS run target.
+> Date: 2026-08-06. Status: PROPOSED — awaiting approval. Spec lives at `docs/superpowers/specs/` (not a declared feature; matches the 2026-08-06 screenshot-verification precedent). Implementation target: `lib/features/dashboard/` + a macOS run target.
+>
+> **Changelog** (2026-08-06, user pivot): storage moved **local Isar → Supabase** to enable a *bidirectional* task queue (user flips a ticket in the app → status lands in the DB → the agent picks it up as the worker). All LOCKED UI/form-factor decisions (§2 #1–#5) are unchanged; the dashboard slice, macOS route guard, and three-column kanban are identical. Only the data plane changes: isar → supabase client + local JSON cache. Markdown remains the audit trail for the external review gate.
+
+## Pivot (Supabase) — executive summary
+
+| Question | Old (v0) | New (v1) | Rationale |
+|---|---|---|---|
+| Storage | local isar (one-way mirror) | **Supabase `tickets` table** (queue) + local JSON cache (offline) | Bidirectional sync is impossible without a shared backend. The app and the agent are different processes on (possibly) different machines — only a cloud table bridges them. |
+| Source of truth | markdown (script reads) | **markdown = audit trail; Supabase `tickets.status` = queue state** | The external gate signs resolutions in markdown; the live "what to work on" lives in the queue. Two-way, directional (§9). |
+| Agent learns a flip | n/a (mirror only) | **`scripts/check_queue.sh`** polled at session start | Shell-first, 0-token poll (curl to PostgREST). No daemon/webhook — single-user, cheap. |
+| App writes | never | **optimistic local update + upsert via anon key + user JWT** | User drives todo→ready / blocked; agent drives ready→inProgress→done via service_role. RLS separates the two write paths. |
+
+**Evidence base for the storage verdict** (verified 2026-08-06):
+- `Dart SDK 3.8.0` caps `supabase_flutter` at **2.15.4** — `2.16.0+` requires SDK ≥3.9.0 (pub resolution fails on `sdk: ^3.8.0`). Resolved stack: `supabase 2.13.4` / `postgrest 2.8.0` / `realtime_client 2.10.0` / `gotrue 2.25.0`. Compatible; no upgrade needed.
+- Supabase free tier (500 MB, 50 k MAU, **2 concurrent connections**, pauses after 7 d idle) is ample for a single-user tool. The 2-conn cap is honoured by design: 1 for the app, 1 for the poll script; no realtime listener (saves a websocket connection).
+- `supabase` CLI is installable via `npx --yes supabase@2.111.0` for local dev (`supabase start` → local Postgres/gotrue/postgrest/realtime); no global install required.
+- khelam pubspec already carries `flutter_secure_storage` + `flutter_dotenv` (JWT + env persistence, zero new deps for auth plumbing) and `dio ^5.9.2` (commons `DioApiClient` **stays** for the NestJS booking API — Supabase is a *separate* client, not a dio replacement).
+- `.env` is **tracked** in git (`git ls-files .env` → confirmed); it is safe to hold the **anon** key (public-by-design). The **service_role** key is the real secret and lives only in `~/.config/khelam/sb.env` (never committed).
+
+---
 
 ## 1. Purpose
 
-A personal, macOS-only decision-support dashboard over the project's *existing* markdown memory (Open Actions, backlog, day-plan batches, learnings). It is a **read-only mirror** — markdown stays the source of truth. The board is a three-column kanban per the user's locked UI spec; a local isar DB caches the parsed artifacts so the user can scan state, spot blockers, and step through an in-progress execution batch without re-reading half a dozen files.
+A personal, macOS-only **controller** over the project's markdown memory. The user advances a ticket in the three-column kanban (todo / in-progress / done) → the status change is written to a Supabase `tickets` row → the agent (the worker) picks up `ready` tickets and drives them to `done`, writing `completedAt` + actual tokens back so the board reflects execution in real time. Markdown (`review-memory.md`, backlog, day-plan, learnings) stays the **audit trail** the external gate signs; the queue is the **live state**.
 
-## 2. Locked decisions (user, 2026-08-06)
+## 2. Locked decisions (user, 2026-08-06) — unchanged by pivot
 
 | # | Decision | Constraint |
-|---|----------|------------|
+|---|---|---|
 | 1 | Form factor | Flutter (house growth path), macOS surface |
 | 2 | Layout | Row of Expanded, each a ListView of Cards (todo / in-progress / done) |
 | 3 | In-progress card | step counter ("Step 2/5") + `LinearProgressIndicator` |
 | 4 | Done card | subtle opacity dip + completed timestamp |
 | 5 | Status marker | `Container`+`BoxDecoration` circle, no icon assets; colors red=blocked, amber=in-progress, green=done, gray=todo |
-| 6 | Storage | local DB (hive/isar), user's choice of shape, free-tier cost preserved |
+| 6 | Storage | **REVISED** → Supabase (was: local DB hive/isar); a local JSON cache backs offline + optimistic updates |
 
-## 3. App form factor & location (options evaluated)
+## 3. App form factor & location — LOCKED (unchanged)
 
-| Option | How | Pros | Cons | Verdict |
-|---|---|---|---|---|
-| (a) separate Flutter repo | new `khelam-dashboard/` repo | total separation from mobile app | new repo + commons re-wire + new DI; heaviest; violates "no new infra" | REJECTED |
-| (b) feature slice inside khelam | `lib/features/dashboard/` | reuses theme, commons, DI, test infra | must platform-gate so it never builds into iOS/Android | ACCEPTED (see below) |
-| (c) macOS run target only | `flutter run -d macos` | khelam's macos target already builds (committed fix `f108c0f`) | needs a route that never appears on mobile | ACCEPTED — hybrid with (b) |
+Decision — feature slice inside khelam (`lib/features/dashboard/`) behind a macOS-only route guard. New slice ADR-0004 layout: `bloc/`, `data/`, `models/`, `views/`, `widgets/`. macOS-only route via a platform-conditional `GoRoute('/dashboard')` in `app_router.dart` (`defaultTargetPlatform == TargetPlatform.macOS` gates route registration; a debug `assert` backs it). Run with `flutter run -d macos`. (Full text unchanged — see v0 §3.)
 
-**Decision — (b)+(c) hybrid, one app.** New slice `lib/features/dashboard/` (ADR-0004 layout: `bloc/`, `data/`, `models/`, `views/`, `widgets/`), behind a macOS-only route guard (`assert(defaultTargetPlatform == TargetPlatform.macOS)` + a `go_router` route `/dashboard` not registered on mobile shells). Run with `flutter run -d macos`. Rationale: zero new infra/CI/repos, reuses the existing macOS target the user already fixed, keeps Flutter as the growth surface, and the dashboard never ships to iOS/Android binaries because the route is unreachable on mobile. **Note:** the booking-calendar README lists the slice path as `lib/ui/features/schedule/` but the *actual* ADR-0004 layout is `lib/features/<name>/` (auth, booking, home, theme_preview) — the design follows the real layout.
+## 4. Storage: Supabase vs local cache (re-evaluated)
 
-## 4. Storage: Hive vs Isar (options evaluated)
-
-| | Hive | Isar |
+| | Supabase (`tickets` table) | Local JSON cache |
 |---|---|---|
-| Pub latest stable | `hive 2.2.3` (Jun 2022) | `isar 3.1.0+1` |
-| Platforms | Android/iOS/Linux/macOS/web/Windows | Android/iOS/Linux/macOS/web/Windows |
-| Native deps | none (pure Dart: `crypto, meta`) | `isar_flutter_libs` (native core via ffi) |
-| Codegen | optional (`hive_generator`) — Map boxes need none | **required** (`isar_generator` + `build_runner`) |
-| Dart 3.8 fit | **BLOCKED** — 2.2.3 predates Dart 3; issue #1334 reports "Hive generator incompatible with Dart 3.7+". Only `4.0.0-dev.2` (prerelease) resolves on Dart 3.x | Dart 3.x compatible, actively maintained |
-| Maintenance | README now says "If you need queries → check out Isar"; issues #1331/#1339/#1340 ask to deprecate | active (4.0.0-dev.14) |
+| Role | **shared queue** — app + agent both read/write | **offline mirror + optimistic writes** — personal tool survives DB pause/offline |
+| Free-tier hit | 1 of 2 concurrent conns; REST only | zero cost; file in app-support dir |
+| Dart 3.8 fit | `supabase_flutter 2.15.4` (max; 2.16+ needs Dart 3.9) — OK | none (dart:io read/write) |
+| When it degrades | 7-d pause → slow cold first request; retry + cache banner | used automatically when POST/GET fails |
 
-**Decision — Isar primary.** Hive stable cannot resolve against khelam's `sdk: ^3.8.0`; the only Hive that does is a dev prerelease on a project signaling deprecation. Isar's latest stable supports Dart 3.x + macOS and is the maintained path. Codegen is a one-time local `dart run build_runner build` (no network, no model calls → no token cost). The extra native binary is acceptable for a macOS-debug-only personal tool. Lighter fallback: Hive `4.0.0-dev.2` Map boxes (zero codegen) if the prerelease risk is acceptable — documented as the "if you want zero-codegen" escape hatch.
+**Verdict — full Supabase queue + JSON local cache.** Not a hybrid that "falls back to pure local" (that was the old one-way design and cannot satisfy bidirectional). The cache is a *read+write-through* fallback: every successful fetch overwrites `data/task_cache.json`; failed app writes stage into `data/task_pending.json` and flush on next online fetch. The existing markdown pipeline (`ccusage_collect.sh`, `weekly_review.sh`, `opencode.db`) never touches Supabase → no single point of failure for the review cadence.
 
-## 5. Entity model — `Ticket`
+## 5. Entity model — `Ticket` (Supabase row)
 
-Single entity (keeps the board schema-flat). Stored in one isar collection; no joins.
+Maps 1:1 to the `tickets` table row. Stored via `supabase_flutter` (freezed `@JsonSerializable` ↔ `fromJson`/`toJson`) — **not** isar `@collection` (codegen swap; same `build_runner` step, now emits `ticket.g.dart` for JSON not isar).
 
 | Field | Type | Source |
 |---|---|---|
-| `id` | String | derived (§6) |
-| `title` | String | Open Action / backlog bullet / batch step / learning |
+| `id` | uuid | Supabase `uuid_generate()` (app-stable; Finder reveal, writes) |
+| `owner_id` | uuid | `auth.uid()` — single-user JWT anchor for RLS |
+| `status` | enum `todo\|ready\|inProgress\|done` | **queue state machine** (was 3-value; +`ready` for agent claim) |
+| `source_id` | String? | seed dedupe key (e.g. `oa-5`, `bl-revenue`, `dp-2026-08-06`) |
+| `title` | String | OA / backlog bullet / batch step / learning |
 | `type` | enum `openAction\|backlogItem\|dayPlan\|learning` | row origin |
-| `status` | enum `todo\|inProgress\|done` | maps to column |
-| `isBlocked` | bool | red dot (see §8) |
+| `isBlocked` | bool | red dot (§8) |
 | `priority` | enum `p0\|p1\|p2\|p3` | severity / urgency / backlog priority |
 | `sourcePath` | String | `file:LiN` (tap → reveal in Finder) |
-| `estTokens`, `actualTokens` | int? | day-plan batch line; OA screenshot-verify ~7k |
-| `stepIndex`, `stepCount` | int? | `current_batch` / batch-log count (in-progress day-plan) |
-| `progress` | double 0..1 | stepIndex/stepCount; 1.0 done / 0.0 todo |
+| `estTokens`,`actualTokens` | int? | day-plan batch line; OA screenshot-verify ~7k |
+| `stepIndex`,`stepCount` | int? | active batch / batch-log count |
+| `progress` | double 0..1 | stepIndex/stepCount |
 | `trust` | String? | "L1\|L2\|L3" (day-plan) |
 | `scope` | String? | "clean\|dirty" (day-plan) |
-| `createdAt`,`updatedAt` | DateTime | file mtime |
-| `completedAt` | DateTime? | done-card timestamp |
 | `deferralCount` | int | "(Review: …, add #N)" count; external gate max 2 |
-| `notes` | String? | deferral history line / full body excerpt |
+| `notes` | String? | deferral history / body excerpt |
+| `createdAt`,`updatedAt`,`completedAt` | DateTime | `now()` / trigger / set on done |
 
-## 6. Artifact → entity mapping
+**State machine + who transits:**
+| From → To | Who | Channel |
+|---|---|---|
+| `todo` ↔ `ready` | user | app (anon key + JWT) |
+| `ready` → `inProgress` | agent | `scripts/check_queue.sh` → `ticket_queue.sh claim` (service_role) |
+| `inProgress` step / token updates | agent | same worker script |
+| `inProgress` → `done` | agent | `ticket_queue.sh complete` (sets `completedAt` + `actualTokens`) |
+| any → `isBlocked`=true | user | app |
 
-| Markdown artifact | Ticket type | id pattern | status @2026-08-06 |
-|---|---|---|---|
-| review-memory.md Open Actions §6.1–6.6 (lines 61–66) | `openAction` | `oa-N` (N=1..6) | all `todo`; OA#5 `isBlocked=true` (pending user decision) |
-| backlog.md bullets (8 items; 3 marked DONE 2026-08-01) | `backlogItem` | `bl-<slug>` | 3 DONE→`done`(completed 08-01); C5 drift/revenue/home/auth/turfs/screenshot/watchpoint/nav → `todo` |
-| `*-status.md` (`current_batch=N` + batch log) | `dayPlan` | `dp-<YYYY-MM-DD>` | 2026-08-06 → `done` (batch 7 ALL DONE) |
-| session file §4 LEARNINGS table (lines 148–158, 9 rows) | `learning` | `learn-N` | `todo` (new); urgency→priority (1=p1…3=p3) |
+## 6. Artifact → entity mapping — LOCKED (unchanged)
 
-Active execution detection (drives in-progress): a status file whose `current_batch=N` line is *not* `ALL DONE` AND whose last batch-log entry is `status=done` with `batch < N` → ticket `status=inProgress`, `stepIndex=current_batch`, `stepCount=batch-log rows`. At the 2026-08-06 snapshot the day-plan is complete → in-progress column is empty (renders a "no active execution" placeholder).
+(Same as v0 §6.) Seed mapping by `source_id`; active-execution detection sets `status=inProgress`, `stepIndex=current_batch`, `stepCount` from the batch log. At the 2026-08-06 snapshot the day-plan is complete → in-progress column renders the "no active execution" placeholder.
 
-## 7. Ingestion/sync — manifest bridge
+## 7. Ingestion/sync — bidirectional bridge
 
-The DB is Flutter-native; a bash/python script cannot author isar binaries safely. House style = bash+python3 for parsing logic (cf. `ccusage_collect.sh`). → **bridge pattern**: script writes a JSON manifest; the app imports it.
+The DB is now cloud-native (no local binaries to author); the bash/python boundary inverts — scripts write to the table directly via PostgREST REST.
 
 ```
 docs/reviews/review-memory.md ─┐
-docs/backlog.md               ├─→ scripts/sync_tasks.sh ──→ lib/features/dashboard/data/task_manifest.json ──import──▶ isar Ticket box
-docs/sessions/*-status.md     │    (bash: grep/parse; python3: emit canonical JSON; idempotent)
-docs/sessions/<date>.md §4    ┘
+docs/backlog.md               ├─→ scripts/sync_tasks.sh ──→ Supabase REST (POST /tickets, UPSERT
+docs/sessions/*-status.md     │    service_role)           by source_id; status NOT clobbered)
+docs/sessions/<date>.md §4    └─>                          → tickets.status is the live queue
+                                                                   app reads anon key+JWT; agent reads service_role
+agent (this process) ──────> scripts/ticket_queue.sh claim/complete ──→ Supabase REST (inProgress/done)
+agent completion ──────> scripts/ticket_queue.sh complete ──→ append resolution line ──→ docs/reviews/review-memory.md (write-back)
 ```
 
-- **Idempotent**: `sync_tasks.sh` re-emits the same manifest on re-run; the app upserts by `id` (delete-then-rewrite the box if manifest mtime is newer than last import).
-- **Staleness**: app reimports on launch when `task_manifest.json` mtime > imported-at; a manual "Refresh" button always reimports.
-- **No continuous watcher** (cheap): the script is run on demand by the user OR optionally wrapped by the existing `weekly_review.sh` cadence (V2). `bash -n` + `python3 -m json.tool` smoke on every run.
-- **One-way**: the manifest is the only write target of the script; the app never writes markdown; drag-to-column reorders are local-only (see §9).
+- **Seed (md→supabase)**: `sync_tasks.sh` is idempotent (UPSERT by `source_id`); it only **inserts new** rows and **updates non-status metadata** (title, sourcePath, estTokens when changed) — never resets `status`, `completedAt`, or `actualTokens`. Re-running is a safe no-op. `bash -n` + `python3 -m json.tool` smoke.
+- **App read/write (supabase↔local cache)**: `DashboardCubit` fetches `tickets` on load + on focus; writes optimistically to `task_cache.json` **and** upserts to Supabase; on failure, stages to `task_pending.json` and flushes later.
+- **Agent read/write (queue→agent→supabase)**: `check_queue.sh` lists `status='ready'` (service_role, ordered by priority/createdAt). The agent claims one (PATCH `status=ready→inProgress`), updates steps, then `complete` (PATCH `status=done` + `completedAt` + `actualTokens`).
+- **Write-back (supabase→md)**: on `complete` of an `openAction` ticket, `ticket_queue.sh` appends an idempotent `+ [done YYYY-MM-DD] <source_id> — agent-completed (queue id <uuid>)` line to `review-memory.md` so the weekly review sees the resolution and signs off. For `dayPlan`/`backlogItem` the completion marker lands in the owning status file / bullet. Markdown stays the audit trail; Supabase stays the queue.
 
-## 8. UI structure (user spec locked; fleshed)
+## 8. UI structure — LOCKED (unchanged; only data source shifts)
 
-- **Column header** = status dot (`Container` 10×10, `BoxDecoration` circle) + name + count badge. Dot color per §5; `isBlocked` overrides any column to **red**.
-- **Todo card**: title + priority pill + source path line (small). 
-- **In-progress card** (day-plan ticket): title + trust badge ("L2") + **"Step 3/7"** + `LinearProgressIndicator(value: 3/7)` + est/actual tokens row ("est 3500 → actual 4500") when present.
-- **Done card**: opacity `0.6` + `completedAt` timestamp line + progress 100%.
-- **Tap card** → Material `showModalBottomSheet` (macOS: constrained width): full `notes`, `sourcePath` (tap → `dart:io` `Process.run('open', [dir])` reveal in Finder — no new dep), `est/actualTokens`, `trust`/`scope`, `deferralCount`.
-- **State**: `DashboardCubit extends Cubit<DashboardState>` holding `List<Ticket>` + `isLoading` (matches khelam's `flutter_bloc` Cubit convention, ADR-0004; not Riverpod, not bare setState). Single `DashboardState` value class.
+(Identical to v0 §8: column header dot + count badge; todo card; in-progress "Step X/N" + `LinearProgressIndicator` + est→actual tokens; done opacity 0.6 + `completedAt`; tap→bottom sheet with notes + sourcePath "reveal in Finder"; `DashboardCubit extends Cubit<DashboardState>` holding `List<Ticket>` + `isLoading`.) Data source note: the cubit now fetches from the Supabase client (via `ticket_repository.dart`) and seeds the local cache, instead of importing `task_manifest.json` into isar. The "Refresh" button re-fetches; a "Reveal in Finder" tap still uses `dart:io Process.run('open', …)` (no new dep).
 
-## 9. One-way sync policy (explicit)
+## 9. Governance: markdown (audit) vs Supabase (queue) — external gate flow
 
-The dashboard is a **decision-support mirror only**. The markdown files are the single source of truth (per `management-strategy.md` Ch. 4 "source of truth" + the external-audit gate). **Nothing the user does in the dashboard writes back to markdown** — reordering, blocking flags, or notes are local scratch and discard on reimport. This is deliberate: the external-audit gate (user signs every Open Action) must remain anchored to `review-memory.md`, never to a local reorder. One `localNote` field is permitted on the Ticket for in-session scratch only.
+**Recommendation (a): Supabase = queue, markdown = audit trail, directional two-way sync.** (Rejects (b) purge-markdown and (c) status-only-in-DB.)
 
-## 10. Token-cost preservation (user-raised)
+Why markdown stays a first-class record: `management-strategy.md` Ch. 5 makes **you** the external auditor; `review-memory.md` §6.1–6.6 Open Actions carry your signed resolutions, and the weekly review reads them. Scrapping markdown (option b) would orphan the audit gate. The queue (Supabase) is the *execution* state — it must be cloud (app↔agent differ). So:
 
-- **No network**: isar local only; `sync_tasks.sh` reads local files; no HTTP, no `ccusage` calls, no `opencode.db` writes.
-- **No analytics writes**: `~/analytics/`, `performance-summary.md`, `update-log.md`, `opencode.db` are untouched. The dashboard reads `docs/sessions/*-status.md` (per-batch cost) for the in-progress token row — it does **not** re-derive analytics.
-- **Idempotent + cheap**: re-running the script + app reimport is a no-op when nothing changed.
-- **Codegen is local**: `dart run build_runner build` for isar_generator — a build step, zero model calls.
-- **No CI / no launchd additions** (V2 only): run via `flutter run -d macos` + `bash scripts/sync_tasks.sh`.
-- **Expected implementation cost**: §12 estimates ~12–20k tokens across B1–B3, all free-tier ($0) — consistent with `performance-summary.md` Week 1 (167.5M tokens, $0). The dashboard must not regress that $0 discipline.
+1. **Seed** writes *content + metadata* into Supabase; status is **never** reset by the seed, so a user-advanced ticket keeps its live status across re-seeds.
+2. The **external gate reads markdown** at every weekly review: your signed `fix / defer-with-date / drop` lives there; `ticket_queue.sh complete` only ever *appends* a resolution line, never rewrites your signature. The review sees both the markdown signature and the Supabase `completedAt`.
+3. **Week-planning** (strategy Ch. 6): `check_queue.sh` output (`status='ready'`) is appended into the next day-plan's "Queued from dashboard" line — work still **enters via the day-plan contract**; the queue feeds the contract, it doesn't bypass it.
+
+## 10. Token-cost preservation (user requirement, updated)
+
+- **Shell polls = 0 tokens**: `check_queue.sh`, `sync_tasks.sh`, `ticket_queue.sh` are bash+curl; no LLM. (Matches `ccusage_collect.sh` house style.)
+- **Per-pickup LLM cost**: ~300–500 tokens (script output ingested once per claim) — vs a 167.5 M token free-tier week; negligible.
+- **Analytics pipeline untouched**: `ccusage_collect.sh`, `weekly_review.sh`, `opencode.db`, `~/analytics/` never reference Supabase. The in-progress token row still comes from `docs/sessions/*-status.md`.
+- **App client**: compiled Dart (supabase_flutter); fetches the board via REST — no extra model calls.
+- **Expected implementation cost**: ~28–34 k tokens across B1–B3, all free-tier ($0) — consistent with `performance-summary.md` Week 1 ($0).
 
 ## 11. Deliverables (files)
 
 | File | Purpose |
 |---|---|
-| `docs/superpowers/specs/2026-08-06-task-dashboard-design.md` | this spec |
-| `lib/features/dashboard/models/ticket.dart` | isar `@collection` Ticket + enums |
-| `lib/features/dashboard/models/ticket.g.dart` | generated (build_runner) |
-| `lib/features/dashboard/bloc/dashboard_cubit.dart` | loads manifest → isar → emits `List<Ticket>` |
-| `lib/features/dashboard/views/dashboard_view.dart` | 3-column board |
-| `lib/features/dashboard/widgets/task_card.dart` | card + status dot + opacity + progress |
-| `lib/features/dashboard/data/manifest_repository.dart` | reads `task_manifest.json` + upserts isar |
-| `scripts/sync_tasks.sh` | parses markdown → JSON manifest (idempotent) |
-| `docs/features/dashboard/README.md` | feature doc (V2, after feature is real) |
+| `docs/superpowers/specs/2026-08-06-task-dashboard-design.md` | this spec (revised) |
+| `supabase/migrations/20260806_create_tickets.sql` | `tickets` table + check enums + RLS + `updated_at` trigger |
+| `supabase/.gitignore` (+ root `.gitignore` add) | `supabase/.env` (local service_role) never committed |
+| `lib/features/dashboard/models/ticket.dart` | freezed `@JsonSerializable` Ticket (supabase row), + enums |
+| `lib/features/dashboard/models/ticket.g.dart` | generated (`build_runner`) |
+| `lib/features/dashboard/data/supabase_client.dart` | `SupabaseClient` init from `.env` (URL + anon key) |
+| `lib/features/dashboard/data/ticket_repository.dart` | fetch upsert + local JSON cache (`task_cache.json` / `task_pending.json`) |
+| `lib/features/dashboard/bloc/dashboard_cubit.dart` | loads tickets → emits `List<Ticket>`; optimistic writes + refresh-on-focus |
+| `lib/features/dashboard/views/dashboard_view.dart` | LOCKED 3-column board |
+| `lib/features/dashboard/widgets/task_card.dart` | LOCKED card + dot + progress + opacity + sheet |
+| `lib/ui/navigation/app_router.dart` + `app_routes.dart` | add macOS-only `/dashboard` route guard |
+| `.env` | add `SUPABASE_URL` + `SUPABASE_ANON_KEY` (tracked, public anon key) |
+| `scripts/sync_tasks.sh` | parses markdown → UPSERT `tickets` (idempotent, status-preserving) |
+| `scripts/check_queue.sh` | lists `status='ready'` via PostgREST (service_role from `~/.config/khelam/sb.env`) |
+| `scripts/ticket_queue.sh` | `claim`/`complete`/`block` subcommands → REST PATCH + markdown write-back |
 
 ## 12. Batch breakdown (background-agent protocol)
 
-- **Batch 1 [L2] — Storage + sync**: add `isar`/`isar_flutter_libs`/`isar_generator` to `pubspec.yaml`; write `ticket.dart` + run codegen; write `sync_tasks.sh`; smoke: script parses review-memory → `task_manifest.json` with ≥6 open-action rows, `python3 -m json.tool` valid. Acceptance: `bash -n` clean; manifest valid; `dart run build_runner build` succeeds. Est ~6k tokens.
-- **Batch 2 [L1] — Board UI**: `DashboardCubit` + `dashboard_view.dart` (Row/Expanded/ListView/Cards), step counter + `LinearProgressIndicator`, done opacity+timestamp, status dots, macOS route guard. Acceptance: `flutter analyze` clean; `flutter run -d macos` shows 3 columns with real Open Actions; in-progress card renders "Step X/N"+bar when a status file is active; done card shows opacity+timestamp. Est ~10k tokens.
-- **Batch 3 [L2] — Detail + import**: card tap → bottom sheet (deferral history, notes, source path "reveal in Finder"; reimport-on-launch + Refresh button; idempotent). Acceptance: sheet shows OA#1 deferral history; reveal opens `review-memory.md` at the action; re-run script + relaunch → no duplicates. Est ~4k tokens.
+- **Batch 1 [L2] — Supabase project + schema + seed**: `npx supabase init` + migration SQL (enums + RLS + trigger) + `sync_tasks.sh` (md→supabase UPSERT by `source_id`). Acceptance: `supabase db push` succeeds; seed writes ≥6 `oa-*` + 3 backlog + 1 dayplan + 9 learnings with `status=todo` (no status clobber); `bash -n` clean; script is idempotent. Est ~6 k.
+- **Batch 2 [L1] — App client + dashboard slice**: add `supabase_flutter ^2.15.4` to pubspec; `supabase_client.dart` + `ticket.dart` (freezed) + `DashboardCubit` (fetch/cache/optimistic/refresh-on-focus) + macOS `/dashboard` route guard; rebuild LOCKED 3-column UI. Acceptance: `flutter analyze` clean; `flutter run -d macos` renders 3 columns from seeded tickets; flipping todo→ready persists; offline renders cache. Est ~14 k.
+- **Batch 3 [L2] — Agent loop + pickup + write-back**: `check_queue.sh` + `ticket_queue.sh` (claim/complete/block) using service_role; complete appends to `review-memory.md`. Acceptance: `supabase start` running; `check_queue` lists a ready ticket; claim → `inProgress` visible in app after refresh; complete → `done` + `completedAt` + markdown resolution line. Est ~8 k.
 
-## 13. Acceptance bar
+> **Commons-consumer check**: only khelam's pubspec changes (supabase_flutter); forkable does **not** build the dashboard → no forkable dep change. Per `AGENTS.md`, run `flutter analyze` in both khelam and forkable before committing any pubspec change.
 
-1. `bash scripts/sync_tasks.sh` exits 0 and writes `lib/features/dashboard/data/task_manifest.json`.
-2. Manifest contains ≥6 `oa-1..6` tickets + ≥3 DONE backlog tickets + the `dp-2026-08-06` day-plan ticket + 9 `learn-N` tickets.
-3. `dart run build_runner build` succeeds; `flutter analyze` clean.
-4. `flutter run -d macos` renders exactly three columns (Todo / In-Progress / Done) with real Open Actions.
-5. In-progress day-plan card shows "Step N/M" + `LinearProgressIndicator`; done `dp-2026-08-06` card shows opacity dip + `completedAt` timestamp.
-6. Tapping OA#1 card → bottom sheet shows deferral line + sourcePath; tapping sourcePath reveals `docs/reviews/review-memory.md` in Finder.
-7. Re-running `sync_tasks.sh` + relaunching the app yields no duplicate rows (idempotent).
+## 13. Acceptance bar (full loop)
+
+1. `supabase db push` applies `20260806_create_tickets.sql` (table + enums + RLS).
+2. `bash scripts/sync_tasks.sh` seeds markdown artifacts into `tickets` (status-preserving, idempotent re-run = no dupes/status reset).
+3. `dart pub get` resolves `supabase_flutter 2.15.4` on `sdk: ^3.8.0`; `flutter analyze` clean; `dart run build_runner build` emits `ticket.g.dart`.
+4. `flutter run -d macos` renders exactly three columns with seeded tickets from Supabase.
+5. **Full loop**: user flips a ticket todo→ready in the app → `bash scripts/check_queue.sh` lists it → agent claims it (ready→inProgress, visible in app after refresh) → agent completes it (done + `completedAt`) → `review-memory.md` gains a resolution line readable by the weekly review.
+6. Offline: kill Supabase / cut network → app renders last `task_cache.json`; queued writes flush on reconnect.
+7. `flutter analyze` clean in khelam + forkable after the pubspec change.
 
 ## 14. Deferred scope (V2)
 
-- Optional `launchd` job (mirror `com.khelam.weekly-review.plist`) to run `sync_tasks.sh` on a cadence — keep out until proven needed (no new infra per constraint).
-- Hive `4.0.0-dev.2` Map-box mode as a codegen-free alternative if isar native-libs prove troublesome on macOS.
-- `docs/features/dashboard/README.md` migration to the declared-feature model (once the feature is real) + the Session Objective convention `Feature: docs/features/dashboard/README.md — <task>` for collector attribution.
-- Gold/screenshot pipeline not needed — macOS screenshots of the board go straight into the PR description (reuse §6 of the screenshot-verification spec).
+- **Realtime listener**: a single-user websocket is not worth the free-tier conn cap; `check_queue.sh` poll + manual Refresh is the V1 surface. V2 if the user wants live push to the board.
+- **Hive `4.0.0-dev.2` Map-box escape hatch**: if Supabase infra is rejected at the gate, revert to local isar/hive as a read-only mirror (revert `§5` status enum to 3-value, drop §7 bidirectional). Documented rollback path; not the recommended direction.
+- **`supabase functions/` edge functions**: not needed V1 (worker is local shell + service_role).
+- **`sync_to_forkable.sh`**: mirror `scripts/` + `supabase/migrations/` to forkable once the dashboard slice lands there (mirrors the screenshot-verification sync pattern).
+- Gold/screenshot pipeline for the macOS dashboard board — out of scope (reuse §6 of the screenshot-verification spec if/when needed).
 
 ## 15. Open questions (for the external gate)
 
-1. **Is isar's native-libs + codegen acceptable** vs the Hive `4.0.0-dev.2` Map-box zero-codegen path? (Recommendation: isar — supported; Hive-dev only as escape hatch.)
-2. **macOS route guard strength** — OK to gate with a debug-only `assert(defaultTargetPlatform == TargetPlatform.macOS)` + route not registered on mobile, or do you want `dart:io` `Platform.isMacOS` compile-time exclusion from mobile flavors?
-3. **Reimport cadence** — manual Refresh only, or also auto-reimport-on-launch when manifest is newer? (Lean: auto-on-launch, no launchd.)
+1. **Single-user auth** — accept the one-time email/password signup (supabase_flutter persists JWT in `flutter_secure_storage`)? Alternative: anon-key permissive writes (rejected — RLS should still scope to a user). Recommendation: email/password, one-time.
+2. **Service key storage for scripts** — `~/.config/khelam/sb.env` created by a one-time `supabase secrets set` / manual paste. Accept the local-secrets convention, or does the user prefer macOS Keychain (`security` CLI) for the worker key? Recommendation: `~/.config/khelam/sb.env` (matches `ccusage_collect.sh` `~/.local/share/opencode` pattern; simplest to grep/rotate).
+3. **Seed frequency** — keep `sync_tasks.sh` as an on-demand/manual refresh (V1), or also prepend it to `weekly_review.sh` cadence (V2)? Lean: manual + on-demand now.
