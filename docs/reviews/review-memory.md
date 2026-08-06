@@ -9,6 +9,7 @@
 | Date | Key Findings | Review Doc |
 |------|--------------|------------|
 | 2026-08-05 | 8 waste instances (DTO rebuild, double @librarian, router guard ×2, deferred API tests, known-broken E2E, samseer rework, widget-test hang, minor churn). Top 3 cuts: upfront scope questions, no deferred diagnosis, check Blockers before E2E. | `docs/reviews/2026-08-05.md` |
+| 2026-08-06 | 7 waste incidents in week 08-05→08-06; 167.5M tokens all free-tier ($0); ~59% estimate accuracy (safe direction); 23 sessions; booking-calendar Out-list stale (API integration + auth guard shipped). Background-agent v1 executed under 08-05 execution-model spec: 7 batches, 5 L2/L1 gates passed, 1 latent bug caught by validation (`mechanical_check` ordering), sandbox guard scripts NOT mechanically installed (deviation). | `docs/reviews/2026-08-06.md` |
 
 ---
 
@@ -31,6 +32,11 @@
 | Sidetrack guard (global): passive `[nudge]` one-liners on prompt drift, major drift → one question; weekly review audits user prompt drift (category 6) | `~/.config/opencode/AGENTS.md` + `scripts/weekly_review.sh` | Catches user-side scope creep / deferred decisions / missing bars before they cost cycles |
 | Hard Rule #2 (Strict Rules with rationale, `as T` covered, generated-code exemption) + precedence chain; review-memory wired into Hard Rule #1; session lifecycle (30-day archive); global-config pointer; symbol-level-edit definition; estimate feedback loop; session-time commons check; read-once carve-out | `AGENTS.md` (audit-driven restructure, 2026-08-05) | Closes the audit's structural + rule-coverage gaps |
 | Mechanical codegraph/graphify tripwire + filename-date session selection | `scripts/weekly_review.sh` (2026-08-05) | Replaces pure self-report with a computed check; kills mtime double-count |
+| Analytics pipeline v2 (SQL → CSV weekly/monthly, charts on demand, idempotent collector, venv) | `scripts/ccusage_collect.sh`, `scripts/analytics_charts.py`, `~/analytics/` (2026-08-06) | Self-serve cost data, no blind trust in review agent |
+| Report delivery abstraction (macos notification / webhook stubs) | `scripts/report_sink.sh` (2026-08-06) | Review results reach the user reliably |
+| Feature-doc model (declared features `docs/features/<name>/README.md`, Objective convention for collector) | `docs/features/booking-calendar/README.md` + khelam `AGENTS.md` (2026-08-06) | Feature_parent attribution in analytics; PRD replaced |
+| Background-agent execution model (trust dial L1/L2/L3, fresh session per batch, status file, checkpoint commits, scopeshift protocol, learnings log) | `docs/superpowers/specs/2026-08-05-background-agent-execution-model-design.md` (2026-08-06, experiment) | One-off v1 experiment; formalize after next task |
+| `mechanical_check` ordering fix | `scripts/weekly_review.sh` `0bde76f` (2026-08-06) | Latent bug caught by batch-6 validation — functions must precede PROMPT expansion |
 | Quarterly rule gut-check | `docs/reviews/review-memory.md` How-to-Update | Tracks whether the rule set stays net-positive |
 
 ---
@@ -51,6 +57,9 @@ Full register: `docs/reviews/2026-08-05-full-history-audit.md` (librarian audit,
 ## Open Actions (Ranked)
 
 1. **commons `_FakeStrings` missing `registerLabel` getter** — `test/auth/login_screen_test.dart:6` fails analyze (interface gained the getter in v0.5.0 `1890d05`; fake never updated). Discovered 2026-08-06 during background-agent Batch 2 validation (pre-existing, unrelated to AGENTS.md deletion). Decision: log + defer to weekly review (user 2026-08-06). Fix: add `String get registerLabel => '...'` override. Severity: low (test-only, analyze red).
+2. **Session boundaries** — fresh session per batch per execution-model spec; flag weekly sessions older than 1 day with >50M cache reads (Review: 2026-08-06, add #2).
+3. **Origin-repo self-check** — extend session-time commons consumer check to run `flutter analyze` in commons itself (its own test fake was broken while only consumers were checked) (Review: 2026-08-06, add #3).
+4. **Refresh feature README** — booking-calendar Out-of-scope list stale (API integration + auth guard shipped this week); update `docs/features/booking-calendar/README.md` (Review: 2026-08-06, add #4).
 
 ---
 
