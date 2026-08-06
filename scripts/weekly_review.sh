@@ -13,10 +13,20 @@ REPO="/Users/rubenk/projects/khel-service/khelam"
 REVIEWS_DIR="$REPO/docs/reviews"
 SESSION_DIR="$REPO/docs/sessions"
 LOG="/tmp/weekly-review.log"
+ANALYTICS_DIR="$HOME/analytics"
+SCRIPTS_DIR="$REPO/scripts"
 
 REVIEW_DATE="$(date +%F)"
 REVIEW_FILE="$REVIEWS_DIR/$REVIEW_DATE.md"
 mkdir -p "$REVIEWS_DIR"
+
+# Source report_sink for delivery abstraction (REPORT_SINK env honored).
+. "$SCRIPTS_DIR/report_sink.sh"
+
+# Step 0 (v2): run the analytics collector FIRST so the review agent has
+# I/O data. Degrades gracefully (logs to $LOG) — never blocks the review.
+bash "$SCRIPTS_DIR/ccusage_collect.sh" >> "$LOG" 2>&1 || \
+  echo "$(date): WARNING — analytics collector failed; review proceeds without I/O data" >> "$LOG"
 
 # Sessions for the last 7 days, selected by FILENAME date (not mtime —
 # editing an old session file would otherwise drag it into a later week).
@@ -57,6 +67,8 @@ $(if [ -n "$CONSUMER_NOTE" ]; then echo "Consumer health note (from the script):
 
 MECHANICAL CHECK (computed by the script, not by you): $(mechanical_check)
 
+WEEKLY I/O DATA (from the analytics collector): weekly CSV at $ANALYTICS_DIR/weekly/$REVIEW_DATE.csv (may not exist yet on the first run of a week — then note that). Monthly rollup at $ANALYTICS_DIR/monthly/.
+
 Audit checklist — be specific, quote file names and commit hashes:
 1. Redundant verification: full 'flutter test'/'flutter analyze' runs that were not needed; integration tests re-run without the live path changing; anything re-verified that was already green.
 2. Tooling discipline: for symbol/codebase questions, was 'codegraph explore' / 'codegraph node' / 'graphify query' used, or did the agent grep/read files repeatedly? Scan the session text for 'codegraph'/'graphify' mentions vs grep/read volume. Cite the actual tool calls you find — if the agent never logged any codegraph/graphify call, say so explicitly.
@@ -65,6 +77,19 @@ Audit checklist — be specific, quote file names and commit hashes:
 5. Open Actions from review-memory.md: were any worked on? Close or keep them in your report.
 6. User prompt drift (sidetrack guard): did the user's prompts cause waste this week? Look for the patterns in the global AGENTS.md 'User Prompt Discipline' section (destination layer missing, follow-up scope extensions, deferred decisions, missing acceptance bars, praise-then-scope-creep). Name each instance and the cheaper phrasing. This feeds the guard's pattern list.
 
+SECTION A — ANALYTICS (v2): read the week's CSV ($ANALYTICS_DIR/weekly/$REVIEW_DATE.csv if it exists, else note its absence) and the monthly rollup ($ANALYTICS_DIR/monthly/). Write $ANALYTICS_DIR/performance-summary.md (OVERWRITE each week) with EXACT structure:
+# Performance Summary — $REVIEW_DATE
+## Agent Metrics (table)
+Columns: Metric | This Week | 4-Week Trend
+Rows: Total tokens, Cost USD, Estimate accuracy %, Waste incidents (w/ categories), Full test runs, codegraph/graphify lookups, Sessions
+## User Metrics (table)
+Columns: Sidetrack pattern | Count | Cheaper phrasing
+Rows: one per sidetrack pattern found this week (destination layer missing, follow-up scope extension, deferred decision, missing acceptance bar, praise-then-scope-creep) + a Total nudges issued row.
+
+SECTION B — UPDATE LOG (v2): append '## $REVIEW_DATE' entries to $ANALYTICS_DIR/update-log.md (create the file with a header if missing) for every knowledge/rule change made or recommended this week. Format: '- **AGENTS.md** (global|project): <what> (Review: $REVIEW_DATE, action: <#>)'. If nothing changed, write 'No changes — <reason>'.
+
+SECTION C — FEATURE AUDIT (v2): for each docs/features/<feature>/README.md touched this week: checklist completion %, ADRs added, scope drift (sessions on untracked items), stale (>7 days no progress → flag for CEO review). If no features are declared yet, write 'No declared features this week'.
+
 Then write $REVIEW_FILE with this exact structure (plain language, under 60 lines):
 # Weekly Review — $REVIEW_DATE
 ## What shipped this week (5-8 bullets)
@@ -72,8 +97,10 @@ Then write $REVIEW_FILE with this exact structure (plain language, under 60 line
 ## Top 3 cuts for next week (concrete and actionable)
 ## One thing that went well
 ## Memory update (changes to make in docs/reviews/review-memory.md: new review-history row, actions closed or added)
+## Performance Summary (see $ANALYTICS_DIR/performance-summary.md)
+## Feature Audit
 
-Do NOT commit, push, or modify any file other than $REVIEW_FILE."
+Do NOT commit, push, or modify any file other than $REVIEW_FILE, $ANALYTICS_DIR/performance-summary.md, and $ANALYTICS_DIR/update-log.md."
 
 # Mechanical codegraph/graphify usage verification: counts actual tool
 # invocations in the week's session files vs grep/read volume. Sessions with
@@ -95,9 +122,10 @@ cd "$REPO"
 opencode run --auto --dir "$REPO" "$PROMPT" >> "$LOG" 2>&1
 
 if [ -f "$REVIEW_FILE" ]; then
-  osascript -e "display notification \"Weekly review ready: docs/reviews/$REVIEW_DATE.md\" with title \"Khelam Weekly Review\"" >> "$LOG" 2>&1
+  send_report "Khelam Weekly Review" "Weekly review ready: docs/reviews/$REVIEW_DATE.md" \
+    "performance-summary.md" "update-log.md" "weekly/$REVIEW_DATE.csv"
   echo "$(date): review written to $REVIEW_FILE" >> "$LOG"
 else
   echo "$(date): ERROR — review agent did not produce $REVIEW_FILE" >> "$LOG"
-  osascript -e 'display notification "Weekly review FAILED — check /tmp/weekly-review.log" with title "Khelam Weekly Review" sound name "Sosumi"' >> "$LOG" 2>&1
+  send_error_report "Khelam Weekly Review" "Weekly review FAILED — check /tmp/weekly-review.log"
 fi
