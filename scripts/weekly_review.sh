@@ -57,6 +57,22 @@ if [ -d "$COMMONS/.git" ] && git -C "$COMMONS" log --oneline --since="7 days ago
   fi
 fi
 
+# Mechanical codegraph/graphify usage verification: counts actual tool
+# invocations in the week's session files vs grep/read volume. Sessions with
+# zero lookups but heavy grep/read activity are flagged for the review agent
+# (a real check, not just self-report).
+mechanical_check() {
+  local dir="$SESSION_DIR"
+  local calls reads
+  calls="$(rg -l 'codegraph (explore|node|sync|status)|graphify (query|path|explain)' "$dir" 2>/dev/null | wc -l | tr -d ' ')"
+  reads="$(rg -l '\b(rg|grep|find|read)\b' "$dir" 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "${calls:-0}" -eq 0 ] && [ "${reads:-0}" -gt 0 ]; then
+    echo "FAILED: 0 session files log codegraph/graphify usage but $reads log grep/read activity — tooling-discipline rule violated. Investigate and cite it."
+  else
+    echo "OK: $calls session file(s) log codegraph/graphify usage vs $reads with grep/read activity."
+  fi
+}
+
 PROMPT="Weekly cost review for the khelam project (and sibling repos commons/forkable when mentioned).
 
 Read every session file listed below, plus the persistent review memory at docs/reviews/review-memory.md (its Open Actions table lists what is still outstanding — check each one), plus run 'git log --oneline --since=\"7 days ago\"' in the repo.
@@ -101,22 +117,6 @@ Then write $REVIEW_FILE with this exact structure (plain language, under 60 line
 ## Feature Audit
 
 Do NOT commit, push, or modify any file other than $REVIEW_FILE, $ANALYTICS_DIR/performance-summary.md, and $ANALYTICS_DIR/update-log.md."
-
-# Mechanical codegraph/graphify usage verification: counts actual tool
-# invocations in the week's session files vs grep/read volume. Sessions with
-# zero lookups but heavy grep/read activity are flagged for the review agent
-# (a real check, not just self-report).
-mechanical_check() {
-  local dir="$SESSION_DIR"
-  local calls reads
-  calls="$(rg -l 'codegraph (explore|node|sync|status)|graphify (query|path|explain)' "$dir" 2>/dev/null | wc -l | tr -d ' ')"
-  reads="$(rg -l '\b(rg|grep|find|read)\b' "$dir" 2>/dev/null | wc -l | tr -d ' ')"
-  if [ "${calls:-0}" -eq 0 ] && [ "${reads:-0}" -gt 0 ]; then
-    echo "FAILED: 0 session files log codegraph/graphify usage but $reads log grep/read activity — tooling-discipline rule violated. Investigate and cite it."
-  else
-    echo "OK: $calls session file(s) log codegraph/graphify usage vs $reads with grep/read activity."
-  fi
-}
 
 cd "$REPO"
 opencode run --auto --dir "$REPO" "$PROMPT" >> "$LOG" 2>&1
