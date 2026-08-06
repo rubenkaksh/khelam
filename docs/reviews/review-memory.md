@@ -56,6 +56,8 @@ Full register: `docs/reviews/2026-08-05-full-history-audit.md` (librarian audit,
 
 ## Open Actions (Ranked)
 
+> **Policy (2026-08-06, user decision — external audit gate):** you are the external reviewer. At each weekly review every Open Action gets a user-signed resolution — **fix / defer-with-date / drop**. No action survives two reviews unresolved. Protocol-change proposals must cite quantified waste; Day Plans require your estimate column.
+
 1. **commons `_FakeStrings` missing `registerLabel` getter** — `test/auth/login_screen_test.dart:6` fails analyze (interface gained the getter in v0.5.0 `1890d05`; fake never updated). Discovered 2026-08-06 during background-agent Batch 2 validation (pre-existing, unrelated to AGENTS.md deletion). Decision: log + defer to weekly review (user 2026-08-06). Fix: add `String get registerLabel => '...'` override. Severity: low (test-only, analyze red).
 2. **Session boundaries** — fresh session per batch per execution-model spec; flag weekly sessions older than 1 day with >50M cache reads (Review: 2026-08-06, add #2).
 3. **Origin-repo self-check** — extend session-time commons consumer check to run `flutter analyze` in commons itself (its own test fake was broken while only consumers were checked) (Review: 2026-08-06, add #3).

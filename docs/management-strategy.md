@@ -1,118 +1,112 @@
-# Khelam Management Strategy — How Context Survives Across Sessions
+# The Khelam Memory System — A Story-Driven Guide
 
-> **What this is**: a user-readable summary of how khelam's agent system keeps context alive across sessions, how work is planned and executed, and the project-management plan going forward. Written 2026-08-06.
-
----
-
-## 1. TL;DR
-
-Khelam runs on a **layered memory system**: durable rules live in `AGENTS.md` files, daily life lives in session files, decisions live in specs and review docs, and everything is measured by a weekly analytics review. Work executes under a **contract-based protocol** (morning plan → trust-dialed batches → evening review) whose learnings feed the *next* protocol. When you switch contexts mid-stream, the session file's `Environment` + `Next Steps` sections are the anchor that lets any fresh session pick up exactly where things stopped — nothing is re-derived, everything is carried forward.
+> Written 2026-08-06, revised after an adversarial architecture review. This is the story of how context survives in this project — what we built, what broke, and the decision that changed how it's governed.
 
 ---
 
-## 2. The story so far
+## Chapter 1 — Why this document exists
 
-| When | What happened | Artifact |
+You switch contexts a lot. One hour we're planning a background-agent experiment, the next we're fixing a macOS build, then designing screenshot tooling. Each switch risks losing the thread — unless the project itself remembers.
+
+This project is built around one belief: **the agent should never re-derive what it already knows**. Everything is designed to carry forward — but carrying forward only works if the system is *honest* about what's actually running versus what was only designed. This document tells you which is which.
+
+## Chapter 2 — Where we started
+
+In June 2026, the project had a problem: sessions were expensive, mistakes repeated, and nothing remembered. The first architecture review (06-22) flagged a theme monolith. The 07-31 session planted the seed of an idea: **measure the agent's own cost**. By 08-01, a full history audit (librarian) had catalogued 8 waste instances — rebuilt DTOs, double-invoked agents, known-broken test endpoints run anyway.
+
+The answer took shape in two moves:
+
+1. **08-05 — the hierarchy**: global rules moved to `~/.config/opencode/AGENTS.md` (hard rules, cost discipline, session template); each repo got a slim project file. Two design specs were locked: the background-agent execution model and the scope-sandbox/retry policy.
+2. **08-06 — the experiment**: a day-plan contract drove 7 batches (sibling AGENTS.md, analytics pipeline, review v2, feature docs, validation, closeout). It worked — 7/7 acceptance bars, −17% under budget — and its evening review produced 9 learnings for the next protocol.
+
+Then the architect grilled the strategy. It found the truth beneath the tidy story.
+
+## Chapter 3 — The design: eight layers of memory
+
+When everything works, context flows through eight layers. Think of them as a filing cabinet with a rule for every drawer:
+
+| Layer | Where it lives | What it holds |
 |---|---|---|
-| 2026-06-22 | First architecture review → theme monolith watchpoint | review |
-| 2026-07-31 | Analytics idea: measure agent cost per session | session file |
-| 2026-08-01 | Commons migration (Dio, theme, auth slices v0.2–v0.6) + full-history audit | `docs/reviews/2026-08-05-full-history-audit.md` |
-| 2026-08-05 | **AGENTS.md hierarchy rewrite**: global rules live in `~/.config/opencode/AGENTS.md`; khelam/commons/forkable/backend each get slim project files. Two design specs locked: background-agent execution model + scope-sandbox/retry policy. Weekly review automation + launchd. | `AGENTS.md`, 2 specs |
-| 2026-08-06 (AM) | **v1 experiment**: day-plan contract, 7 trust-dialed batches (sibling AGENTS.md, analytics pipeline, review v2, feature docs, validation, closeout) | `docs/plans/2026-08-06-day-plan.md` |
-| 2026-08-06 (PM) | Evening review: 7/7 acceptance bars, calibration 27.5k est → 22.7k actual, 9 learnings for next protocol. macOS build fix. UI-screenshot-verification design (architect). | session + review docs |
+| 0. Global rules | `~/.config/opencode/AGENTS.md` | Hard rules, cost discipline, sidetrack guard |
+| 1. Project rules | `AGENTS.md` (4 repos) | Session mandate, conventions, pre-commit gate |
+| 2. Daily session file | `docs/sessions/YYYY-MM-DD.md` | The living handoff: Work Log, Decisions, Environment, Next Steps |
+| 3. Status + plan | `docs/sessions/*-status.md`, `docs/plans/` | `current_batch=N`, per-batch progress, scope manifests |
+| 4. Review memory | `docs/reviews/review-memory.md` | Implemented measures, Open Actions (ranked) |
+| 5. Update log | `~/analytics/update-log.md` | Every rule/tooling change, dual-authored |
+| 5b. Context map | `.codegraph/`, `graphify-out/` | Symbol index + semantic graph (codegraph = "where is X", graphify = "how do A and B relate") |
+| 6. Analytics | `~/analytics/` | Weekly CSV, performance summary, charts |
+| 7. Decisions & features | `docs/superpowers/specs/`, `docs/features/*/README.md`, `docs/backlog.md` | Locked designs, per-feature memory, unscheduled work |
 
----
+Two ideas hold the cabinet together:
 
-## 3. The memory layers (how context is kept)
+- **The session file is the anchor.** Every session starts by reading it; the `Environment` section records running services so nothing gets killed; `Next Steps` is the handoff. When you branch topics, each becomes a Work Log section in the same day's file — fresh sessions pick up from the file, not from chat memory.
+- **The context map is the compass.** Codegraph answers symbol questions ("who calls X?"), graphify answers architecture questions ("how does the auth slice relate to booking?"). Every symbol-level edit is supposed to log its lookup line — the weekly review's tripwire counts them.
 
-| Layer | Location | What it holds | Written by |
-|---|---|---|---|
-| **0. Global rules** | `~/.config/opencode/AGENTS.md` | Hard rules (`!`/`as T` ban), cost discipline, sidetrack guard, session template | me (audited weekly) |
-| **1. Project rules** | `AGENTS.md` (khelam + siblings) | HR#1 session-file mandate, conventions, demo seam, pre-commit gate | me |
-| **2. Daily session file** | `docs/sessions/YYYY-MM-DD.md` | Objective / Work Log / Decisions / Environment / Cleanup / Blockers / Next Steps — **the living handoff** | me, continuously |
-| **3. Status + plan contract** | `docs/sessions/*-status.md`, `docs/plans/*-day-plan.md` | `current_batch=N`, per-batch progress, scope manifests, dependency graph | me, per batch |
-| **4. Review memory** | `docs/reviews/review-memory.md` | Implemented measures, Review History, **ranked Open Actions** (checked before cost-flagged work) | me + weekly review |
-| **5. Update log** | `~/analytics/update-log.md` | Ledger of every rule/tooling change (dual-author: session logs, weekly verifies) | me + weekly review |
-| **5b. Context map** | `.codegraph/` (per repo), `graphify-out/` (per repo + cross-repo merge graphs) | Symbol index + semantic graph of the codebase — see §3b | codegraph + graphify (auto-rebuilt on commit) |
-| **6. Analytics** | `~/analytics/` | weekly CSV (23 sessions → cost/tokens), performance-summary, charts | weekly review (Sun 18:00) |
-| **7. Decisions & specs** | `docs/superpowers/specs/`, `docs/backlog.md` | Locked design decisions, unscheduled work | me + architect |
-| **7b. Feature READMEs** | `docs/features/<name>/README.md` | **Per-feature memory**: Problem/Solution/Scope, user stories, ADR decision table, domain models, implementation checklist, Test Plan, progress, backlinks | me (per feature, when chunks ship) |
+And work happens under a protocol: **morning planning** writes a day-plan contract → **batches** run under a trust dial (L1 halts for you, L2 auto-proceeds, L3 autonomous) → **evening review** audits acceptance bars, calibrates estimates, and writes a learnings table that feeds the next protocol.
 
-**The README roles, explicitly:**
-- **Feature READMEs are the feature-boundary handoff** — before work enters a feature directory, the session consults that feature's README (per global AGENTS.md "feature-boundary handoff" rule). They answer "what is this feature, what did we decide, what's done" without re-deriving from chat or session history.
-- **They are the screenshot-verification trigger anchor**: a feature-doc chunk added + UI-visible = screenshot for that screen (per the 08-06 design spec — `docs/features/<feature>/screens.yaml` sits next to the README).
-- **They feed analytics**: session Objective convention `Feature: docs/features/<name>/README.md — <task>` is machine-parseable → the weekly CSV's `feature_parent` column attributes cost to the feature. (First week: no session used it yet — convention added 08-06.)
-- **Root `README.md`** is the template identity (khelam = reusable starter template; points to legacy `memory.md`/`phase-1-checklist.md`) — informational, not part of the memory loop; feature work lives in feature READMEs.
+That's the design. Here's the truth.
 
-**Key invariants**: rules never live in two places (global vs project split); every symbol-level edit logs its lookup; a change without an update-log entry = violation; Open Actions are ranked so the highest-value fix gets picked first.
+## Chapter 4 — The hard truth: what's real and what isn't
 
-## 3b. The context map — codegraph + graphify
+The architect's grilling (08-06) compared every claim against the actual files. The verdict: **the system is selectively honest** — it admits some gaps while selling others as live. Here is the status of every mechanism, no softening:
 
-The **navigation layer** that lets the agent find code instead of brute-force grepping. Two tools, one routing rule:
+| Mechanism | Status | Evidence |
+|---|---|---|
+| Lookup-logging on symbol edits | ⚠️ **BROKEN** | Zero lookups in all feature sessions; tripwire passed only on a tooling-setup session |
+| Fresh session per batch | ⚠️ **BROKEN in v1** | One 5-day session ran the whole experiment (126M cache reads) |
+| Sandbox mechanical guard | ❌ **NOT SHIPPED** | `scope_guard.sh`, `sandbox_audit.sh` don't exist; update-log: "NOT installed" |
+| Open Actions get closed | ❌ **ACCUMULATING** | registerLabel (1-line fix) survived two deferral cycles |
+| `feature_parent` cost attribution | 🚧 **VAPOR** | `"-"` in all 23 CSV rows — no session used the Objective convention |
+| 30-day session archive | 🚧 **NOT IMPLEMENTED** | `docs/sessions/archive/` doesn't exist |
+| Learnings → next protocol | 🚧 **INFORMAL** | 9 learnings sit in a session file; no parser, no gate, nothing carries them forward |
+| Analytics "measured truth" | 🚧 **WEEK 1** | One week of data; trend columns all `—` |
 
-| Tool | What it indexes | Questions it answers | When to use |
-|---|---|---|---|
-| **codegraph** (`explore`/`node`/`sync`) | Symbols per repo (functions, classes, callers) | "Where is `X` defined?" "Who calls `Y`?" | Symbol-level questions before editing |
-| **graphify** (`query`/`path`/`explain`) | Semantic knowledge graph — cross-file, **cross-repo merge graphs** (khelam graph includes commons) | "How does A relate to B?" "Explain this concept" | Architecture/semantic questions |
+The grilling also caught a **latent bug**: the weekly review selects sessions with `find -maxdepth 1`, so if archiving ever activates, the review silently loses old sessions.
 
-- **Routing rule** (global AGENTS.md): symbol → codegraph, architecture → graphify. Use them BEFORE grep/read.
-- **Pre-edit rule**: every symbol-level edit logs its codegraph/graphify lookup reference in the session Work Log — the weekly review's `mechanical_check()` tripwire counts these lines (an edit without a lookup line = flagged).
-- **Auto-maintained**: graphify hooks rebuild the graph on commits (watch + merge-driver); codegraph syncs on demand. `graphify-out/` is denylisted from commits in khelam/commons.
-- **Honest gap**: this week's work sessions logged **zero** active lookups (the tripwire passed only on 08-01's setup session). Learnings row 3 (urgency 3) proposes: count work-session lookups only, and require per-symbol lookup lines. The system is designed to *measure* its own discipline and feed the fix into the next protocol.
+And one contradiction in the architecture itself: forkable is called "the future source of truth," but everything mirrors khelam → forkable, with no trigger, no owner, no date for the handoff.
 
----
+## Chapter 5 — The decision: you are the external gate
 
-## 4. The protocol — how work gets done
+The grilling's core finding was simple: **the agent was the sole author, grader, and auditor of its own protocol** — acceptance bars self-set, calibration self-reported, weekly review being a script that runs a prompt (agent auditing agent). That had to end.
 
-Three phases, one contract:
+**Decision (user, 2026-08-06): the external gate is you, and you are in charge of review.**
 
-1. **Morning planning** — I verify environment, write a Day Plan contract (batches, trust levels, scope manifests, estimates, dependency graph), you approve it. The contract is the ONLY document execution reads.
-2. **Batch execution** — each batch runs under a **trust dial**: `L1` halts for your approval, `L2` auto-proceeds (halts on deviations >20% estimate / destructive ops / bar not met), `L3` autonomous with deferred audit. Every batch logs a greppable `[CHECKPOINT]` line and checkpoint commit.
-3. **Evening review** — per-batch acceptance-bar audit, calibration table (est vs actual), drift/blocker audit, and a **Learnings for the next protocol** table.
+Three mechanisms make it real:
 
-**Failure handling**: retry policy (1-min wait × 4 = 5 attempts, 2-strike identical-error rule), sandbox scope manifests (deny beats allow, force-push banned), `[FAIL]` log lines.
+1. **You close every Open Action.** At each weekly review, every open action gets a signed resolution from you: **fix / defer-with-date / drop**. No action survives two reviews without one. "Defer to review" is no longer a loop — it's a ticket with an owner and a date.
+2. **Protocol changes must prove their worth.** Any proposal the weekly review emits must cite the *specific quantified waste* it prevents (e.g. "registerLabel: analyze red all week, 1-line fix"). Abstract "process improvement" proposals are rejected.
+3. **Your estimate column is a hard gate.** Day plans are not approved until you fill the user-estimate column. Calibration is a two-player game, not agent self-report.
 
-**The learning loop**: the evening review's 9-row learnings table (urgency-ranked) is the **input for the next task's protocol** — at the next morning planning, each row gets adopted / amended / rejected into protocol v2, and that task's evening review verifies the adoptions worked. The table is a feedback instrument, not a report.
+Everything else is downstream of this: the sandbox guards, the archive fix, the learnings parser — they're all buildable, but none of them matter if the system can't be trusted to audit itself. Now it can't — because you do.
 
----
+## Chapter 6 — The plan from here
 
-## 5. Context follow-through (your branching sessions)
+| What | When | Who |
+|---|---|---|
+| Open Actions #1–#4: your signed resolutions | Next weekly review (Sun 18:00) | You |
+| Screenshot-verification design → 3-batch implementation | When scheduled | Agent (your approval gates) |
+| Learnings ingestion gate (Day Plan template requires adopt/amend/reject of prior learnings) | Next task's morning planning | Agent + you |
+| Sandbox guards installed OR §4 relabeled "deferred" | Next batch touching scripts | Agent |
+| Archive bug fixed (selector descends into `archive/`) | Next tooling pass | Agent |
+| forkable handoff trigger + owner stated | Before forkable becomes source of truth | You |
+| Story-driven docs (this document + session files) | Ongoing | Agent |
 
-When you switch between topics mid-day, this is what keeps everything consistent:
-
-1. **Session start**: I read today's session file; if missing, create it carrying forward `Next Steps` + `Environment` from the previous day.
-2. **Environment section**: running services (backend :8000, launchd, emulator, simulator) are recorded — the next session never kills or duplicates them.
-3. **Read-once discipline**: files are read once per session; earlier reads are reused. Session files reference codegraph/graphify lookups so navigation isn't repeated.
-4. **Status file is machine-readable**: scripts read `current_batch=N`; you can `cat` it anytime for a one-glance state.
-5. **Branching is safe**: each topic becomes a Work Log section in the same day's file (e.g. "macOS build fix", "screenshot verification design" after the experiment closeout). Fresh sessions pick up from the file, not from chat memory.
-6. **Weekly review is the safety net**: any rule drift, waste, or missed Open Action gets caught Sunday 18:00 and lands in review-memory.
-
----
-
-## 6. Project management plan (going forward)
-
-- **Work intake**: new ideas → `docs/backlog.md` with source link + open questions → when picked up, becomes a feature README or a spec → then a day-plan contract.
-- **Cadence**: daily session file (mandatory, HR#1); weekly review (automated Sun 18:00 → review doc + analytics + update-log); quarterly rule gut-check ("did this rule cost more than it saved?").
-- **Memory hygiene**: session files archived after 30 days (monthly file); review-memory kept ≤120 lines; update-log dual-author; screenshots land in gitignored `docs/screenshots/`.
-- **One-off experiment rule**: v1 execution protocol is an experiment — the formalized protocol is built from its learnings at the **next** task's planning.
-- **Current queue**: 4 Open Actions (registerLabel fix, session boundaries, commons self-analyze, README refresh) + screenshot-verification design (3 batches) + 9 learnings awaiting next-task adoption.
-
----
-
-## 7. Where things live (quick map)
+## Appendix — File map
 
 ```
 ~/.config/opencode/AGENTS.md        → global rules (never edit casually)
 AGENTS.md (4 repos)                 → project rules
 README.md                           → template identity (informational)
-docs/sessions/YYYY-MM-DD.md         → daily living memory
+docs/sessions/YYYY-MM-DD.md         → daily living memory (the anchor)
 docs/sessions/*-status.md           → machine-readable progress
-docs/plans/                         → day-plan contracts
-docs/reviews/review-memory.md       → Open Actions + measures (read first)
+docs/plans/                         → day-plan contracts (need your estimate column)
+docs/reviews/review-memory.md       → Open Actions + measures (you close actions here)
 docs/reviews/YYYY-MM-DD.md          → weekly review reports
 docs/superpowers/specs/             → locked designs (execution model, sandbox, screenshot)
-.codegraph/ + graphify-out/          → context map: symbol index + semantic graph (auto-rebuilt; gitignored)
-docs/features/*/README.md           → declared features (booking-calendar): per-feature memory + screens.yaml registry
+.codegraph/ + graphify-out/         → context map (auto-rebuilt, gitignored)
+docs/features/*/README.md           → per-feature memory + screens.yaml registry
 docs/backlog.md                     → unscheduled work
-~/analytics/                        → measured truth (CSV, summary, charts, update-log)
+~/analytics/                        → measured truth (week 1; trends accumulate)
 ```
+
+**One line to remember:** the agent carries the memory; you carry the review.
