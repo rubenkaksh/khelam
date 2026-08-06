@@ -33,6 +33,7 @@ Khelam runs on a **layered memory system**: durable rules live in `AGENTS.md` fi
 | **3. Status + plan contract** | `docs/sessions/*-status.md`, `docs/plans/*-day-plan.md` | `current_batch=N`, per-batch progress, scope manifests, dependency graph | me, per batch |
 | **4. Review memory** | `docs/reviews/review-memory.md` | Implemented measures, Review History, **ranked Open Actions** (checked before cost-flagged work) | me + weekly review |
 | **5. Update log** | `~/analytics/update-log.md` | Ledger of every rule/tooling change (dual-author: session logs, weekly verifies) | me + weekly review |
+| **5b. Context map** | `.codegraph/` (per repo), `graphify-out/` (per repo + cross-repo merge graphs) | Symbol index + semantic graph of the codebase — see §3b | codegraph + graphify (auto-rebuilt on commit) |
 | **6. Analytics** | `~/analytics/` | weekly CSV (23 sessions → cost/tokens), performance-summary, charts | weekly review (Sun 18:00) |
 | **7. Decisions & specs** | `docs/superpowers/specs/`, `docs/backlog.md` | Locked design decisions, unscheduled work | me + architect |
 | **7b. Feature READMEs** | `docs/features/<name>/README.md` | **Per-feature memory**: Problem/Solution/Scope, user stories, ADR decision table, domain models, implementation checklist, Test Plan, progress, backlinks | me (per feature, when chunks ship) |
@@ -44,6 +45,20 @@ Khelam runs on a **layered memory system**: durable rules live in `AGENTS.md` fi
 - **Root `README.md`** is the template identity (khelam = reusable starter template; points to legacy `memory.md`/`phase-1-checklist.md`) — informational, not part of the memory loop; feature work lives in feature READMEs.
 
 **Key invariants**: rules never live in two places (global vs project split); every symbol-level edit logs its lookup; a change without an update-log entry = violation; Open Actions are ranked so the highest-value fix gets picked first.
+
+## 3b. The context map — codegraph + graphify
+
+The **navigation layer** that lets the agent find code instead of brute-force grepping. Two tools, one routing rule:
+
+| Tool | What it indexes | Questions it answers | When to use |
+|---|---|---|---|
+| **codegraph** (`explore`/`node`/`sync`) | Symbols per repo (functions, classes, callers) | "Where is `X` defined?" "Who calls `Y`?" | Symbol-level questions before editing |
+| **graphify** (`query`/`path`/`explain`) | Semantic knowledge graph — cross-file, **cross-repo merge graphs** (khelam graph includes commons) | "How does A relate to B?" "Explain this concept" | Architecture/semantic questions |
+
+- **Routing rule** (global AGENTS.md): symbol → codegraph, architecture → graphify. Use them BEFORE grep/read.
+- **Pre-edit rule**: every symbol-level edit logs its codegraph/graphify lookup reference in the session Work Log — the weekly review's `mechanical_check()` tripwire counts these lines (an edit without a lookup line = flagged).
+- **Auto-maintained**: graphify hooks rebuild the graph on commits (watch + merge-driver); codegraph syncs on demand. `graphify-out/` is denylisted from commits in khelam/commons.
+- **Honest gap**: this week's work sessions logged **zero** active lookups (the tripwire passed only on 08-01's setup session). Learnings row 3 (urgency 3) proposes: count work-session lookups only, and require per-symbol lookup lines. The system is designed to *measure* its own discipline and feed the fix into the next protocol.
 
 ---
 
@@ -96,6 +111,7 @@ docs/plans/                         → day-plan contracts
 docs/reviews/review-memory.md       → Open Actions + measures (read first)
 docs/reviews/YYYY-MM-DD.md          → weekly review reports
 docs/superpowers/specs/             → locked designs (execution model, sandbox, screenshot)
+.codegraph/ + graphify-out/          → context map: symbol index + semantic graph (auto-rebuilt; gitignored)
 docs/features/*/README.md           → declared features (booking-calendar): per-feature memory + screens.yaml registry
 docs/backlog.md                     → unscheduled work
 ~/analytics/                        → measured truth (CSV, summary, charts, update-log)
