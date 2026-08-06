@@ -50,7 +50,7 @@ Full register: `docs/reviews/2026-08-05-full-history-audit.md` (librarian audit,
 
 ## Open Actions (Ranked)
 
-None open as of 2026-08-05 — all 8 from the librarian audit implemented (see Implemented Measures). New actions get added here after each weekly review.
+1. **commons `_FakeStrings` missing `registerLabel` getter** — `test/auth/login_screen_test.dart:6` fails analyze (interface gained the getter in v0.5.0 `1890d05`; fake never updated). Discovered 2026-08-06 during background-agent Batch 2 validation (pre-existing, unrelated to AGENTS.md deletion). Decision: log + defer to weekly review (user 2026-08-06). Fix: add `String get registerLabel => '...'` override. Severity: low (test-only, analyze red).
 
 ---
 
