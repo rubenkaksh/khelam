@@ -14,6 +14,8 @@ When a UI-affecting change ships (replacing a component, adding a feature chunk 
 | 2 | Trigger on feature-doc chunk added **and** UI-visible (component replace/add, large feature chunk). **Skip** text changes, layout tweaks. | Avoid screenshot noise |
 | 3 | Screenshots embedded into the PR description. | PR = review surface |
 | 4 | iOS only (iPhone 16 Pro Max simulator). Android out of scope. | Platform cap |
+| 5 | Screenshots land in `docs/screenshots/feature/YYYY-MM-DD.png`, and `docs/screenshots/` is **gitignored** (not committed). | Local artifact; repo stays lean |
+| 6 | Deep-link URL-scheme (non-initial routes) = **deferred scope, V2**. | v0 covers initial route only |
 
 ## 3. Mechanism for capture — options evaluated
 
@@ -72,14 +74,14 @@ Per-feature YAML at `docs/features/<feature>/screens.yaml`, discovered by globbi
 
 ## 7. PR integration
 
-Screenshots are **not** committed (binary, regenerable — keeps the repo lean and the pre-commit gate fast). The script writes PNGs to a timestamped dir and prints a markdown snippet the caller pastes into the PR description; the user drags the PNGs from Finder into the PR (GitHub embed support) — zero upload deps.
+Screenshots land in `docs/screenshots/feature/YYYY-MM-DD.png` (per decision 5) — a **local, gitignored** artifact (`docs/screenshots/` added to `.gitignore`: regenerable, keeps the pre-commit gate fast). The script writes the PNG to that path and prints a markdown snippet the caller pastes into the PR description; the user drags the PNG from Finder into the PR (GitHub embed support) — zero upload deps.
 
 ```
 ---
 ## UI Screenshots — 2026-08-06 18:20 (iOS / iPhone 16 Pro Max)
 
-![schedule](docs/screenshots/2026-08-06_18-20-00/schedule_2026-08-06_18-20-00.png)
-> Drag the PNGs from Finder into this block to embed.
+![schedule](docs/screenshots/booking-calendar/2026-08-06.png)
+> Drag the PNG from Finder into this block to embed.
 ---
 ```
 
@@ -109,6 +111,7 @@ Screenshots are **not** committed (binary, regenerable — keeps the repo lean a
 | `scripts/capture_screens.sh` | Primary capture script (new) |
 | `scripts/sync_to_forkable.sh` | Lightweight khelam→forkable mirror for `scripts/` + `docs/features/` (new) |
 | `docs/features/booking-calendar/screens.yaml` | Screen registry entry for `schedule` (new) |
+| `.gitignore` | Add `docs/screenshots/` (decision 5) |
 
 **Batch breakdown (background-agent protocol):**
 - **Batch 1 [L2]** — `capture_screens.sh` + `schedule` screens.yaml entry; acceptance = `bash -n` clean + dry-run resolving the screen.
@@ -122,8 +125,9 @@ Screenshots are **not** committed (binary, regenerable — keeps the repo lean a
 3. `/tmp/ss-test/schedule_<timestamp>.png` exists, `file` reports `PNG image data` (1320×2868), size >5 KB.
 4. Screenshots are of the schedule screen (date strip + turf header visible) — verified by sanity size + the initial-route invariant.
 
-## 12. Open items
+## 12. Deferred scope (V2)
 
-- **URL-scheme registration**: to reach non-initial routes via `simctl openurl`, `Info.plist` + `go_router` deep-link config must be added (one-time Dart/iOS change; not in this design's scope, tracked for when trigger expands beyond `schedule`).
+- **URL-scheme registration**: to reach non-initial routes via `simctl openurl`, `Info.plist` + `go_router` deep-link config must be added (one-time Dart/iOS change). V2 unlocks `home`, `login`, `theme-preview` screens. Tracked in the backlog; screens.yaml already carries the `deep_link` field so v0 entries for non-initial routes are a drop-in once the scheme lands.
 - **CI hook**: a non-blocking CI job that captures on PRs is deferred — the primary path is local/scripted, run by the agent before PR closeout.
+- **Android**: same script extends via `adb exec-out screencap`; not built now (decision 4).
 - **Cost estimate**: implementation ≈ 3 k tokens writing scripts + 4 k tokens CLI validation (free tier, $0).
