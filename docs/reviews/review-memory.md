@@ -62,6 +62,7 @@ Full register: `docs/reviews/2026-08-05-full-history-audit.md` (librarian audit,
 2. **Session boundaries** — fresh session per batch per execution-model spec; flag weekly sessions older than 1 day with >50M cache reads (Review: 2026-08-06, add #2).
 3. **Origin-repo self-check** — extend session-time commons consumer check to run `flutter analyze` in commons itself (its own test fake was broken while only consumers were checked) (Review: 2026-08-06, add #3).
 4. **Refresh feature README** — booking-calendar Out-of-scope list stale (API integration + auth guard shipped this week); update `docs/features/booking-calendar/README.md` (Review: 2026-08-06, add #4).
+5. **forkable handoff trigger (pending decision, user)** — strategy Ch. 6: "future source of truth" needs a trigger + owner (what khelam milestone copies the setup to forkable, who validates). User: pick up first thing after the 2026-08-09 weekly review (2026-08-06).
 
 ---
 
