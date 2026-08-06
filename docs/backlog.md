@@ -26,3 +26,7 @@ Work items not yet scheduled into a plan. Each entry links its source (review/se
 
 ## Note (2026-08-06)
 - `docs/superpowers/specs/` + `docs/superpowers/plans/` stay as-is — not declared features (no feature READMEs yet). Declared-feature model: `docs/features/<name>/README.md`; booking-calendar is the first (migrated from `docs/prd/`).
+
+## From the 2026-08-06 session
+
+- **UI screenshot verification** — when making any UI-affecting feature (major changes), run on the simulator/emulator and capture screenshots as part of the acceptance bar. Idea: a separate package/script (`khelam_screenshot_verify` or similar) that boots the app, navigates the flow, and saves screenshots to a timestamped dir for the review/closeout. Open questions before scheduling: (a) standalone package vs script inside khelam, (b) which UI flows are the canonical capture set, (c) whether screenshots gate the commit or just attach to the report, (d) iOS simulator + Android emulator both, or one first.
