@@ -63,6 +63,7 @@ Full register: `docs/reviews/2026-08-05-full-history-audit.md` (librarian audit,
 3. **Origin-repo self-check** — extend session-time commons consumer check to run `flutter analyze` in commons itself (its own test fake was broken while only consumers were checked) (Review: 2026-08-06, add #3).
 4. **Refresh feature README** — booking-calendar Out-of-scope list stale (API integration + auth guard shipped this week); update `docs/features/booking-calendar/README.md` (Review: 2026-08-06, add #4).
 5. **forkable handoff trigger (pending decision, user)** — strategy Ch. 6: "future source of truth" needs a trigger + owner (what khelam milestone copies the setup to forkable, who validates). User: pick up first thing after the 2026-08-09 weekly review (2026-08-06).
+6. **Screenshot-verification implementation** — design locked `docs/superpowers/specs/2026-08-06-ui-screenshot-verification-design.md` (6 user decisions). 3 batches: B1 [L2] `capture_screens.sh` + screens.yaml, B2 [L1] live iOS-sim validation, B3 [L2] `sync_to_forkable.sh` mirror. Est ~7k tokens. User: pick up **after #5** (2026-08-06).
 
 ---
 
