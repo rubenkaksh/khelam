@@ -34,7 +34,14 @@ Khelam runs on a **layered memory system**: durable rules live in `AGENTS.md` fi
 | **4. Review memory** | `docs/reviews/review-memory.md` | Implemented measures, Review History, **ranked Open Actions** (checked before cost-flagged work) | me + weekly review |
 | **5. Update log** | `~/analytics/update-log.md` | Ledger of every rule/tooling change (dual-author: session logs, weekly verifies) | me + weekly review |
 | **6. Analytics** | `~/analytics/` | weekly CSV (23 sessions → cost/tokens), performance-summary, charts | weekly review (Sun 18:00) |
-| **7. Decisions & specs** | `docs/superpowers/specs/`, `docs/features/*/README.md`, `docs/backlog.md` | Locked design decisions, declared features, unscheduled work | me + architect |
+| **7. Decisions & specs** | `docs/superpowers/specs/`, `docs/backlog.md` | Locked design decisions, unscheduled work | me + architect |
+| **7b. Feature READMEs** | `docs/features/<name>/README.md` | **Per-feature memory**: Problem/Solution/Scope, user stories, ADR decision table, domain models, implementation checklist, Test Plan, progress, backlinks | me (per feature, when chunks ship) |
+
+**The README roles, explicitly:**
+- **Feature READMEs are the feature-boundary handoff** — before work enters a feature directory, the session consults that feature's README (per global AGENTS.md "feature-boundary handoff" rule). They answer "what is this feature, what did we decide, what's done" without re-deriving from chat or session history.
+- **They are the screenshot-verification trigger anchor**: a feature-doc chunk added + UI-visible = screenshot for that screen (per the 08-06 design spec — `docs/features/<feature>/screens.yaml` sits next to the README).
+- **They feed analytics**: session Objective convention `Feature: docs/features/<name>/README.md — <task>` is machine-parseable → the weekly CSV's `feature_parent` column attributes cost to the feature. (First week: no session used it yet — convention added 08-06.)
+- **Root `README.md`** is the template identity (khelam = reusable starter template; points to legacy `memory.md`/`phase-1-checklist.md`) — informational, not part of the memory loop; feature work lives in feature READMEs.
 
 **Key invariants**: rules never live in two places (global vs project split); every symbol-level edit logs its lookup; a change without an update-log entry = violation; Open Actions are ranked so the highest-value fix gets picked first.
 
@@ -82,13 +89,14 @@ When you switch between topics mid-day, this is what keeps everything consistent
 ```
 ~/.config/opencode/AGENTS.md        → global rules (never edit casually)
 AGENTS.md (4 repos)                 → project rules
+README.md                           → template identity (informational)
 docs/sessions/YYYY-MM-DD.md         → daily living memory
 docs/sessions/*-status.md           → machine-readable progress
 docs/plans/                         → day-plan contracts
 docs/reviews/review-memory.md       → Open Actions + measures (read first)
 docs/reviews/YYYY-MM-DD.md          → weekly review reports
 docs/superpowers/specs/             → locked designs (execution model, sandbox, screenshot)
-docs/features/*/README.md           → declared features (booking-calendar)
+docs/features/*/README.md           → declared features (booking-calendar): per-feature memory + screens.yaml registry
 docs/backlog.md                     → unscheduled work
 ~/analytics/                        → measured truth (CSV, summary, charts, update-log)
 ```
