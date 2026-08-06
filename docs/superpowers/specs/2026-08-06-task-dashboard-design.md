@@ -1,8 +1,12 @@
-# Design — Task/Ticket Breakdown Dashboard (v1, Supabase pivot)
+# Design — Task/Ticket Breakdown Dashboard (v2, standalone project, Supabase pivot)
 
-> Date: 2026-08-06. Status: PROPOSED — awaiting approval. Spec lives at `docs/superpowers/specs/` (not a declared feature; matches the 2026-08-06 screenshot-verification precedent). Implementation target: `lib/features/dashboard/` + a macOS run target.
+> Date: 2026-08-06. Status: PROPOSED — awaiting approval. Spec lives at `docs/superpowers/specs/` (not a declared feature; matches the 2026-08-06 screenshot-verification precedent). Implementation target: **standalone Flutter project** at `~/projects/task-dashboard`.
 >
-> **Changelog** (2026-08-06, user pivot): storage moved **local Isar → Supabase** to enable a *bidirectional* task queue (user flips a ticket in the app → status lands in the DB → the agent picks it up as the worker). All LOCKED UI/form-factor decisions (§2 #1–#5) are unchanged; the dashboard slice, macOS route guard, and three-column kanban are identical. Only the data plane changes: isar → supabase client + local JSON cache. Markdown remains the audit trail for the external review gate.
+> **Changelog** (2026-08-06, user decisions):
+> - **v1** (user pivot): storage moved **local Isar → Supabase** to enable a *bidirectional* task queue (user flips a ticket in the app → status lands in the DB → the agent picks it up as the worker).
+> - **v2** (user): **location moved OUT of khelam** — the dashboard is a **separate simple Flutter project** (`~/projects/task-dashboard`, own repo), NOT a khelam feature slice. It serves **all agentic tasks that require user review/decisions going forward** (khelam, forkable, backend, commons, cross-project), not just khelam's. Open questions 1–3 answered with architect's leanings: **auth = email/password signup**, **service key = `~/.config/khelam/sb.env`**, **seed = manual/on-demand v1**.
+>
+> Locked UI/form-factor decisions (§2 #1–#5) are unchanged; three-column kanban identical. Only the data plane + project location change: supabase client + local JSON cache in a standalone app.
 
 ## Pivot (Supabase) — executive summary
 
@@ -17,7 +21,7 @@
 - `Dart SDK 3.8.0` caps `supabase_flutter` at **2.15.4** — `2.16.0+` requires SDK ≥3.9.0 (pub resolution fails on `sdk: ^3.8.0`). Resolved stack: `supabase 2.13.4` / `postgrest 2.8.0` / `realtime_client 2.10.0` / `gotrue 2.25.0`. Compatible; no upgrade needed.
 - Supabase free tier (500 MB, 50 k MAU, **2 concurrent connections**, pauses after 7 d idle) is ample for a single-user tool. The 2-conn cap is honoured by design: 1 for the app, 1 for the poll script; no realtime listener (saves a websocket connection).
 - `supabase` CLI is installable via `npx --yes supabase@2.111.0` for local dev (`supabase start` → local Postgres/gotrue/postgrest/realtime); no global install required.
-- khelam pubspec already carries `flutter_secure_storage` + `flutter_dotenv` (JWT + env persistence, zero new deps for auth plumbing) and `dio ^5.9.2` (commons `DioApiClient` **stays** for the NestJS booking API — Supabase is a *separate* client, not a dio replacement).
+- Standalone project uses `flutter_secure_storage` + `flutter_dotenv` (JWT + env persistence, standard deps) and `supabase_flutter 2.15.4` for the Supabase client. No dio, no commons dependency — the dashboard talks only to Supabase REST (via supabase_flutter), never to the NestJS API. khelam's pubspec is untouched by this project.
 - `.env` is **tracked** in git (`git ls-files .env` → confirmed); it is safe to hold the **anon** key (public-by-design). The **service_role** key is the real secret and lives only in `~/.config/khelam/sb.env` (never committed).
 
 ---
@@ -36,10 +40,19 @@ A personal, macOS-only **controller** over the project's markdown memory. The us
 | 4 | Done card | subtle opacity dip + completed timestamp |
 | 5 | Status marker | `Container`+`BoxDecoration` circle, no icon assets; colors red=blocked, amber=in-progress, green=done, gray=todo |
 | 6 | Storage | **REVISED** → Supabase (was: local DB hive/isar); a local JSON cache backs offline + optimistic updates |
+| 7 | Project location | **REVISED (v2)** → standalone Flutter project `~/projects/task-dashboard` (own repo, NOT a khelam slice). Scope: **all agentic tasks requiring user review/decisions** — cross-project (khelam, forkable, backend, commons, future repos) |
+| 8 | Auth | email/password one-time signup, JWT in secure storage (architect lean, user 2026-08-06) |
+| 9 | Service key storage | `~/.config/khelam/sb.env`, never committed (architect lean, user 2026-08-06) |
+| 10 | Seed frequency | manual/on-demand `sync_tasks.sh` v1; automate into weekly_review only if drift shows (architect lean, user 2026-08-06) |
 
-## 3. App form factor & location — LOCKED (unchanged)
+## 3. App form factor & location — LOCKED (v2, standalone)
 
-Decision — feature slice inside khelam (`lib/features/dashboard/`) behind a macOS-only route guard. New slice ADR-0004 layout: `bloc/`, `data/`, `models/`, `views/`, `widgets/`. macOS-only route via a platform-conditional `GoRoute('/dashboard')` in `app_router.dart` (`defaultTargetPlatform == TargetPlatform.macOS` gates route registration; a debug `assert` backs it). Run with `flutter run -d macos`. (Full text unchanged — see v0 §3.)
+Decision — **standalone Flutter project** at `~/projects/task-dashboard` (own git repo, simple structure: `lib/` with `main.dart` + minimal feature folders; macOS run target). NOT a khelam feature slice — khelam stays a pure mobile/desktop app; the dashboard is a separate tool that may consume data from any project's markdown. Run with `flutter run -d macos`. No commons dependency, no khelam pubspec change → **no commons-consumer check triggered** (forkable unaffected). Supabase client + local JSON cache only.
+
+Implications of standalone (vs v0's in-khelam):
+- Sync scripts live in the dashboard repo (`scripts/check_queue.sh`, `ticket_queue.sh`, `sync_tasks.sh`) — they read markdown from ANY repo path passed as an argument (e.g. `--source ~/projects/khel-service/khelam/docs/reviews/review-memory.md`), defaulting to khelam's paths.
+- Write-back appends to the source repo's `review-memory.md` — the external audit gate stays per-project; each project's weekly review reads its own markdown.
+- No route-guard needed (no mobile target); macOS is the only target.
 
 ## 4. Storage: Supabase vs local cache (re-evaluated)
 
@@ -130,30 +143,29 @@ Why markdown stays a first-class record: `management-strategy.md` Ch. 5 makes **
 - **App client**: compiled Dart (supabase_flutter); fetches the board via REST — no extra model calls.
 - **Expected implementation cost**: ~28–34 k tokens across B1–B3, all free-tier ($0) — consistent with `performance-summary.md` Week 1 ($0).
 
-## 11. Deliverables (files)
+## 11. Deliverables (files — all in the standalone project `~/projects/task-dashboard`)
 
 | File | Purpose |
 |---|---|
-| `docs/superpowers/specs/2026-08-06-task-dashboard-design.md` | this spec (revised) |
+| `docs/superpowers/specs/2026-08-06-task-dashboard-design.md` | this spec (revised; lives in khelam's docs as the design record) |
 | `supabase/migrations/20260806_create_tickets.sql` | `tickets` table + check enums + RLS + `updated_at` trigger |
 | `supabase/.gitignore` (+ root `.gitignore` add) | `supabase/.env` (local service_role) never committed |
-| `lib/features/dashboard/models/ticket.dart` | freezed `@JsonSerializable` Ticket (supabase row), + enums |
-| `lib/features/dashboard/models/ticket.g.dart` | generated (`build_runner`) |
-| `lib/features/dashboard/data/supabase_client.dart` | `SupabaseClient` init from `.env` (URL + anon key) |
-| `lib/features/dashboard/data/ticket_repository.dart` | fetch upsert + local JSON cache (`task_cache.json` / `task_pending.json`) |
-| `lib/features/dashboard/bloc/dashboard_cubit.dart` | loads tickets → emits `List<Ticket>`; optimistic writes + refresh-on-focus |
-| `lib/features/dashboard/views/dashboard_view.dart` | LOCKED 3-column board |
-| `lib/features/dashboard/widgets/task_card.dart` | LOCKED card + dot + progress + opacity + sheet |
-| `lib/ui/navigation/app_router.dart` + `app_routes.dart` | add macOS-only `/dashboard` route guard |
+| `lib/models/ticket.dart` | freezed `@JsonSerializable` Ticket (supabase row), + enums |
+| `lib/models/ticket.g.dart` | generated (`build_runner`) |
+| `lib/data/supabase_client.dart` | `SupabaseClient` init from `.env` (URL + anon key) |
+| `lib/data/ticket_repository.dart` | fetch upsert + local JSON cache (`task_cache.json` / `task_pending.json`) |
+| `lib/bloc/dashboard_cubit.dart` | loads tickets → emits `List<Ticket>`; optimistic writes + refresh-on-focus |
+| `lib/views/dashboard_view.dart` | LOCKED 3-column board |
+| `lib/widgets/task_card.dart` | LOCKED card + dot + progress + opacity + sheet |
 | `.env` | add `SUPABASE_URL` + `SUPABASE_ANON_KEY` (tracked, public anon key) |
-| `scripts/sync_tasks.sh` | parses markdown → UPSERT `tickets` (idempotent, status-preserving) |
+| `scripts/sync_tasks.sh` | parses markdown → UPSERT `tickets` (idempotent, status-preserving); takes `--source <path>` for any repo |
 | `scripts/check_queue.sh` | lists `status='ready'` via PostgREST (service_role from `~/.config/khelam/sb.env`) |
 | `scripts/ticket_queue.sh` | `claim`/`complete`/`block` subcommands → REST PATCH + markdown write-back |
 
 ## 12. Batch breakdown (background-agent protocol)
 
 - **Batch 1 [L2] — Supabase project + schema + seed**: `npx supabase init` + migration SQL (enums + RLS + trigger) + `sync_tasks.sh` (md→supabase UPSERT by `source_id`). Acceptance: `supabase db push` succeeds; seed writes ≥6 `oa-*` + 3 backlog + 1 dayplan + 9 learnings with `status=todo` (no status clobber); `bash -n` clean; script is idempotent. Est ~6 k.
-- **Batch 2 [L1] — App client + dashboard slice**: add `supabase_flutter ^2.15.4` to pubspec; `supabase_client.dart` + `ticket.dart` (freezed) + `DashboardCubit` (fetch/cache/optimistic/refresh-on-focus) + macOS `/dashboard` route guard; rebuild LOCKED 3-column UI. Acceptance: `flutter analyze` clean; `flutter run -d macos` renders 3 columns from seeded tickets; flipping todo→ready persists; offline renders cache. Est ~14 k.
+- **Batch 2 [L1] — App client + board UI (standalone project)**: `flutter create` the project; add `supabase_flutter ^2.15.4` to pubspec; `supabase_client.dart` + `ticket.dart` (freezed) + `DashboardCubit` (fetch/cache/optimistic/refresh-on-focus); rebuild LOCKED 3-column UI. Acceptance: `flutter analyze` clean; `flutter run -d macos` renders 3 columns from seeded tickets; flipping todo→ready persists; offline renders cache. Est ~14 k.
 - **Batch 3 [L2] — Agent loop + pickup + write-back**: `check_queue.sh` + `ticket_queue.sh` (claim/complete/block) using service_role; complete appends to `review-memory.md`. Acceptance: `supabase start` running; `check_queue` lists a ready ticket; claim → `inProgress` visible in app after refresh; complete → `done` + `completedAt` + markdown resolution line. Est ~8 k.
 
 > **Commons-consumer check**: only khelam's pubspec changes (supabase_flutter); forkable does **not** build the dashboard → no forkable dep change. Per `AGENTS.md`, run `flutter analyze` in both khelam and forkable before committing any pubspec change.
