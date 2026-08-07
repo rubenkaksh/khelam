@@ -58,3 +58,6 @@ graphify-out/
 # Generated docs
 docs/*.pdf
 *.code-workspace
+
+# Local screenshot artifacts (regenerable, for PR review — never committed)
+docs/screenshots/

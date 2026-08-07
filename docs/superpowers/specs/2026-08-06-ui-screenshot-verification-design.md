@@ -1,6 +1,6 @@
 # Design — UI Screenshot Verification (v0, initial)
 
-> Date: 2026-08-06. Status: PROPOSED — awaiting morning-planning slot. Lives at `docs/superpowers/specs/` (not a declared feature; matches the 2026-08-06 precedent for `docs/superpowers/specs/`).
+> Date: 2026-08-06. Status: **LOCKED — amended 2026-08-07** (decision #1 + §8 rewritten forkable-first per OA#5 policy: forkable = base template, shared capabilities land forkable-first). Lives at `docs/superpowers/specs/` (not a declared feature; matches the 2026-08-06 precedent for `docs/superpowers/specs/`).
 
 ## 1. Purpose
 
@@ -10,7 +10,7 @@ When a UI-affecting change ships (replacing a component, adding a feature chunk 
 
 | # | Decision | Constraint |
 |---|----------|------------|
-| 1 | Script lives in khelam, pulled to forkable with migrations. Must also solve "khelam-common points → forkable" sync of the tooling itself. | khelam is primary; forkable = future source of truth |
+| 1 | **Forkable-first (amended 2026-08-07, OA#5 policy)**: canonical script lives in `forkable/scripts/capture_screens.sh`; khelam pulls a synced copy. khelam never edits it forkable-first — the weekly forkable-sync tripwire flags drift. | forkable = base template; shared capabilities forkable-first |
 | 2 | Trigger on feature-doc chunk added **and** UI-visible (component replace/add, large feature chunk). **Skip** text changes, layout tweaks. | Avoid screenshot noise |
 | 3 | Screenshots embedded into the PR description. | PR = review surface |
 | 4 | iOS only (iPhone 16 Pro Max simulator). Android out of scope. | Platform cap |
@@ -85,16 +85,16 @@ Screenshots land in `docs/screenshots/feature/YYYY-MM-DD.png` (per decision 5) �
 ---
 ```
 
-## 8. Sync strategy to forkable (decision 1)
+## 8. Sync strategy to forkable (decision 1 — amended forkable-first, 2026-08-07)
 
 | Artifact | Where it lives | Sync mechanics | Why here |
 |---|---|---|---|
-| `scripts/capture_screens.sh` | khelam `scripts/` | `scripts/sync_to_forkable.sh` mirrors `scripts/` → forkable (NEW, ~15-line rsync/cp). Triggered manually, part of the khelam→forkable migration batch. | Shell tooling stays in-app (per decision 1); no commons involvement. |
-| `docs/features/*/screens.yaml` | khelam `docs/features/` | Same mirror script (`docs/features/`) → forkable. | Screen registry is feature-doc metadata, not shared code. |
+| `scripts/capture_screens.sh` | **canonical: forkable `scripts/`**; pulled copy in khelam `scripts/` | Manual pull (`cp` canonical → khelam) on change; **forkable-sync tripwire** (`forkable_sync_check()` in canonical `weekly_review.sh`) verifies `scripts/` byte-identical and flags child-only drift. The old khelam→forkable `sync_to_forkable.sh` mirror is **dropped** — obsoleted by the pull model. | Shared capability → forkable-first (OA#5). |
+| `docs/features/*/screens.yaml` | Per-app data — khelam `docs/features/booking-calendar/screens.yaml` only | **Not mirrored.** Screens are app-specific (bundle id, routes, feature docs); forkable's script globs its own (empty) registry until a child app declares screens. | App data, not shared capability. |
 | Shared **Dart** logic (future, e.g. URL-scheme routing helper) | `commons` package (versioned) | `commons` version bump → both apps `pub get` via git ref. | Only shared Dart goes to commons; shell scripts never do. |
-| Design spec (this file) | khelam `docs/superpowers/specs/` | Mirror to forkable `docs/superpowers/specs/`. | Specs are doc artifacts, mirrored with the rest. |
+| Design spec (this file) | khelam `docs/superpowers/specs/` | Stays in the repo whose feature it plans (khelam superpowers doc). Shared *capability* specs would be canonical forkable-first — not applicable here. | Specs are per-repo planning docs. |
 
-**Current gap:** forkable has no `scripts/` dir today — the first sync run creates it. The mirror is one-directional (khelam → forkable), matching the "forkable is future source of truth" migration pattern (forkable `AGENTS.md` §3: copy khelam's setup at end of development).
+**Current state:** forkable has the full `scripts/` set already (governance-tooling migration, 2026-08-07) — this script joins the same canonical set. The pull is one-directional (forkable → children), matching the forkable-first policy. Script is repo-agnostic: derives `REPO` from `BASH_SOURCE` and the app bundle id from `ios/Runner.xcodeproj/project.pbxproj` (works for khelam `com.megamanus.khelam` and any child app).
 
 ## 9. Deviation from existing patterns
 
@@ -107,16 +107,16 @@ Screenshots land in `docs/screenshots/feature/YYYY-MM-DD.png` (per decision 5) �
 
 | File | Purpose |
 |---|---|
-| `docs/superpowers/specs/2026-08-06-ui-screenshot-verification-design.md` | This design doc |
-| `scripts/capture_screens.sh` | Primary capture script (new) |
-| `scripts/sync_to_forkable.sh` | Lightweight khelam→forkable mirror for `scripts/` + `docs/features/` (new) |
-| `docs/features/booking-calendar/screens.yaml` | Screen registry entry for `schedule` (new) |
-| `.gitignore` | Add `docs/screenshots/` (decision 5) |
+| `docs/superpowers/specs/2026-08-06-ui-screenshot-verification-design.md` | This design doc (amended forkable-first) |
+| `forkable/scripts/capture_screens.sh` | Primary capture script — **canonical copy** (new) |
+| `khelam/scripts/capture_screens.sh` | Pulled synced copy (byte-identical to canonical) |
+| `docs/features/booking-calendar/screens.yaml` | Screen registry entry for `schedule` (new, khelam-only) |
+| `.gitignore` (khelam + forkable) | Add `docs/screenshots/` (decision 5) |
 
 **Batch breakdown (background-agent protocol):**
-- **Batch 1 [L2]** — `capture_screens.sh` + `schedule` screens.yaml entry; acceptance = `bash -n` clean + dry-run resolving the screen.
-- **Batch 2 [L1]** — End-to-end validation on booted iOS sim: `bash scripts/capture_screens.sh schedule --out /tmp/ss-test` → exit 0, PNG exists, `file` reports valid PNG >5 KB.
-- **Batch 3 [L2]** — `sync_to_forkable.sh` + mirror verification; acceptance = forkable receives both files.
+- **Batch 1 [L2]** — canonical `capture_screens.sh` in forkable + `schedule` screens.yaml entry (khelam) + `.gitignore` both; acceptance = `bash -n` clean + dry-run resolving the screen.
+- **Batch 2 [L1]** — End-to-end validation on booted iOS sim: `bash scripts/capture_screens.sh schedule --out /tmp/ss-test --reuse-installed` → exit 0, PNG exists, `file` reports valid PNG >5 KB.
+- **Batch 3 [L2]** — pull canonical into khelam (byte-identical) + tripwire verification; acceptance = `diff -rq scripts/` khelam vs forkable = identical (exit 0). (Replaces the dropped `sync_to_forkable.sh`.)
 
 ## 11. Acceptance bar
 

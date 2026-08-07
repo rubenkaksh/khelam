@@ -1,0 +1,9 @@
+# Screen registry for capture_screens.sh — one entry per UI-visible screen.
+# Adding a feature-doc chunk with a UI-visible screen → add an entry here;
+# no script change needed (per-app data — lives in this repo, not mirrored).
+- name: schedule
+  route: /schedule
+  deep_link: khelam://schedule   # used when not the initial route
+  initial: true                   # simctl launch lands here
+  needs_auth: false               # /schedule is public
+  needs_backend: false            # MockBookingService by default
