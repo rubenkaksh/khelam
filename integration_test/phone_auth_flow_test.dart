@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:commons/commons.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,8 +11,8 @@ import 'package:khelam/features/auth/models/auth_session.dart';
 /// Exercises the real phone auth flow end-to-end against the live NestJS
 /// backend (`rms-futsal-backend` on branch `feature/login-auth`, port 8000).
 ///
-/// From the Android emulator the host machine is reachable at `10.0.2.2`, so
-/// the base URL matches the app's `.env` (`API_BASE_URL`) and the backend
+/// The Android emulator reaches the host machine at `10.0.2.2`; the iOS
+/// simulator shares the host network, so `localhost` works there. The backend
 /// must be running on the host:
 ///
 ///     cd rms-futsal-backend && npm run start:dev
@@ -19,7 +21,9 @@ import 'package:khelam/features/auth/models/auth_session.dart';
 ///
 ///     flutter test integration_test/phone_auth_flow_test.dart -d <device>
 void main() {
-  const String baseUrl = 'http://10.0.2.2:8000';
+  final String baseUrl = Platform.isAndroid
+      ? 'http://10.0.2.2:8000'
+      : 'http://localhost:8000';
   const String phoneNumber = '9800000001';
   const String password = 'khelam123';
   const String fullName = 'Khelam Integration Test';
