@@ -143,6 +143,35 @@ forkable_sync_check() {
   fi
 }
 
+# Deny-deferral survey (sandbox policy): L3 tasks that hit a denied path record
+# one line per hit in ~/projects/sandbox/logs/deny-deferred-YYYY-MM-DD.log (the
+# agent writes it synchronously, does NOT retry the denied path, and continues
+# without the resource). The weekly review aggregates unsolved entries so the
+# user can execute them supervised and sign off. Override via $SANDBOX_LOGS_DIR.
+deny_deferred_survey() {
+  local logs="${SANDBOX_LOGS_DIR:-$HOME/projects/sandbox/logs}"
+  if [ ! -d "$logs" ]; then
+    echo "SKIPPED: no sandbox deny-deferral logs at $logs — sandbox not in use."
+    return
+  fi
+  local files
+  files="$(ls "$logs"/deny-deferred-*.log 2>/dev/null | sort | tail -7 || true)"
+  if [ -z "$files" ]; then
+    echo "OK: no deny-deferred entries in the last 7 log files."
+    return
+  fi
+  echo "DENY-DEFERRED (sandbox policy — entries need user supervised execution + sign-off):"
+  local n=0
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    echo "  - $line"
+    n=$((n+1))
+  done < <(rg -v 'resolved_by_user' $files 2>/dev/null | tail -20)
+  if [ "$n" -eq 0 ]; then
+    echo "  (none unsolved)"
+  fi
+}
+
 PROMPT="Weekly cost review for the $REPO_NAME project (and sibling repos commons/forkable when mentioned).
 
 Read every session file listed below, plus the persistent review memory at docs/reviews/review-memory.md (its Open Actions table lists what is still outstanding — check each one), plus run 'git log --oneline --since=\"7 days ago\"' in the repo.
@@ -157,6 +186,8 @@ SESSION-BOUNDARY CHECK (computed by the script): $(session_boundary_check)
 
 FORKABLE-SYNC CHECK (computed by the script, base-template policy): $(forkable_sync_check)
 
+DENY-DEFERRED SURVEY (computed by the script, sandbox policy): $(deny_deferred_survey)
+
 WEEKLY I/O DATA (from the analytics collector): weekly CSV at $ANALYTICS_DIR/weekly/$REVIEW_DATE.csv (may not exist yet on the first run of a week — then note that). Monthly rollup at $ANALYTICS_DIR/monthly/.
 
 Audit checklist — be specific, quote file names and commit hashes:
@@ -167,6 +198,7 @@ Audit checklist — be specific, quote file names and commit hashes:
 5. Open Actions from review-memory.md: were any worked on? Close or keep them in your report.
 6. User prompt drift (sidetrack guard): did the user's prompts cause waste this week? Look for the patterns in the global AGENTS.md 'User Prompt Discipline' section (destination layer missing, follow-up scope extensions, deferred decisions, missing acceptance bars, praise-then-scope-creep). Name each instance and the cheaper phrasing. This feeds the guard's pattern list.
 7. Base-template drift (forkable policy): did the week build any reusable/shared capability child-first instead of in forkable? The FORKABLE-SYNC CHECK above lists script drift; the agent should also scan session files for shared-component work that landed in $REPO_NAME without a forkable home, and flag it for the user's decision.
+8. Sandbox/guard health: the DENY-DEFERRED SURVEY lists tasks that hit a denied path — check the session files named in each entry and the opencode logs to confirm the agent did NOT retry the denied path (a retry is a guard violation). Also check no project config gained an 'external_directory' key this week (a config that declares it can override the global boundary — convention requires grants to omit it). Flag both for the user.
 
 SECTION A — ANALYTICS (v2): read the week's CSV ($ANALYTICS_DIR/weekly/$REVIEW_DATE.csv if it exists, else note its absence) and the monthly rollup ($ANALYTICS_DIR/monthly/). Write $ANALYTICS_DIR/performance-summary.md (OVERWRITE each week) with EXACT structure:
 # Performance Summary — $REVIEW_DATE
