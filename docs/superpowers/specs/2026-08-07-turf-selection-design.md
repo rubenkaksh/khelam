@@ -21,14 +21,15 @@ Replace the hardcoded turf id (`ScheduleCubit._defaultTurfId = '44444444-4444-44
 | 9 | **Entry flow**: new public route `turf-selection` becomes `initialLocation`. `TurfSelectionCubit.initialize()` reads `Preferences.selectedTurfId()`: stored pick → auto-advance to schedule; none (first-time) → dropdown + **Continue button** → persist → navigate. | User: "First time user lands on the dropdown screen… selects the id and moves ahead"; "continue" |
 | 10 | **No `!`/`as` force operators** in hand-written Dart (global hard rule). Route `extra` read via `is String` promotion. | Global Flutter tier-1 rule |
 | 11 | **Known debt (recorded, NOT now)**: khelam's auth has outgrown forkable (`AuthTokenStore`/secure storage absent in forkable). A future forkable-sync pass is required; logged in backlog + §9. | User: "this has to sync not right now but has to" |
+| 12 | **Logout clears preferences too**: `AuthCubit.logout()` clears the persisted session **and** `Preferences.clear()` (khelam-only — forkable's AuthCubit adopts `Preferences` during the future auth-sync pass). Next launch after logout = first-time flow (dropdown again). | User: "On logout clear the preferences as well" |
 
 ## 3. Repositories & files
 
 ### forkable (canonical) — `lib/data/storage/`
-- `store_service.dart` — `abstract interface class StoreService { Future<String?> readString(String key); Future<void> writeString(String key, String value); Future<void> delete(String key); Future<bool> contains(String key); }`
+- `store_service.dart` — `abstract interface class StoreService { Future<String?> readString(String key); Future<void> writeString(String key, String value); Future<void> delete(String key); Future<bool> contains(String key); Future<void> clearAll(); }` — `clearAll()` wipes the whole store (safe: `StoreService` holds only preference keys; auth tokens live in `AuthTokenStore`'s separate secure storage).
 - `shared_prefs_store_service.dart` — `SharedPrefsStoreService implements StoreService` (wraps `SharedPreferencesAsync`).
-- `preferences.dart` — `abstract interface class Preferences { Future<String?> selectedTurfId(); Future<void> setSelectedTurfId(String turfId); }` (future typed properties land here).
-- `preferences_impl.dart` — `PreferencesImpl implements Preferences` (wraps any `StoreService`, defaults to `SharedPrefsStoreService`).
+- `preferences.dart` — `abstract interface class Preferences { Future<String?> selectedTurfId(); Future<void> setSelectedTurfId(String turfId); Future<void> clear(); }` (future typed properties land here).
+- `preferences_impl.dart` — `PreferencesImpl implements Preferences` (wraps any `StoreService`, defaults to `SharedPrefsStoreService`); `clear()` delegates to `StoreService.clearAll()`.
 - DI: shared-infra registrations in `lib/di/service_locator.dart` (`StoreService` → `SharedPrefsStoreService`; `Preferences` → `PreferencesImpl(store: locator<StoreService>())`).
 - Deps: `shared_preferences` added to `pubspec.yaml`.
 - Tests: `test/data/storage/` (`SharedPreferences.setMockInitialValues`).
@@ -41,6 +42,7 @@ Replace the hardcoded turf id (`ScheduleCubit._defaultTurfId = '44444444-4444-44
 - `lib/features/booking/bloc/turf_selection_cubit.dart` — state `{turfs, selectedTurfId, isLoading, errorMessage, storedTurfId}`; `initialize()` / `selectTurf(id)` / `confirm()` (persists via `Preferences`).
 - `lib/features/booking/views/turf_selection_view.dart` — `LoadingView` / `ErrorView(retry)` / `DropdownInput` + `Continue` button; auto-advance when `storedTurfId` present.
 - `lib/features/booking/di/booking_dependencies.dart` — `USE_MOCK_TURFS` switch; `TurfsRepository` singleton; `TurfSelectionCubit` factory (`Preferences` + `TurfsRepository`).
+- `lib/features/auth/bloc/auth_cubit.dart` — constructor gains `required Preferences preferences`; `logout()` calls `_preferences.clear()` alongside `_tokenStore.clear()` (best-effort, same try/catch). Wired in `lib/features/auth/di/auth_dependencies.dart` (`preferences: locator<Preferences>()`).
 - Router (`lib/ui/navigation/app_router.dart` + `app_routes.dart`): `turfSelection`/`/select-turf` public, `initialLocation`; schedule route passes `turfId` via `extra`; `ScheduleCubit Function(String turfId)`.
 - `test/helpers/recording_preferences.dart` — `RecordingPreferences implements Preferences` (mirrors `RecordingTokenStore`).
 
@@ -64,6 +66,10 @@ launch ──> /select-turf (initialLocation, public)
                                                     ▼
             ScheduleCubit(turfId: id) ──> load() ──> getTurf(id) + getSchedule(turfId, date)
             selectDate / bookSlot ──> turfId (constructor id)  [no hardcoded fallback]
+
+logout ──> AuthCubit.logout() ──> _service.logout() + _tokenStore.clear()
+                                        + Preferences.clear()   [decision #12]
+        ──> next launch: /select-turf first-time flow again
 ```
 
 ## 5. Error handling
@@ -82,6 +88,7 @@ launch ──> /select-turf (initialLocation, public)
 | khelam | `turf_selection_view_test.dart` | two UUIDs in dropdown, Continue gating, retry path |
 | khelam | `mock_turfs_repository_test.dart` | returns exactly the two UUIDs |
 | khelam | `schedule_cubit_test.dart` (updated) | constructor `turfId` threaded through load/selectDate/bookSlot |
+| khelam | `auth_cubit_test.dart` (updated) | logout clears `Preferences` (RecordingPreferences fake); constructors gain the fake |
 | khelam | `test/widget_test.dart` (check) | app boot may now land on turf-selection; needs `RecordingPreferences` |
 
 Validation before commit: `flutter analyze` + full suite in commons, khelam, forkable (pre-commit gate runs on Dart commits; commons-consumer check after any commons change).
@@ -89,6 +96,7 @@ Validation before commit: `flutter analyze` + full suite in commons, khelam, for
 ## 7. Acceptance bar
 - Launch with no stored pick → dropdown with exactly the two UUIDs; Continue disabled until a pick; Continue persists and lands on schedule showing that turf's slots.
 - Second launch (stored pick) → skips straight to schedule with the persisted id.
+- **Logout** clears the persisted session + preferences → next launch shows the dropdown again (first-time flow).
 - `ScheduleCubit._defaultTurfId` gone; no hardcoded turf id remains in lib code.
 - Storage layer exists byte-identical in forkable + khelam behind `StoreService`/`Preferences` interfaces.
 - All tests green in three repos; analyze clean.
