@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:commons/commons.dart';
 import 'package:khelam/features/auth/data/auth_api_service.dart';
@@ -10,6 +9,8 @@ import 'package:khelam/features/auth/data/auth_exception.dart';
 import 'package:khelam/features/auth/data/auth_token_store.dart';
 import 'package:khelam/features/auth/models/auth_session.dart';
 import 'package:khelam/features/auth/models/auth_user.dart';
+
+import '../../../helpers/fake_secure_storage.dart';
 
 void main() {
   group('AuthApiService', () {
@@ -352,7 +353,7 @@ AuthApiService _service(DioApiClient apiClient) {
 
 AuthTokenStore _tokenStore() {
   // In-memory fake storage so no platform channel is touched.
-  return AuthTokenStore(storage: _FakeSecureStorage());
+  return AuthTokenStore(storage: FakeSecureStorage());
 }
 
 DioApiClient _apiClient(_RecordingAdapter adapter) {
@@ -396,53 +397,4 @@ class _RecordingAdapter implements HttpClientAdapter {
 
   @override
   void close({bool force = false}) {}
-}
-
-/// Minimal in-memory [FlutterSecureStorage] stand-in for tests.
-class _FakeSecureStorage extends FlutterSecureStorage {
-  final Map<String, String> _values = <String, String>{};
-
-  @override
-  Future<void> write({
-    required String key,
-    required String? value,
-    AppleOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    AppleOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async {
-    if (value == null) {
-      _values.remove(key);
-    } else {
-      _values[key] = value;
-    }
-  }
-
-  @override
-  Future<String?> read({
-    required String key,
-    AppleOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    AppleOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async {
-    return _values[key];
-  }
-
-  @override
-  Future<void> delete({
-    required String key,
-    AppleOptions? iOptions,
-    AndroidOptions? aOptions,
-    LinuxOptions? lOptions,
-    WebOptions? webOptions,
-    AppleOptions? mOptions,
-    WindowsOptions? wOptions,
-  }) async {
-    _values.remove(key);
-  }
 }

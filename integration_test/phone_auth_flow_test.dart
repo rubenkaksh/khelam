@@ -12,8 +12,8 @@ import 'package:khelam/features/auth/models/auth_session.dart';
 /// backend (`rms-futsal-backend` on branch `feature/login-auth`, port 8000).
 ///
 /// The Android emulator reaches the host machine at `10.0.2.2`; the iOS
-/// simulator shares the host network, so `localhost` works there. The backend
-/// must be running on the host:
+/// simulator and macOS desktop share the host network, so `localhost` works
+/// there. The backend must be running on the host:
 ///
 ///     cd rms-futsal-backend && npm run start:dev
 ///
@@ -30,7 +30,11 @@ void main() {
 
   testWidgets('register then login against the live backend', (tester) async {
     final DioApiClient apiClient = DioApiClient(baseUrl: baseUrl);
-    final AuthTokenStore tokenStore = AuthTokenStore();
+    // On macOS the store keeps the session in memory only (the ad-hoc-signed
+    // release build cannot use the keychain), so no platform channel is hit.
+    final AuthTokenStore tokenStore = AuthTokenStore(
+      persist: !Platform.isMacOS,
+    );
     final AuthApiService service = AuthApiService(
       apiClient: apiClient,
       tokenStore: tokenStore,
@@ -65,10 +69,15 @@ void main() {
     // endpoints are out of scope here: the shared Supabase schema is behind
     // the local schema (slots.locked_by missing) until the drift is resolved.
 
-    // A persisted session restores at "launch".
+    // A persisted session restores at "launch" — except on macOS, where the
+    // store is a no-op pass-through and nothing is restored.
     await tokenStore.saveSession(session);
-    final AuthSession? restored = await tokenStore.restoreSession();
-    expect(restored?.accessToken, session.accessToken);
-    expect(restored?.user.phoneNumber, phoneNumber);
+    if (Platform.isMacOS) {
+      expect(await tokenStore.restoreSession(), isNull);
+    } else {
+      final AuthSession? restored = await tokenStore.restoreSession();
+      expect(restored?.accessToken, session.accessToken);
+      expect(restored?.user.phoneNumber, phoneNumber);
+    }
   });
 }

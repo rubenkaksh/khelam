@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:commons/commons.dart';
 import 'package:get_it/get_it.dart';
 
@@ -17,7 +19,12 @@ abstract final class AuthDependencies {
     final bool useMockAuth =
         envValue('USE_MOCK_AUTH') == 'true' || envValue('API_BASE_URL') == null;
 
-    locator.registerLazySingleton<AuthTokenStore>(() => AuthTokenStore());
+    // macOS: keep the session in memory only. The sandbox denies keychain
+    // access without a keychain-access-groups entitlement, which requires a
+    // development certificate — the release DMG is ad-hoc signed.
+    locator.registerLazySingleton<AuthTokenStore>(
+      () => AuthTokenStore(persist: !Platform.isMacOS),
+    );
     locator.registerLazySingleton<AuthService>(
       () => useMockAuth
           ? const MockAuthService()
