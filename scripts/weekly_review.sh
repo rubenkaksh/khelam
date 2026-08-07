@@ -323,7 +323,7 @@ cd "$REPO"
 opencode run --auto --dir "$REPO" "$PROMPT" >> "$LOG" 2>&1
 
 if [ -f "$REVIEW_FILE" ]; then
-  send_report "$REPO_NAME Weekly Review" "Weekly review ready: docs/reviews/$REVIEW_DATE.md" \
+  send_report_to weekly-reviews "$REPO_NAME Weekly Review" "Weekly review ready: docs/reviews/$REVIEW_DATE.md" \
     "performance-summary.md" "update-log.md" "weekly/$REVIEW_DATE.csv"
   echo "$(date): review written to $REVIEW_FILE" >> "$LOG"
 else

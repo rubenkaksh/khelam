@@ -249,5 +249,5 @@ cat <<EOF
 
 saved: $OUT_FILE
 EOF
-send_report "capture_screens.sh done" "captured $SCREEN ($size bytes)" "$OUT_FILE"
+send_report_to screenshots "capture_screens.sh done" "captured $SCREEN ($size bytes)" "$OUT_FILE"
 exit 0

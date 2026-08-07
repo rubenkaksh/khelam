@@ -1,21 +1,41 @@
 #!/bin/bash
-# report_sink.sh — delivery abstraction for background-agent reports (v1: Discord comms).
+# report_sink.sh — delivery abstraction for background-agent reports (v2: multi-channel Discord).
 #
 # Usage:  send_report <title> <body> [artifact...]
+#         send_report_to <channel> <title> <body> [artifact...]
 #         send_error_report <title> <body>   # always audible (Sosumi); best-effort Discord
 #         (. scripts/report_sink.sh)
 #
 # REPORT_SINK env:
 #   macos_notification (default) — osascript display notification, lists artifacts
-#   discord_webhook — POST JSON to Discord (DISCORD_WEBHOOK_URL, see below)
+#   discord_webhook — POST JSON to Discord (per-channel webhook URLs, see below)
 #   slack_webhook — stub (v3 reserved; kept for option value, no behavior yet)
 #   noop — testing; logs to $WEEKLY_LOG only
 #
-# Secret: DISCORD_WEBHOOK_URL is a SECRET (anyone holding it can post to the channel).
-# It is sourced from $DISCORD_ENV_FILE (default ~/.config/khelam/discord.env) — a
-# machine-local file OUTSIDE all repos, never committed. Format:
+# Channels (name → env key; all keys live in the shared env file, see Secret):
+#   default        → DISCORD_WEBHOOK_URL            (v1 alias, backward-compatible)
+#   daily-overview → DAILY_OVERVIEW_WEBHOOK_URL
+#   weekly-reviews → WEEKLY_REVIEWS_WEBHOOK_URL
+#   screenshots    → SCREENSHOTS_WEBHOOK_URL
+#   agent-errors   → AGENT_ERRORS_WEBHOOK_URL
+# Channel names resolve case-insensitively; '-' and '_' are interchangeable.
+# Resolution: the channel's own key first, then the 'default' alias
+# (DISCORD_WEBHOOK_URL) as a fallback — so a channel with no URL of its own
+# still delivers via the v1 webhook. Unknown channel names resolve to 'default'.
+# An unresolved (empty) URL degrades to macos_notification + log, never drops.
+#
+# Secret: every webhook URL is a SECRET (anyone holding one can post to the
+# channel). They are sourced from $DISCORD_ENV_FILE (default
+# ~/.config/opencode/discord.env — v2 moved the default from ~/.config/khelam/) —
+# a machine-local file OUTSIDE all repos, never committed. Format:
 #   DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/<id>/<token>
-# If absent, discord_webhook degrades to macos_notification + log (never drops).
+#   DAILY_OVERVIEW_WEBHOOK_URL=…
+#   WEEKLY_REVIEWS_WEBHOOK_URL=…
+#   SCREENSHOTS_WEBHOOK_URL=…
+#   AGENT_ERRORS_WEBHOOK_URL=…
+# If a channel's URL is absent, that channel falls back to the default alias,
+# else to macos_notification + log (never drops). send_error_report always
+# targets the agent-errors channel.
 #
 # Artifacts: a local file (stat-able) ≤25 MiB is uploaded as a Discord attachment; a
 # non-file token (e.g. "weekly/2026-08-07.csv") is rendered as a text list. Discord
@@ -29,7 +49,10 @@ REPORT_SINK="${REPORT_SINK:-macos_notification}"
 LOG="${WEEKLY_LOG:-/tmp/weekly-review.log}"
 
 # --- Discord secret load (machine-local, never committed) -------------------------
-DISCORD_ENV_FILE="${DISCORD_ENV_FILE:-$HOME/.config/khelam/discord.env}"
+# v2: shared cross-project env file default moved from ~/.config/khelam/ to
+# ~/.config/opencode/ (home of the global agent config). Override via
+# DISCORD_ENV_FILE. All per-channel webhook keys are loaded from here.
+DISCORD_ENV_FILE="${DISCORD_ENV_FILE:-$HOME/.config/opencode/discord.env}"
 if [ -f "$DISCORD_ENV_FILE" ]; then
   set -a; . "$DISCORD_ENV_FILE"; set +a
 fi
@@ -45,11 +68,26 @@ _notify_macos() { # _notify_macos <title> <body> [sound]
   fi
 }
 
-# _discord_post <content> [file-or-token...]  — subshell fn, returns 0 on HTTP 2xx.
+# _discord_url_for <channel> — prints the resolved webhook URL, or empty.
+# Eval-free indirection via bash ${!key}. Channel key = UPPER + '-'→'_' +
+# '_WEBHOOK_URL'. 'default' (and anything unresolved) → DISCORD_WEBHOOK_URL alias.
+_discord_url_for() {
+  local channel="$1" key url
+  if [ "$channel" = "default" ]; then
+    url="${DISCORD_WEBHOOK_URL:-}"
+  else
+    key="$(printf '%s' "$channel" | tr '[:lower:]' '[:upper:]' | tr '-' '_')_WEBHOOK_URL"
+    url="${!key:-}"
+  fi
+  [ -z "$url" ] && url="${DISCORD_WEBHOOK_URL:-}"
+  printf '%s' "$url"
+}
+
+# _discord_post <url> <content> [file-or-token...]  — subshell fn, returns 0 on HTTP 2xx.
 _discord_post() (
   set -euo pipefail
-  local content="$1"; shift
-  [ -z "${DISCORD_WEBHOOK_URL:-}" ] && { echo "DISCORD_WEBHOOK_URL unset" >&2; exit 1; }
+  local url="$1" content="$2"; shift 2
+  [ -z "$url" ] && { echo "discord webhook URL unset (channel resolution empty)" >&2; exit 1; }
 
   local upload_files=() f sz
   for f in "$@"; do
@@ -78,18 +116,19 @@ PY
     for f in "${upload_files[@]}"; do
       args+=(-F "files[]=@${f};filename=$(basename "$f")")
     done
-    curl -sS -f "${args[@]}" "$DISCORD_WEBHOOK_URL"
+    curl -sS -f "${args[@]}" "$url"
     rm -f "$tmpjson"
   else
-    curl -sS -f -H "Content-Type: application/json" -d "$json" "$DISCORD_WEBHOOK_URL"
+    curl -sS -f -H "Content-Type: application/json" -d "$json" "$url"
   fi
 )
 
 # --- public -----------------------------------------------------------------------
-send_report() {
-  local title="$1" body="$2"; shift 2
-  local artifacts=""
+send_report_to() { # send_report_to <channel> <title> <body> [artifact...]
+  local channel="$1" title="$2" body="$3"; shift 3
+  local artifacts="" url
   [ "$#" -gt 0 ] && artifacts=" Artifacts: $*"
+  url="$(_discord_url_for "$channel")"
 
   case "$REPORT_SINK" in
     macos_notification)
@@ -97,8 +136,8 @@ send_report() {
       echo "$(date): [report_sink] macos_notification sent: $title" >> "$LOG"
       ;;
     discord_webhook)
-      if _discord_post "${title} — ${body}" "$@" 2>>"$LOG"; then
-        echo "$(date): [report_sink] discord_webhook sent ($# artifact(s)): $title" >> "$LOG"
+      if _discord_post "$url" "${title} — ${body}" "$@" 2>>"$LOG"; then
+        echo "$(date): [report_sink] discord_webhook sent to '$channel' ($# artifact(s)): $title" >> "$LOG"
       else
         echo "$(date): [report_sink] discord_webhook FAILED — fallback macos_notification: $title" >> "$LOG"
         _notify_macos "$title" "${body}${artifacts}"
@@ -118,16 +157,23 @@ send_report() {
   esac
 }
 
+send_report() { # send_report <title> <body> [artifact...] — v1 alias for the default channel
+  send_report_to default "$@"
+}
+
 send_error_report() {
-  # Failure path: ALWAYS audible (Sosumi). Best-effort ALSO posts to Discord; a
-  # Discord failure never suppresses the Sosumi.
+  # Failure path: ALWAYS audible (Sosumi). Best-effort ALSO posts to the
+  # agent-errors channel (resolved via the shared env); a Discord failure
+  # never suppresses the Sosumi.
   local title="$1" body="$2"
+  local url
+  url="$(_discord_url_for "agent-errors")"
   case "$REPORT_SINK" in
     noop)
       echo "$(date): [report_sink] noop ERROR: $title — $body" >> "$LOG"
       ;;
     discord_webhook)
-      if [ -n "${DISCORD_WEBHOOK_URL:-}" ] && _discord_post "⚠️ **${title}** — ${body}" 2>>"$LOG"; then
+      if [ -n "$url" ] && _discord_post "$url" "⚠️ **${title}** — ${body}" 2>>"$LOG"; then
         echo "$(date): [report_sink] discord_webhook error POSTED: $title" >> "$LOG"
       else
         echo "$(date): [report_sink] discord_webhook error FAILED — audible only: $title" >> "$LOG"
