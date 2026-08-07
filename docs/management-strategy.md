@@ -65,6 +65,8 @@ The grilling also caught a **latent bug**: the weekly review selects sessions wi
 
 And one contradiction in the architecture itself: forkable is called "the future source of truth," but everything mirrors khelam → forkable, with no trigger, no owner, no date for the handoff.
 
+**Resolved 2026-08-07 (user decision, OA#5):** there is no big-bang handoff. forkable is the **base template** — new projects fork from it, and shared capabilities (samseer, screenshot tooling, anything reusable) are added to **forkable first**, then pulled/cherry-picked into children that need them. khelam is the first child and got lenient khelam-first treatment; that leniency does not extend to new work. Placement is a **manual, user-driven decision** per capability; the agent executes copies and the weekly review's forkable-sync tripwire flags child-only drift for the user's sign-off.
+
 ## Chapter 5 — The decision: you are the external gate
 
 The grilling's core finding was simple: **the agent was the sole author, grader, and auditor of its own protocol** — acceptance bars self-set, calibration self-reported, weekly review being a script that runs a prompt (agent auditing agent). That had to end.
@@ -88,7 +90,7 @@ Everything else is downstream of this: the sandbox guards, the archive fix, the 
 | Learnings ingestion gate (Day Plan template requires adopt/amend/reject of prior learnings) | Next task's morning planning | Agent + you |
 | Sandbox guards installed OR §4 relabeled "deferred" | Next batch touching scripts | Agent |
 | Archive bug fixed (selector descends into `archive/`) | Next tooling pass | Agent |
-| forkable handoff trigger + owner stated | Before forkable becomes source of truth | You |
+| ~~forkable handoff trigger + owner stated~~ → **DONE 2026-08-07**: forkable = base template; shared capabilities forkable-first, user-driven; agent executes + weekly tripwire + user sign-off | Before forkable becomes source of truth | ~~You~~ → resolved |
 | Story-driven docs (this document + session files) | Ongoing | Agent |
 
 ## Appendix — File map
