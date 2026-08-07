@@ -51,13 +51,13 @@ void main() {
       expect(tester.widget<FilledButton>(confirmFinder).onPressed, isNotNull);
     });
 
-    testWidgets('shows phone input with +91 prefix', (tester) async {
+    testWidgets('shows phone input with +977 prefix', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(body: BookingConfirmationSheet(slot: testSlot)),
         ),
       );
-      expect(find.text('+91'), findsOneWidget);
+      expect(find.text('+977'), findsOneWidget);
       expect(find.text('Phone Number'), findsOneWidget);
     });
   });
