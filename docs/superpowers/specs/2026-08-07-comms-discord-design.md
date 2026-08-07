@@ -428,3 +428,75 @@ After §15 enablement: user runs the weekly review (or a manual `send_report "te
 ## 17. Token-cost note
 
 Implementation batch (§11) est **~4 k tokens** (bash rewrite + mock harness + tripwire) — within the free tier ($0), consistent with `performance-summary.md` Week 1. A cost-note line should be added to the implementer's session file before starting per Cost Discipline rules.
+
+---
+
+## v2 — Multi-Channel Cross-Project Hub (locked 2026-08-07, Grill Gate 12/12)
+
+> Supersedes the v2-deferred list in §16 for **channel routing** and adds a **cross-project daily digest**. v2 is **additive over v1**: every v1 caller (`send_report`, `send_error_report`, the env-file contract) keeps byte-compatible behavior. Canonical edits are forkable-first (§8); the khelam copies are pulled byte-identical (tripwire `forkable_sync_check()` enforces). OA#8 in `khelam/docs/reviews/review-memory.md` (OPEN — next queue).
+
+### V1. Channel topology (per concern, one webhook per channel)
+
+| Channel | Env key | Producers |
+|---|---|---|
+| `default` | `DISCORD_WEBHOOK_URL` (v1 alias) | v1 callers, unknown/empty channel resolution |
+| `daily-overview` | `DAILY_OVERVIEW_WEBHOOK_URL` | `daily_digest.sh` (08:00 Mon–Fri) |
+| `weekly-reviews` | `WEEKLY_REVIEWS_WEBHOOK_URL` | `weekly_review.sh` success report |
+| `screenshots` | `SCREENSHOTS_WEBHOOK_URL` | `capture_screens.sh` success (PNG attachment) |
+| `agent-errors` | `AGENT_ERRORS_WEBHOOK_URL` | `send_error_report` (always) |
+
+Channel names resolve case-insensitively; `-` and `_` are interchangeable. **Resolution rules** (`_discord_url_for <channel>`):
+1. `default` → `DISCORD_WEBHOOK_URL` directly.
+2. any other name → its own key (`UPPER` + `-`→`_` + `_WEBHOOK_URL`), else the `DISCORD_WEBHOOK_URL` alias, else empty.
+3. unknown names resolve to `default`. Empty resolution → `macos_notification` + log (never drops — same failure behavior as v1).
+
+### V2. Env schema (shared, machine-local)
+
+- All webhook keys live in **one** shared file `~/.config/opencode/discord.env` (never in any repo). **`DISCORD_ENV_FILE` default moved from `~/.config/khelam/discord.env` to `~/.config/opencode/discord.env`** (home of the global agent config; the khelam path was a leftover of the pre-global layout). `DISCORD_ENV_FILE` override still honored.
+- Schema (one key per line, `KEY=url`):
+  ```
+  DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/<id>/<token>   # v1 alias
+  DAILY_OVERVIEW_WEBHOOK_URL=…
+  WEEKLY_REVIEWS_WEBHOOK_URL=…
+  SCREENSHOTS_WEBHOOK_URL=…
+  AGENT_ERRORS_WEBHOOK_URL=…
+  ```
+- User creates the file later (webhook URLs unknown at implementation time); tests use URL env vars set inline. A channel with no URL of its own still delivers via the v1 alias — partial setups degrade gracefully.
+
+### V3. API (report_sink.sh v2 — additive)
+
+- `send_report_to <channel> <title> <body> [artifact...]` — routes to the channel's resolved URL (multipart `payload_json`+`files[]` ≤25 MiB cap, python3 json.dumps, `curl -sS -f`, 2xx-only, mktemp cleanup — all unchanged from v1). Unresolved URL → macos fallback + log, exit 0.
+- `send_report` — now `send_report_to default ...` (v1 callers unchanged, byte-compatible).
+- `send_error_report <title> <body>` — signature unchanged; **always** targets `agent-errors` (Sosumi always + best-effort Discord, v1 semantics). Existing callers (`capture_screens.sh fail()`) need no edit.
+- `_discord_post` core unchanged but now takes the **resolved URL** as `$1` (`_discord_post <url> <content> [file-or-token...]`).
+
+### V4. `daily_digest.sh` (NEW, forkable-first canonical)
+
+Reports the **previous calendar day** across khelam/forkable/commons in **one** `send_report_to daily-overview` message (body capped ≤1900 chars for the Discord 2000 cap; truncate with `… [truncated]`).
+
+- **Repo env hooks** (mirror `weekly_review.sh`): `KHELAM_REPO` / `FORKABLE_REPO` / `COMMONS_REPO` (defaults `~/projects/khel-service/khelam`, `~/projects/forkable`, `~/projects/commons`); missing dir → skipped with a note, exit 0. `DB_PATH` overrides `~/.local/share/opencode/opencode.db`.
+- **Signal 1 — token deltas**: sqlite3 over the `session` table (`SUM(tokens_input+tokens_output+tokens_cache_read)`, `COUNT(*)`), matched by `directory LIKE '%/<repo_basename>'` and `time_created` in **yesterday local midnight→midnight** (UNIX ms — the same epoch convention `session_boundary_check()` uses; window computed via python3 local `datetime.timestamp()`). Human-readable k/M per repo.
+- **Signal 2 — Open Actions**: from each repo's `docs/reviews/review-memory.md`, count `## Open Actions...` section lines that are **not struck through** (`~~`); list up to 3 titles (~60 chars). Heuristic documented in the script header (excludes blockquotes/table chrome/placeholders; numbered khelam rows render as `OA#8: <title>`).
+- **Signal 3 — untriaged backlog**: from each repo's `docs/backlog.md`, count top-level `^- ` bullets; list up to 3 titles (~60 chars). Documented heuristic: counts all column-0 bullets incl. watchpoint/DONE-note sections (stricter untriaged-only filter = future work); `- (empty)` placeholders excluded.
+- **Session activity count**: number of `docs/sessions/<yesterday>.md` files across the repos (may be 0).
+- Format (fixed emoji set): `🔥 Yesterday's agent tokens — … | …` / `📋 Open Actions: …` / `🗂 Backlog: …` / `📄 Sessions yesterday: N`.
+- Exit codes: 0 always after assembly (send degrades via report_sink); 1 only if `report_sink.sh` is missing beside it.
+- Logging: `$(date): [daily_digest] …` → `$LOG` (default `/tmp/weekly-review.log`).
+
+### V5. Launchd template + instance model
+
+- `com.khelam.daily-digest.plist` (NEW template, forkable/scripts/, mirrors `com.khelam.weekly-review.plist` style): Label `com.khelam.daily-digest`, `/bin/bash <installed path>/daily_digest.sh`, `StartCalendarInterval` **Weekday 1–5 @ Hour 8 Minute 0** — one dict per weekday (launchd fires only on listed weekdays; a single range is not supported), `StandardOutPath`/`StandardErrorPath` → `/tmp/daily-digest.log`, `RunAtLoad false`.
+- **Install = user step** (never auto-installed): copy to `~/Library/LaunchAgents/`, fill the path placeholder, `launchctl load`. Same machine-local policy as the weekly plist (env keys stay in `~/.config/opencode/discord.env`, the plist never holds secrets).
+- `capture_screens.sh` success call → `send_report_to screenshots …` (one-line change); `weekly_review.sh` success call → `send_report_to weekly-reviews …` (keeps the 3 artifact tokens). `fail()`/`send_error_report` unchanged (→ `agent-errors` automatically).
+
+### V6. §14 test extension (multi-channel)
+
+Beyond the v1 §14.1–14.4 cases (v1 regression: `send_report`/`send_error_report` under only `DISCORD_WEBHOOK_URL` behave exactly as v1 — alias path, ⚠️ error prefix, URL-unset → macos fallback, dead URL → Sosumi + log, exit 0 always):
+
+- Mock server (same shape as §14.1, 127.0.0.1:8099) records bodies **per path**.
+- (a) `send_report_to daily-overview` → hits `/daily` only; (b) `weekly-reviews` → `/weekly` only; (c) `screenshots` + fake PNG → `/shots` multipart (`files[]`+`payload_json`); (d) unknown channel `bogus` → falls back to the `DISCORD_WEBHOOK_URL` alias if set, else macos fallback (exit 0); (e) channel key unset but alias set → alias fallback, no macos fallback. Plus: `send_error_report` with `AGENT_ERRORS_WEBHOOK_URL` set → `/errors` with ⚠️ prefix.
+- `daily_digest.sh` run against real repo dirs + mock `/daily`: exactly **one** POST, body contains `Daily overview —` + all three repo names + a token number each + `Open Actions`/`Backlog`/`Sessions` lines, ≤1900 chars; with a bogus repo dir → still exit 0, skip noted in body/log.
+
+### V7. Rollout
+
+v2 ships additive over v1 (no consumer of v1 is broken; only the `DISCORD_ENV_FILE` **default** moves — the override var and inline-var behavior are unchanged). Reference checkpoint commit (implemented, NOT to be committed by the implementer): `comms/discord-v2-multi-channel`. Post-review: user creates `~/.config/opencode/discord.env`, sets `REPORT_SINK=discord_webhook`, and installs the daily-digest plist.
