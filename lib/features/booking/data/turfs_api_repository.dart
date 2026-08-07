@@ -1,5 +1,3 @@
-import 'package:dio/dio.dart' show DioException;
-
 import 'package:commons/commons.dart';
 
 import '../models/turf_summary.dart';
@@ -10,12 +8,13 @@ import 'turfs_repository.dart';
 /// `rms-futsal-backend`.
 ///
 /// Endpoints:
-/// - `GET /turfs` (not shipped yet — until it exists the call fails with a
-///   [DioException] and [getTurfs] falls back to the two known turfs, the
-///   same dummy data `MockTurfsRepository` serves; booking's `getTurf` uses
-///   the same TODO-until-endpoint pattern).
+/// - `GET /turfs` (not shipped yet — until it exists the call fails with an
+///   [ApiClientException] and [getTurfs] falls back to the two known turfs,
+///   the same dummy data `MockTurfsRepository` serves; booking's `getTurf`
+///   uses the same TODO-until-endpoint pattern).
 class TurfsApiRepository implements TurfsRepository {
-  TurfsApiRepository({required DioApiClient apiClient}) : _apiClient = apiClient;
+  TurfsApiRepository({required DioApiClient apiClient})
+    : _apiClient = apiClient;
 
   final DioApiClient _apiClient;
 
@@ -27,7 +26,9 @@ class TurfsApiRepository implements TurfsRepository {
         '/turfs',
       );
       return jsonList.map(TurfSummary.fromJson).toList();
-    } on DioException {
+    } on Exception {
+      // Any failure (404 today, network, malformed payload) keeps the app
+      // usable with the two known turfs until the endpoint ships.
       return const <TurfSummary>[
         TurfSummary(
           id: MockTurfsRepository.firstTurfId,
