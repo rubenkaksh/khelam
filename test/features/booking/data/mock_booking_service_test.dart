@@ -1,18 +1,27 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:khelam/features/booking/data/mock_booking_service.dart';
+import 'package:khelam/features/booking/data/mock_turfs_repository.dart';
 import 'package:khelam/features/booking/models/slot_status.dart';
 
 void main() {
   group('MockBookingService', () {
     final DateTime date = DateTime(2026, 8, 1);
 
-    test('getTurf returns the demo turf', () async {
+    test('getTurf echoes the requested id with a matching name', () async {
       final MockBookingService service = MockBookingService();
 
-      final turf = await service.getTurf('any-turf-id');
+      final turf = await service.getTurf(
+        MockTurfsRepository.firstTurfId,
+      );
 
-      expect(turf.id, 'turf-a');
+      expect(turf.id, MockTurfsRepository.firstTurfId);
       expect(turf.name, 'Turf A');
+
+      final secondTurf = await service.getTurf(
+        MockTurfsRepository.secondTurfId,
+      );
+      expect(secondTurf.id, MockTurfsRepository.secondTurfId);
+      expect(secondTurf.name, 'Turf B');
     });
 
     test('getSchedule returns one slot per open hour (07:00–22:00)', () async {

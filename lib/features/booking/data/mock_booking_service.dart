@@ -5,6 +5,7 @@ import '../models/schedule_slot_item.dart';
 import '../models/slot.dart';
 import '../models/slot_status.dart';
 import '../models/turf_summary.dart';
+import 'mock_turfs_repository.dart';
 
 String _slotId(int hour, DateTime date) =>
     'slot-${date.year}-${date.month}-${date.day}-$hour';
@@ -14,7 +15,6 @@ String _bookingId(int hour, DateTime date) =>
 class MockBookingService implements BookingService {
   MockBookingService();
 
-  static const String _turfId = 'turf-a';
   static const int _openHour = 7;
   static const int _closeHour = 22;
   static const List<String> _customerNames = <String>[
@@ -30,10 +30,14 @@ class MockBookingService implements BookingService {
   @override
   Future<TurfSummary> getTurf(String turfId) async {
     await Future<void>.delayed(const Duration(milliseconds: 100));
-    return const TurfSummary(
-      id: _turfId,
-      name: 'Turf A',
-      address: 'Sector 12, Sports Complex',
+    // Names follow the two known turfs from MockTurfsRepository so the turf
+    // header matches what was picked on the selection screen.
+    return TurfSummary(
+      id: turfId,
+      name: turfId == MockTurfsRepository.secondTurfId ? 'Turf B' : 'Turf A',
+      address: turfId == MockTurfsRepository.secondTurfId
+          ? 'Sector 7, Futsal Court'
+          : 'Sector 12, Sports Complex',
     );
   }
 
@@ -60,7 +64,7 @@ class MockBookingService implements BookingService {
 
       final Slot slot = Slot(
         id: sid,
-        turfId: _turfId,
+        turfId: turfId,
         slotDate: normalizedDate,
         startTime: startTime,
         endTime: endTime,
@@ -77,7 +81,7 @@ class MockBookingService implements BookingService {
           bookingCode:
               'BK-${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}-${hour.toString().padLeft(2, '0')}',
           userId: 'user-1',
-          turfId: _turfId,
+          turfId: turfId,
           slotId: sid,
           totalAmount: 100.0,
           advanceAmount: 50.0,

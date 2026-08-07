@@ -9,6 +9,7 @@ import 'package:khelam/features/auth/data/mock_auth_service.dart';
 import 'package:khelam/features/auth/views/register_view.dart';
 import 'package:khelam/ui/navigation/app_routes.dart';
 
+import '../../helpers/recording_preferences.dart';
 import '../../helpers/recording_token_store.dart';
 
 class FakeGoogleSignInService implements GoogleSignInService {
@@ -29,6 +30,7 @@ void main() {
       service: const MockAuthService(),
       googleService: FakeGoogleSignInService(),
       tokenStore: store,
+      preferences: RecordingPreferences(),
     );
   });
 

@@ -1,6 +1,7 @@
 import 'package:commons/commons.dart';
 import 'package:get_it/get_it.dart';
 
+import '../../../data/storage/preferences.dart';
 import '../../../di/env_config.dart';
 import '../auth_service.dart';
 import '../bloc/auth_cubit.dart';
@@ -36,6 +37,7 @@ abstract final class AuthDependencies {
         service: locator<AuthService>(),
         googleService: locator<GoogleSignInService>(),
         tokenStore: locator<AuthTokenStore>(),
+        preferences: locator<Preferences>(),
       ),
     );
   }

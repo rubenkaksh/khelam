@@ -5,6 +5,7 @@ import 'package:khelam/features/auth/bloc/auth_cubit.dart';
 import 'package:khelam/features/auth/data/mock_auth_service.dart';
 import 'package:khelam/features/auth/models/auth_user.dart';
 
+import '../../helpers/recording_preferences.dart';
 import '../../helpers/recording_token_store.dart';
 
 class FakeGoogleSignInService implements GoogleSignInService {
@@ -40,6 +41,7 @@ void main() {
         service: const MockAuthService(),
         googleService: fake,
         tokenStore: RecordingTokenStore(),
+        preferences: RecordingPreferences(),
       );
 
       await cubit.googleSignIn();
@@ -57,6 +59,7 @@ void main() {
           result: const GoogleSignInResult(email: 'no-name@khelam.dev'),
         ),
         tokenStore: RecordingTokenStore(),
+        preferences: RecordingPreferences(),
       );
 
       await cubit.googleSignIn();
@@ -76,6 +79,7 @@ void main() {
           ),
         ),
         tokenStore: store,
+        preferences: RecordingPreferences(),
       );
 
       await cubit.googleSignIn();
@@ -90,6 +94,7 @@ void main() {
         service: const MockAuthService(),
         googleService: FakeGoogleSignInService(result: null),
         tokenStore: store,
+        preferences: RecordingPreferences(),
       );
 
       await cubit.googleSignIn();
@@ -107,6 +112,7 @@ void main() {
           error: const MockAuthException('Google sign-in failed.'),
         ),
         tokenStore: RecordingTokenStore(),
+        preferences: RecordingPreferences(),
       );
 
       await cubit.googleSignIn();
@@ -122,6 +128,7 @@ void main() {
         service: const MockAuthService(),
         googleService: FakeGoogleSignInService(result: null),
         tokenStore: RecordingTokenStore(),
+        preferences: RecordingPreferences(),
       );
 
       cubit.restoreSession(
@@ -141,6 +148,7 @@ void main() {
         service: const MockAuthService(),
         googleService: FakeGoogleSignInService(result: null),
         tokenStore: store,
+        preferences: RecordingPreferences(),
       );
 
       await cubit.login(
@@ -160,6 +168,7 @@ void main() {
         service: const MockAuthService(),
         googleService: FakeGoogleSignInService(result: null),
         tokenStore: RecordingTokenStore(),
+        preferences: RecordingPreferences(),
       );
 
       await cubit.login(email: '9800000002', password: 'wrong');
@@ -175,6 +184,7 @@ void main() {
         service: const MockAuthService(),
         googleService: FakeGoogleSignInService(result: null),
         tokenStore: store,
+        preferences: RecordingPreferences(),
       );
 
       await cubit.register(
@@ -193,10 +203,12 @@ void main() {
   group('AuthCubit.logout', () {
     test('clears the persisted session and returns to the initial state', () async {
       final RecordingTokenStore store = RecordingTokenStore();
+      final RecordingPreferences preferences = RecordingPreferences();
       final AuthCubit cubit = AuthCubit(
         service: const MockAuthService(),
         googleService: FakeGoogleSignInService(result: null),
         tokenStore: store,
+        preferences: preferences,
       );
 
       await cubit.login(
@@ -212,6 +224,24 @@ void main() {
       expect(cubit.state.status, AuthStatus.initial);
       expect(cubit.state.isAuthenticated, isFalse);
       expect(cubit.state.user, isNull);
+    });
+
+    test('clears preferences alongside the session', () async {
+      final RecordingPreferences preferences = RecordingPreferences();
+      final AuthCubit cubit = AuthCubit(
+        service: const MockAuthService(),
+        googleService: FakeGoogleSignInService(result: null),
+        tokenStore: RecordingTokenStore(),
+        preferences: preferences,
+      );
+
+      await preferences.setSelectedTurfId('turf-1');
+      expect(await preferences.selectedTurfId(), 'turf-1');
+
+      await cubit.logout();
+
+      expect(preferences.cleared, isTrue);
+      expect(await preferences.selectedTurfId(), isNull);
     });
   });
 }

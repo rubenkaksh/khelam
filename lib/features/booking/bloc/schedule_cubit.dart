@@ -54,15 +54,14 @@ class ScheduleState {
 }
 
 class ScheduleCubit extends Cubit<ScheduleState> {
-  ScheduleCubit({required BookingService service})
+  ScheduleCubit({required BookingService service, required String turfId})
     : _service = service,
+      _turfId = turfId,
       super(const ScheduleState());
 
-  /// Default turf used before the turf is loaded from the service.
-  ///
-  /// TODO: remove once a turfs endpoint exists and the turf id comes from
-  /// navigation/selection instead of a hardcoded dev value.
-  static const String _defaultTurfId = '44444444-4444-4444-4444-444444444441';
+  /// Turf selected on the turf-selection screen and passed through the route
+  /// (no hardcoded fallback: the schedule only exists for a picked turf).
+  final String _turfId;
 
   final BookingService _service;
 
@@ -70,7 +69,7 @@ class ScheduleCubit extends Cubit<ScheduleState> {
     emit(state.copyWith(isLoading: true, clearError: true));
 
     try {
-      final TurfSummary turf = await _service.getTurf(turfId ?? _defaultTurfId);
+      final TurfSummary turf = await _service.getTurf(turfId ?? _turfId);
       final DateTime today = DateTime.now();
       final DateTime normalizedDate = DateTime(
         today.year,
@@ -109,7 +108,7 @@ class ScheduleCubit extends Cubit<ScheduleState> {
 
     try {
       final List<ScheduleSlotItem> slots = await _service.getSchedule(
-        turfId: state.turf?.id ?? _defaultTurfId,
+        turfId: state.turf?.id ?? _turfId,
         date: normalizedDate,
       );
       emit(
@@ -133,7 +132,7 @@ class ScheduleCubit extends Cubit<ScheduleState> {
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
       await _service.bookSlot(
-        turfId: state.turf?.id ?? _defaultTurfId,
+        turfId: state.turf?.id ?? _turfId,
         slotId: slotId,
         customerPhone: customerPhone,
       );
@@ -142,7 +141,7 @@ class ScheduleCubit extends Cubit<ScheduleState> {
       // booked slot (and its booker name) comes back from the API.
       final DateTime date = state.selectedDate ?? DateTime.now();
       final List<ScheduleSlotItem> updatedSlots = await _service.getSchedule(
-        turfId: state.turf?.id ?? _defaultTurfId,
+        turfId: state.turf?.id ?? _turfId,
         date: date,
       );
 

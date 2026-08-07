@@ -25,9 +25,16 @@ class _ScheduleViewState extends m.State<ScheduleView> {
   @override
   void initState() {
     super.initState();
+    // The turf id arrives on the route (/schedule?turfId=...) from the
+    // turf-selection screen; when absent the cubit falls back to its
+    // constructor id (the router guards against the missing case).
+    // GoRouterState.of must run after initState (it depends on ModalRoute).
     final ScheduleCubit cubit = context.read<ScheduleCubit>();
     m.WidgetsBinding.instance.addPostFrameCallback((_) {
-      cubit.load();
+      final String? turfId = GoRouterState.of(
+        context,
+      ).uri.queryParameters['turfId'];
+      cubit.load(turfId: turfId);
     });
   }
 

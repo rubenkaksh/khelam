@@ -1,6 +1,7 @@
 import 'package:commons/commons.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../data/storage/preferences.dart';
 import '../auth_service.dart';
 import '../data/auth_token_store.dart';
 import '../models/auth_session.dart';
@@ -41,14 +42,17 @@ class AuthCubit extends Cubit<AuthState> {
     required AuthService service,
     required GoogleSignInService googleService,
     required AuthTokenStore tokenStore,
+    required Preferences preferences,
   }) : _service = service,
        _googleService = googleService,
        _tokenStore = tokenStore,
+       _preferences = preferences,
        super(const AuthState());
 
   final AuthService _service;
   final GoogleSignInService _googleService;
   final AuthTokenStore _tokenStore;
+  final Preferences _preferences;
 
   Future<void> login({required String email, required String password}) async {
     emit(state.copyWith(status: AuthStatus.loading, clearError: true));
@@ -158,12 +162,14 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   /// Signs out: detaches the bearer token from the HTTP client, clears the
-  /// persisted session, and returns to the initial state. Best effort — even
-  /// if storage cleanup fails, the in-memory session is dropped.
+  /// persisted session and preferences, and returns to the initial state.
+  /// Best effort — even if storage cleanup fails, the in-memory session is
+  /// dropped.
   Future<void> logout() async {
     try {
       await _service.logout();
       await _tokenStore.clear();
+      await _preferences.clear();
     } catch (_) {
       // Fall through: the in-memory session must still be dropped.
     }

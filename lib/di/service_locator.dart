@@ -2,9 +2,15 @@ import 'package:get_it/get_it.dart';
 import 'package:samseer/samseer.dart';
 
 import 'package:commons/commons.dart';
+import '../data/storage/preferences.dart';
+import '../data/storage/preferences_impl.dart';
+import '../data/storage/shared_prefs_store_service.dart';
+import '../data/storage/store_service.dart';
 import '../features/auth/bloc/auth_cubit.dart';
 import '../features/auth/di/auth_dependencies.dart';
 import '../features/booking/bloc/schedule_cubit.dart';
+import '../features/booking/bloc/turf_selection_cubit.dart';
+import '../features/booking/booking_service.dart';
 import '../features/booking/di/booking_dependencies.dart';
 import '../ui/navigation/app_router.dart';
 import 'env_config.dart';
@@ -36,6 +42,13 @@ void configureDependencies({GetIt? getIt, Samseer? samseer}) {
     },
   );
 
+  // Shared infrastructure: key-value preference store (SharedPreferences
+  // today; a typed Hive/Isar store can swap in here later).
+  locator.registerLazySingleton<StoreService>(() => SharedPrefsStoreService());
+  locator.registerLazySingleton<Preferences>(
+    () => PreferencesImpl(store: locator<StoreService>()),
+  );
+
   // Per-feature registries (ADR-0003): each feature wires its own chain.
   AuthDependencies.register(locator);
   BookingDependencies.register(locator);
@@ -44,7 +57,9 @@ void configureDependencies({GetIt? getIt, Samseer? samseer}) {
     () => AppRouter(
       isAuthenticated: () => locator<AuthCubit>().state.isAuthenticated,
       authCubit: () => locator<AuthCubit>(),
-      scheduleCubit: () => locator<ScheduleCubit>(),
+      scheduleCubit: (String turfId) =>
+          ScheduleCubit(service: locator<BookingService>(), turfId: turfId),
+      turfSelectionCubit: () => locator<TurfSelectionCubit>(),
       navigatorKey: samseer?.navigatorKey,
     ),
   );

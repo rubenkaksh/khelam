@@ -78,7 +78,7 @@ void main() {
 
   group('ScheduleCubit', () {
     test('initial state has no date, no turf, empty slots', () {
-      final cubit = ScheduleCubit(service: fakeService);
+      final cubit = ScheduleCubit(service: fakeService, turfId: 'turf-a');
       expect(cubit.state.selectedDate, isNull);
       expect(cubit.state.turf, isNull);
       expect(cubit.state.slots, isEmpty);
@@ -86,7 +86,7 @@ void main() {
     });
 
     test('load sets turf, date and slots on success', () async {
-      final cubit = ScheduleCubit(service: fakeService);
+      final cubit = ScheduleCubit(service: fakeService, turfId: 'turf-a');
       await cubit.load();
 
       expect(cubit.state.turf?.name, 'Turf A');
@@ -98,7 +98,7 @@ void main() {
 
     test('load sets errorMessage on failure', () async {
       fakeService.shouldThrow = true;
-      final cubit = ScheduleCubit(service: fakeService);
+      final cubit = ScheduleCubit(service: fakeService, turfId: 'turf-a');
       await cubit.load();
 
       expect(cubit.state.errorMessage, isNotNull);
@@ -107,7 +107,7 @@ void main() {
     });
 
     test('selectDate refreshes slots for the new date', () async {
-      final cubit = ScheduleCubit(service: fakeService);
+      final cubit = ScheduleCubit(service: fakeService, turfId: 'turf-a');
       await cubit.load();
 
       final DateTime baseDate = cubit.state.selectedDate ?? DateTime.now();
@@ -121,7 +121,7 @@ void main() {
     test(
       'selectDate keeps existing turf when turf is already loaded',
       () async {
-        final cubit = ScheduleCubit(service: fakeService);
+        final cubit = ScheduleCubit(service: fakeService, turfId: 'turf-a');
         await cubit.load();
 
         final DateTime baseDate = cubit.state.selectedDate ?? DateTime.now();
@@ -173,6 +173,7 @@ void main() {
 
       final cubit = ScheduleCubit(
         service: _StaticSlotsService([bookedItem, availableItem]),
+        turfId: 'turf-a',
       );
       await cubit.load();
 
@@ -181,7 +182,7 @@ void main() {
     });
 
     test('bookSlot converts available slot to booked', () async {
-      final cubit = ScheduleCubit(service: fakeService);
+      final cubit = ScheduleCubit(service: fakeService, turfId: 'turf-a');
       await cubit.load();
 
       // Find first available slot
