@@ -89,7 +89,7 @@ Future<T?> showFormBottomSheet<T>({
 **File:** `lib/ui/common/phone_input.dart`
 
 A phone number input field with:
-- `+91` prefix display (non-editable)
+- `+977` prefix display (non-editable)
 - `TextInputType.phone` keyboard
 - `maxLength: 10`
 - Real-time validation: only digits, starts with 6-9

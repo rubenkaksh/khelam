@@ -300,7 +300,7 @@ class PhoneInput extends m.StatelessWidget {
         prefixIcon: const m.Padding(
           padding: m.EdgeInsets.only(left: 12, right: 8),
           child: m.Text(
-            '+91',
+            '+977',
             style: m.TextStyle(fontSize: 16),
           ),
         ),
@@ -334,11 +334,11 @@ import 'package:khelam/ui/common/phone_input.dart';
 
 void main() {
   group('PhoneInput', () {
-    testWidgets('renders with +91 prefix', (tester) async {
+    testWidgets('renders with +977 prefix', (tester) async {
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(body: PhoneInput()),
       ));
-      expect(find.text('+91'), findsOneWidget);
+      expect(find.text('+977'), findsOneWidget);
       expect(find.text('Phone Number'), findsOneWidget);
     });
 

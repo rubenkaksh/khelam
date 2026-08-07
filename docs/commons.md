@@ -17,7 +17,7 @@ Status: migrated 2026-08-01 — all 21 widgets live in `~/projects/commons/lib/s
 - [x] **TextInput** — TextFormField wrapper. Props: label, hint, error, enabled, obscure. `commons/src/widgets/inputs.dart`.
 - [x] **PasswordInput** — TextFormField wrapper. Adds visibility toggle on obscure. `commons/src/widgets/inputs.dart`.
 - [x] **SearchInput** — SearchBar wrapper. Props: hint, onChanged, controller. `commons/src/widgets/inputs.dart`.
-- [x] **PhoneInput** — TextFormField wrapper with +91 prefix, 10-digit Indian mobile validation. `commons/src/widgets/phone_input.dart`.
+- [x] **PhoneInput** — TextFormField wrapper with +977 prefix, 10-digit mobile validation. `commons/src/widgets/phone_input.dart`.
 
 ### Typography (4)
 

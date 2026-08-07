@@ -27,7 +27,7 @@
 
 ### `lib/ui/common/phone_input.dart`
 - [x] `PhoneInput` widget — 10-digit Indian mobile validation
-- [x] `+91` prefix display (non-editable)
+- [x] `+977` prefix display (non-editable)
 - [x] `TextInputType.phone` keyboard
 - [x] `maxLength: 10`
 - [x] Error text on invalid input
