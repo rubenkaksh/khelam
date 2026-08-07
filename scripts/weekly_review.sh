@@ -172,6 +172,97 @@ deny_deferred_survey() {
   fi
 }
 
+# Config-guard check (sandbox policy): mechanically validates the permission
+# invariants the design depends on. (a) Global external_directory map: no '*'
+# catch-all key (shadows every rule under last-match-wins — issue #15664), every
+# deny AFTER every allow (ordering is the enforcement since opencode has no
+# structural deny-wins — ecosystem finding 2026-08-07), and the 18 deny entries
+# present. (b) Project grants: omit external_directory (global deny-list
+# unbypassable) and carry the workspace-relative .env deny rules — an L3 grant's
+# plain 'read: allow' OVERRIDES opencode's native .env-ask default (empirically
+# verified 2026-08-07: granted read of .env succeeded, granular rules then
+# denied it).
+config_guard_check() {
+  local global_cfg="${GLOBAL_CONFIG:-$HOME/.config/opencode/opencode.json}"
+  local base="${FORKABLE_REPO:-/Users/rubenk/projects/forkable}"
+  local grants="$base/opencode.json $HOME/projects/sandbox/config/opencode.json"
+  [ -f "$REPO/opencode.json" ] && grants="$grants $REPO/opencode.json"
+  [ -f "$REPO/.opencode/opencode.json" ] && grants="$grants $REPO/.opencode/opencode.json"
+  local issues=0
+  if [ -f "$global_cfg" ]; then
+    local out
+    out="$(python3 - "$global_cfg" <<'PY'
+import json, sys
+issues = []
+try:
+    cfg = json.load(open(sys.argv[1]))
+except Exception as e:
+    issues.append(f"unparseable: {e}")
+    print("\n".join(issues)); sys.exit(0)
+ed = (cfg.get("permission") or {}).get("external_directory") or {}
+if "*" in ed:
+    issues.append("external_directory contains a '*' catch-all key (shadows all rules under last-match-wins)")
+actions = list(ed.values())
+if "deny" in actions and "allow" in actions:
+    first_deny = min(i for i, a in enumerate(actions) if a == "deny")
+    last_allow = max(i for i, a in enumerate(actions) if a == "allow")
+    if first_deny < last_allow:
+        issues.append("an allow is listed AFTER a deny (deny no longer wins under last-match-wins)")
+expect = ["~/.ssh/**","~/.aws/**","~/.gnupg/**","~/.netrc","~/Library/Keychains/**","~/.config/gh/**","~/.config/gcloud/**","~/.m2/**","~/.gradle/**","~/.config/git/**","~/.npmrc","~/.pypirc","~/.config/docker/**","~/.config/Code/User/**","~/.claude/skills/**","~/.agents/skills/**","~/.zsh_history","~/.bash_history"]
+missing = [p for p in expect if ed.get(p) != "deny"]
+if missing:
+    issues.append(f"missing deny entries: {', '.join(missing)}")
+print("\n".join(issues))
+PY
+)"
+    if [ -n "$out" ]; then
+      echo "ISSUES (global config): $out" | sed 's/^/  /'
+      issues=$((issues+1))
+    else
+      echo "OK: global external_directory (no '*', denies after allows, all 18 denies present)."
+    fi
+  else
+    echo "SKIPPED: global config not found at $global_cfg."
+  fi
+  for g in $grants; do
+    [ -f "$g" ] || continue
+    local gname="${g#$HOME/}"
+    local out2
+    out2="$(python3 - "$g" "$gname" <<'PY'
+import json, sys
+issues = []
+try:
+    cfg = json.load(open(sys.argv[1]))
+except Exception as e:
+    issues.append(f"unparseable: {e}")
+    print("\n".join(issues)); sys.exit(0)
+perm = cfg.get("permission") or {}
+if "external_directory" in perm:
+    issues.append("grant declares external_directory (can weaken the global boundary)")
+read = perm.get("read")
+if isinstance(read, dict):
+    if read.get("*") != "allow":
+        issues.append("read catch-all is not 'allow'")
+    for pat in ("*.env", "*.env.*"):
+        if read.get(pat) != "deny":
+            issues.append(f"read rule '{pat}' is not 'deny'")
+    if read.get("*.env.example") != "allow":
+        issues.append("read rule '*.env.example' is not 'allow'")
+elif read != "allow":
+    issues.append(f"read is neither object nor 'allow' (got {read!r})")
+print("\n".join(issues))
+PY
+)"
+    if [ -n "$out2" ]; then
+      echo "ISSUES (grant $gname): $out2" | sed 's/^/  /'
+      issues=$((issues+1))
+    else
+      echo "OK: grant $gname (no external_directory, .env denied, .env.example allowed)."
+    fi
+  done
+  return $issues
+}
+
 PROMPT="Weekly cost review for the $REPO_NAME project (and sibling repos commons/forkable when mentioned).
 
 Read every session file listed below, plus the persistent review memory at docs/reviews/review-memory.md (its Open Actions table lists what is still outstanding — check each one), plus run 'git log --oneline --since=\"7 days ago\"' in the repo.
@@ -188,6 +279,8 @@ FORKABLE-SYNC CHECK (computed by the script, base-template policy): $(forkable_s
 
 DENY-DEFERRED SURVEY (computed by the script, sandbox policy): $(deny_deferred_survey)
 
+CONFIG-GUARD CHECK (computed by the script, sandbox policy): $(config_guard_check)
+
 WEEKLY I/O DATA (from the analytics collector): weekly CSV at $ANALYTICS_DIR/weekly/$REVIEW_DATE.csv (may not exist yet on the first run of a week — then note that). Monthly rollup at $ANALYTICS_DIR/monthly/.
 
 Audit checklist — be specific, quote file names and commit hashes:
@@ -198,7 +291,7 @@ Audit checklist — be specific, quote file names and commit hashes:
 5. Open Actions from review-memory.md: were any worked on? Close or keep them in your report.
 6. User prompt drift (sidetrack guard): did the user's prompts cause waste this week? Look for the patterns in the global AGENTS.md 'User Prompt Discipline' section (destination layer missing, follow-up scope extensions, deferred decisions, missing acceptance bars, praise-then-scope-creep). Name each instance and the cheaper phrasing. This feeds the guard's pattern list.
 7. Base-template drift (forkable policy): did the week build any reusable/shared capability child-first instead of in forkable? The FORKABLE-SYNC CHECK above lists script drift; the agent should also scan session files for shared-component work that landed in $REPO_NAME without a forkable home, and flag it for the user's decision.
-8. Sandbox/guard health: the DENY-DEFERRED SURVEY lists tasks that hit a denied path — check the session files named in each entry and the opencode logs to confirm the agent did NOT retry the denied path (a retry is a guard violation). Also check no project config gained an 'external_directory' key this week (a config that declares it can override the global boundary — convention requires grants to omit it). Flag both for the user.
+8. Sandbox/guard health: the DENY-DEFERRED SURVEY lists tasks that hit a denied path — check the session files named in each entry and the opencode logs to confirm the agent did NOT retry the denied path (a retry is a guard violation). The CONFIG-GUARD CHECK validates the permission invariants (no '*' key, denies after allows, grants omit external_directory, .env denied in grants) — if it reports ISSUES, flag them for the user immediately, they are security-relevant. Also confirm no project config gained an 'external_directory' key this week (a config that declares it can override the global boundary). Flag all of the above for the user.
 
 SECTION A — ANALYTICS (v2): read the week's CSV ($ANALYTICS_DIR/weekly/$REVIEW_DATE.csv if it exists, else note its absence) and the monthly rollup ($ANALYTICS_DIR/monthly/). Write $ANALYTICS_DIR/performance-summary.md (OVERWRITE each week) with EXACT structure:
 # Performance Summary — $REVIEW_DATE

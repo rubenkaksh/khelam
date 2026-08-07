@@ -4,7 +4,12 @@
     ".opencode/plugins/graphify.js"
   ],
   "permission": {
-    "read": "allow",
+    "read": {
+      "*": "allow",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "*.env.example": "allow"
+    },
     "edit": "allow",
     "glob": "allow",
     "grep": "allow",
