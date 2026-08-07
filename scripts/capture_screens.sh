@@ -77,7 +77,7 @@ done
 fail() { # fail <exit-code> <title> <body>
   local code="$1" title="$2" body="$3"
   echo "ERROR: $body" >&2
-  send_report "$title" "$body"
+  send_error_report "$title" "$body"
   exit "$code"
 }
 
@@ -249,5 +249,5 @@ cat <<EOF
 
 saved: $OUT_FILE
 EOF
-send_report "capture_screens.sh done" "captured $SCREEN ($size bytes) → $OUT_FILE"
+send_report "capture_screens.sh done" "captured $SCREEN ($size bytes)" "$OUT_FILE"
 exit 0
