@@ -14,7 +14,7 @@ When a UI-affecting change ships (replacing a component, adding a feature chunk 
 | 2 | Trigger on feature-doc chunk added **and** UI-visible (component replace/add, large feature chunk). **Skip** text changes, layout tweaks. | Avoid screenshot noise |
 | 3 | Screenshots embedded into the PR description. | PR = review surface |
 | 4 | iOS only (iPhone 16 Pro Max simulator). Android out of scope. | Platform cap |
-| 5 | Screenshots land in `docs/screenshots/feature/YYYY-MM-DD.png`, and `docs/screenshots/` is **gitignored** (not committed). | Local artifact; repo stays lean |
+| 5 | Screenshots land in `docs/screenshots/feature/<screen>_<timestamp>.png`, and `docs/screenshots/` is **gitignored** (not committed). **Amended 2026-08-07 (user):** format is `<screen>_<timestamp>.png` — matches the implemented script (§5 step 6 + §11 acceptance); the earlier `YYYY-MM-DD.png` wording is superseded. | Local artifact; repo stays lean |
 | 6 | Deep-link URL-scheme (non-initial routes) = **deferred scope, V2**. | v0 covers initial route only |
 
 ## 3. Mechanism for capture — options evaluated
@@ -74,7 +74,7 @@ Per-feature YAML at `docs/features/<feature>/screens.yaml`, discovered by globbi
 
 ## 7. PR integration
 
-Screenshots land in `docs/screenshots/feature/YYYY-MM-DD.png` (per decision 5) — a **local, gitignored** artifact (`docs/screenshots/` added to `.gitignore`: regenerable, keeps the pre-commit gate fast). The script writes the PNG to that path and prints a markdown snippet the caller pastes into the PR description; the user drags the PNG from Finder into the PR (GitHub embed support) — zero upload deps.
+Screenshots land in `docs/screenshots/feature/<screen>_<timestamp>.png` (per decision 5, amended 2026-08-07) — a **local, gitignored** artifact (`docs/screenshots/` added to `.gitignore`: regenerable, keeps the pre-commit gate fast). The script writes the PNG to that path and prints a markdown snippet the caller pastes into the PR description; the user drags the PNG from Finder into the PR (GitHub embed support) — zero upload deps.
 
 ```
 ---
