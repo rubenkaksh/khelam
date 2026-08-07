@@ -9,6 +9,11 @@
 # pricing when available (free tiers = 0.0 / NULL documented). Graceful degradation:
 # if the sqlite query fails (schema changed), log a warning and fall back to
 # ccusage global-only (no per-repo split). No commits ever.
+#
+# MACHINE-LOCAL: the repo CASE map below (line ~45) maps this machine's sibling
+# directories to repo names. khel-service/khelam is the canonical source for this
+# script (it lives here as part of the base template); new children add their own
+# CASE arm here after forking.
 
 set -euo pipefail
 

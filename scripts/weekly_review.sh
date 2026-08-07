@@ -1,19 +1,26 @@
 #!/bin/bash
-# Weekly cost/budget review for the khelam project.
+# Weekly cost/budget review for the repo this script lives in (canonical copy
+# lives in forkable/scripts/ — the base template; children pull synced copies).
 #
-# Runs automatically every Sunday 18:00 via launchd
-# (com.khelam.weekly-review.plist — see scripts/). Produces an
-# understandable review doc at docs/reviews/YYYY-MM-DD.md and fires a macOS
-# notification. Nothing is committed or pushed.
+# Runs automatically every Sunday 18:00 via launchd (per-machine scheduling).
+# Produces a review doc at docs/reviews/YYYY-MM-DD.md and fires a notification.
+# Nothing is committed or pushed.
 #
 # Manual run:  bash scripts/weekly_review.sh
 set -euo pipefail
 
-REPO="/Users/rubenk/projects/khel-service/khelam"
+# Repo-agnostic: derive the repo root from this script's own location
+# (scripts/ sits at the repo root). Override for odd layouts via $REPO_OVERRIDE.
+if [ -n "${REPO_OVERRIDE:-}" ]; then
+  REPO="$REPO_OVERRIDE"
+else
+  REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+fi
+REPO_NAME="$(basename "$REPO")"
 REVIEWS_DIR="$REPO/docs/reviews"
 SESSION_DIR="$REPO/docs/sessions"
 LOG="/tmp/weekly-review.log"
-ANALYTICS_DIR="$HOME/analytics"
+ANALYTICS_DIR="${ANALYTICS_DIR:-$HOME/analytics}"
 SCRIPTS_DIR="$REPO/scripts"
 
 REVIEW_DATE="$(date +%F)"
@@ -47,18 +54,17 @@ if [ -z "${SESSION_FILES// }" ]; then
   exit 0
 fi
 
-# Commons consumer check: if commons had commits this week, verify both
-# consumer apps still analyze clean (catches breaking commons changes
-# before they cost a rework cycle).
+# Commons consumer check: if commons had commits this week, verify commons
+# ITSELF (origin self-check) and the consumer apps still analyze clean
+# (catches breaking commons changes before they cost a rework cycle).
+# Machine-local sibling paths — override via $COMMONS_REPO / $FORKABLE_REPO.
 CONSUMER_NOTE=""
-COMMONS="/Users/rubenk/projects/commons"
-FORKABLE="/Users/rubenk/projects/forkable"
+COMMONS="${COMMONS_REPO:-/Users/rubenk/projects/commons}"
+FORKABLE="${FORKABLE_REPO:-/Users/rubenk/projects/forkable}"
 if [ -d "$COMMONS/.git" ] && git -C "$COMMONS" log --oneline --since="7 days ago" 2>/dev/null | rg -q .; then
-  # Open Action #3: origin self-check — analyze commons ITSELF, not just its
-  # consumers (its own test fake was broken while only consumers were checked).
   CONSUMER_NOTE="Commons had commits this week. Origin + consumer check:"$'\n'
   CONSUMER_NOTE+="- commons flutter analyze (origin): $(cd "$COMMONS" && flutter analyze 2>&1 | tail -1)"$'\n'
-  CONSUMER_NOTE+="- khelam flutter analyze: $(cd "$REPO" && flutter analyze 2>&1 | tail -1)"$'\n'
+  CONSUMER_NOTE+="- $REPO_NAME flutter analyze: $(cd "$REPO" && flutter analyze 2>&1 | tail -1)"$'\n'
   if [ -d "$FORKABLE/.git" ]; then
     CONSUMER_NOTE+="- forkable flutter analyze: $(cd "$FORKABLE" && flutter analyze 2>&1 | tail -1)"
   fi
@@ -81,10 +87,11 @@ mechanical_check() {
   fi
 }
 
-# Session-boundary check (Open Action #2, execution-model spec): flag weekly
-# sessions that ran >1 day with >50M cache reads. Long sessions violate the
-# fresh-session-per-batch rule (one long context accumulates cache reads; a
-# fresh session resets them). Computed from opencode.db; degrades gracefully.
+# Session-boundary check (execution-model spec): flag weekly sessions that ran
+# >1 day with >50M cache reads. Long sessions violate the fresh-session-per-batch
+# rule (one long context accumulates cache reads; a fresh session resets them).
+# Computed from opencode.db; degrades gracefully. Matches sessions of THIS repo
+# by directory suffix (covers legacy + current paths alike).
 session_boundary_check() {
   local db="$HOME/.local/share/opencode/opencode.db"
   if [[ ! -f "$db" || ! -x "$(command -v sqlite3)" ]]; then
@@ -96,7 +103,7 @@ session_boundary_check() {
     SELECT title || ' (' || printf('%.0f', COALESCE(tokens_cache_read,0)/1000000.0) || 'M cache, ' ||
            printf('%.1f', (time_updated - time_created)/3600000.0) || 'h span)'
     FROM session
-    WHERE (directory LIKE '%/khelam' OR directory LIKE '%khel-service/khelam%')
+    WHERE directory LIKE '%' || '$(basename "$REPO")'
       AND time_updated > CAST(strftime('%s','now','-7 day') AS INTEGER) * 1000
       AND (time_updated - time_created) > 86400000
       AND COALESCE(tokens_cache_read,0) > 50000000
@@ -110,7 +117,33 @@ session_boundary_check() {
   fi
 }
 
-PROMPT="Weekly cost review for the khelam project (and sibling repos commons/forkable when mentioned).
+# Forkable-sync tripwire (base-template policy): shared tooling (scripts/,
+# pre-commit gate) is canonical in forkable; children pull synced copies.
+# Flags child-only drift mechanically for the user's sign-off.
+forkable_sync_check() {
+  local base="${FORKABLE_REPO:-/Users/rubenk/projects/forkable}"
+  if [ "$REPO" = "$base" ]; then
+    echo "SKIPPED: this repo IS forkable (canonical base) — nothing to compare."
+    return
+  fi
+  if [ ! -d "$base/scripts" ]; then
+    echo "SKIPPED: forkable base has no scripts/ yet — base not migrated."
+    return
+  fi
+  local drift
+  drift="$(diff -rq -x '__pycache__' "$SCRIPTS_DIR" "$base/scripts" 2>/dev/null | rg -v '\.pyc$' || true)"
+  if [ -z "$drift" ]; then
+    echo "OK: scripts/ identical to forkable canonical (child is up to date)."
+  else
+    echo "DRIFT: this repo's scripts/ differs from forkable canonical — child has not pulled:"
+    echo "$drift" | sed 's/^/  - /'
+  fi
+  if [ ! -f "$REPO/.git/hooks/pre-commit" ]; then
+    echo "WARNING: no pre-commit gate installed in this repo."
+  fi
+}
+
+PROMPT="Weekly cost review for the $REPO_NAME project (and sibling repos commons/forkable when mentioned).
 
 Read every session file listed below, plus the persistent review memory at docs/reviews/review-memory.md (its Open Actions table lists what is still outstanding — check each one), plus run 'git log --oneline --since=\"7 days ago\"' in the repo.
 
@@ -120,7 +153,9 @@ $(if [ -n "$CONSUMER_NOTE" ]; then echo "Consumer health note (from the script):
 
 MECHANICAL CHECK (computed by the script, not by you): $(mechanical_check)
 
-SESSION-BOUNDARY CHECK (computed by the script, Open Action #2): $(session_boundary_check)
+SESSION-BOUNDARY CHECK (computed by the script): $(session_boundary_check)
+
+FORKABLE-SYNC CHECK (computed by the script, base-template policy): $(forkable_sync_check)
 
 WEEKLY I/O DATA (from the analytics collector): weekly CSV at $ANALYTICS_DIR/weekly/$REVIEW_DATE.csv (may not exist yet on the first run of a week — then note that). Monthly rollup at $ANALYTICS_DIR/monthly/.
 
@@ -131,6 +166,7 @@ Audit checklist — be specific, quote file names and commit hashes:
 4. Output waste: huge webfetch dumps read fully, same file read multiple times in one session, verbose logs consumed unnecessarily.
 5. Open Actions from review-memory.md: were any worked on? Close or keep them in your report.
 6. User prompt drift (sidetrack guard): did the user's prompts cause waste this week? Look for the patterns in the global AGENTS.md 'User Prompt Discipline' section (destination layer missing, follow-up scope extensions, deferred decisions, missing acceptance bars, praise-then-scope-creep). Name each instance and the cheaper phrasing. This feeds the guard's pattern list.
+7. Base-template drift (forkable policy): did the week build any reusable/shared capability child-first instead of in forkable? The FORKABLE-SYNC CHECK above lists script drift; the agent should also scan session files for shared-component work that landed in $REPO_NAME without a forkable home, and flag it for the user's decision.
 
 SECTION A — ANALYTICS (v2): read the week's CSV ($ANALYTICS_DIR/weekly/$REVIEW_DATE.csv if it exists, else note its absence) and the monthly rollup ($ANALYTICS_DIR/monthly/). Write $ANALYTICS_DIR/performance-summary.md (OVERWRITE each week) with EXACT structure:
 # Performance Summary — $REVIEW_DATE
@@ -161,10 +197,10 @@ cd "$REPO"
 opencode run --auto --dir "$REPO" "$PROMPT" >> "$LOG" 2>&1
 
 if [ -f "$REVIEW_FILE" ]; then
-  send_report "Khelam Weekly Review" "Weekly review ready: docs/reviews/$REVIEW_DATE.md" \
+  send_report "$REPO_NAME Weekly Review" "Weekly review ready: docs/reviews/$REVIEW_DATE.md" \
     "performance-summary.md" "update-log.md" "weekly/$REVIEW_DATE.csv"
   echo "$(date): review written to $REVIEW_FILE" >> "$LOG"
 else
   echo "$(date): ERROR — review agent did not produce $REVIEW_FILE" >> "$LOG"
-  send_error_report "Khelam Weekly Review" "Weekly review FAILED — check /tmp/weekly-review.log"
+  send_error_report "$REPO_NAME Weekly Review" "Weekly review FAILED — check /tmp/weekly-review.log"
 fi

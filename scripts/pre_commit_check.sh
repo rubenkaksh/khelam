@@ -1,11 +1,12 @@
 #!/bin/bash
-# Pre-commit gate for khelam: blocks the commit if `flutter analyze` or the
-# full `flutter test` suite fails. Installed as .git/hooks/pre-commit
-# (calls this script). Manual run: bash scripts/pre_commit_check.sh
+# Pre-commit gate (canonical copy lives in forkable/scripts/): blocks the
+# commit if `flutter analyze` or the full `flutter test` suite fails.
+# Installed as .git/hooks/pre-commit (calls this script). Manual run:
+# bash scripts/pre_commit_check.sh
 #
-# Skips when only docs/markdown/scripts changed — doc commits don't need a
-# build check. Also see the "Cost Discipline" rules in AGENTS.md: the gate
-# enforces "no commits with known failures" mechanically.
+# Skips when only docs/markdown/scripts changed — doc/script commits don't
+# need a build check. Also see the "Cost Discipline" rules in AGENTS.md: the
+# gate enforces "no commits with known failures" mechanically.
 set -euo pipefail
 
 REPO="$(git rev-parse --show-toplevel)"

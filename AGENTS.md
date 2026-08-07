@@ -13,6 +13,7 @@ Inherits the global software-engineer instructions at `~/.config/opencode/AGENTS
 
 ## Project Conventions
 
+- **Base-template tooling**: `scripts/` + the pre-commit gate are synced copies — **canonical versions live in forkable** (forkable-first policy). Pull changes from forkable; never edit them khelam-first. The weekly review's forkable-sync tripwire flags drift mechanically.
 - **Integration tests**: `integration_test/*_test.dart` run against the live backend (emulator-5554). Only run when the live path changed or the user asks — the session file records the last verified state.
 - **Commons consumer check**: after any `commons` change (or a consumer pubspec change), run `flutter analyze` in both `khelam` and `forkable` before committing — don't wait for the weekly review.
 - **Demo seam**: phone `9800000001` / password `khelam123`; default turf `44444444-4444-4444-4444-444444444441` (`ScheduleCubit._defaultTurfId`).
