@@ -30,8 +30,12 @@ bash "$SCRIPTS_DIR/ccusage_collect.sh" >> "$LOG" 2>&1 || \
 
 # Sessions for the last 7 days, selected by FILENAME date (not mtime —
 # editing an old session file would otherwise drag it into a later week).
+# Only files DIRECTLY in SESSION_DIR are candidates: the archive/ subdir
+# holds monthly merged files (YYYY-MM.md) that must never be read into a
+# weekly review — explicit -maxdepth 1 + archive exclusion keeps the
+# selection correct whatever archiving layout evolves into.
 CUTOFF="$(date -v-7d +%F)"
-SESSION_FILES="$(find "$SESSION_DIR" -maxdepth 1 -name '*.md' 2>/dev/null | while read -r f; do
+SESSION_FILES="$(find "$SESSION_DIR" -maxdepth 1 -type f -name '*.md' ! -path '*/archive/*' 2>/dev/null | while read -r f; do
   base="$(basename "$f" .md)"
   if [[ "$base" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] && [[ "$base" > "$CUTOFF" ]] && [[ "$base" != "$REVIEW_DATE" ]]; then
     echo "$f"
@@ -50,7 +54,10 @@ CONSUMER_NOTE=""
 COMMONS="/Users/rubenk/projects/commons"
 FORKABLE="/Users/rubenk/projects/forkable"
 if [ -d "$COMMONS/.git" ] && git -C "$COMMONS" log --oneline --since="7 days ago" 2>/dev/null | rg -q .; then
-  CONSUMER_NOTE="Commons had commits this week. Consumer check:"$'\n'
+  # Open Action #3: origin self-check — analyze commons ITSELF, not just its
+  # consumers (its own test fake was broken while only consumers were checked).
+  CONSUMER_NOTE="Commons had commits this week. Origin + consumer check:"$'\n'
+  CONSUMER_NOTE+="- commons flutter analyze (origin): $(cd "$COMMONS" && flutter analyze 2>&1 | tail -1)"$'\n'
   CONSUMER_NOTE+="- khelam flutter analyze: $(cd "$REPO" && flutter analyze 2>&1 | tail -1)"$'\n'
   if [ -d "$FORKABLE/.git" ]; then
     CONSUMER_NOTE+="- forkable flutter analyze: $(cd "$FORKABLE" && flutter analyze 2>&1 | tail -1)"
@@ -64,12 +71,42 @@ fi
 mechanical_check() {
   local dir="$SESSION_DIR"
   local calls reads
-  calls="$(rg -l 'codegraph (explore|node|sync|status)|graphify (query|path|explain)' "$dir" 2>/dev/null | wc -l | tr -d ' ')"
-  reads="$(rg -l '\b(rg|grep|find|read)\b' "$dir" 2>/dev/null | wc -l | tr -d ' ')"
+  # Exclude archive/ — monthly merged files are not per-session evidence.
+  calls="$(rg -l --glob '!archive/**' 'codegraph (explore|node|sync|status)|graphify (query|path|explain)' "$dir" 2>/dev/null | wc -l | tr -d ' ')"
+  reads="$(rg -l --glob '!archive/**' '\b(rg|grep|find|read)\b' "$dir" 2>/dev/null | wc -l | tr -d ' ')"
   if [ "${calls:-0}" -eq 0 ] && [ "${reads:-0}" -gt 0 ]; then
     echo "FAILED: 0 session files log codegraph/graphify usage but $reads log grep/read activity — tooling-discipline rule violated. Investigate and cite it."
   else
     echo "OK: $calls session file(s) log codegraph/graphify usage vs $reads with grep/read activity."
+  fi
+}
+
+# Session-boundary check (Open Action #2, execution-model spec): flag weekly
+# sessions that ran >1 day with >50M cache reads. Long sessions violate the
+# fresh-session-per-batch rule (one long context accumulates cache reads; a
+# fresh session resets them). Computed from opencode.db; degrades gracefully.
+session_boundary_check() {
+  local db="$HOME/.local/share/opencode/opencode.db"
+  if [[ ! -f "$db" || ! -x "$(command -v sqlite3)" ]]; then
+    echo "SKIPPED: opencode.db or sqlite3 unavailable — session-boundary check not run"
+    return
+  fi
+  local rows
+  rows="$(sqlite3 -separator ' | ' "$db" "
+    SELECT title || ' (' || printf('%.0f', COALESCE(tokens_cache_read,0)/1000000.0) || 'M cache, ' ||
+           printf('%.1f', (time_updated - time_created)/3600000.0) || 'h span)'
+    FROM session
+    WHERE (directory LIKE '%/khelam' OR directory LIKE '%khel-service/khelam%')
+      AND time_updated > CAST(strftime('%s','now','-7 day') AS INTEGER) * 1000
+      AND (time_updated - time_created) > 86400000
+      AND COALESCE(tokens_cache_read,0) > 50000000
+    ORDER BY tokens_cache_read DESC
+    LIMIT 10;" 2>/dev/null || true)"
+  if [[ -z "$rows" ]]; then
+    echo "OK: no weekly session ran >1 day with >50M cache reads (fresh-session-per-batch rule holds)."
+  else
+    echo "FAILED: long sessions with heavy cache reads (violates fresh-session-per-batch):"
+    echo "$rows" | sed 's/^/  - /'
   fi
 }
 
@@ -82,6 +119,8 @@ Inputs (this week's session files): $SESSION_FILES
 $(if [ -n "$CONSUMER_NOTE" ]; then echo "Consumer health note (from the script): $CONSUMER_NOTE"; fi)
 
 MECHANICAL CHECK (computed by the script, not by you): $(mechanical_check)
+
+SESSION-BOUNDARY CHECK (computed by the script, Open Action #2): $(session_boundary_check)
 
 WEEKLY I/O DATA (from the analytics collector): weekly CSV at $ANALYTICS_DIR/weekly/$REVIEW_DATE.csv (may not exist yet on the first run of a week — then note that). Monthly rollup at $ANALYTICS_DIR/monthly/.
 

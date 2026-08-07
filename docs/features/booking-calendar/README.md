@@ -12,8 +12,10 @@ Turf owners and operators need a visual schedule to view and manage bookings acr
 - Read-only calendar screen: 7-day date strip, turf header, hourly timeline (07:00–22:00) with booked/available slot cards, daily stats (booking count, revenue)
 - Mock service for data; clean reusable UI component library for future booking workflows
 - Loads on app launch without login (demo path)
+- Real API integration: `BookingApiService` via commons `DioApiClient`, opt-in through `API_BASE_URL` in `.env` (mock stays default) — shipped 2026-08-05
+- Booking guard: guests tapping slots route through login and back — shipped 2026-08-05 (`0544514`)
 
-**Out:** create/edit/cancel booking flows; payment processing; slot-locking UI; multi-turf switcher; bottom-nav shell; real API integration; auth guard on `/schedule`; persistence/offline.
+**Out:** create/edit/cancel booking flows; payment processing; slot-locking UI; multi-turf switcher; bottom-nav shell; persistence/offline.
 
 ## User Stories
 
@@ -31,18 +33,18 @@ Turf owners and operators need a visual schedule to view and manage bookings acr
 12. …stats updating automatically on date change, so that I always see relevant metrics.
 13. …loading and error states handled gracefully, so that the app feels robust with slow/failing mock data.
 14. …the schedule loading on app launch without login, so that I can demo the feature immediately.
-15. As a **developer**, I want the feature built as a self-contained slice (Cubit → Repository → Mock Service) with freezed domain models, so that it follows the project's clean architecture and is easy to extend.
+15. As a **developer**, I want the feature built as a self-contained slice (Cubit → Service → Mock/API) with freezed domain models, so that it follows the project's clean architecture and is easy to extend.
 
 ## Architecture Decisions
 
 | # | Decision | Detail |
 |---|----------|--------|
-| ADR-0001/2/3 | Pattern | Cubit → Repository → Mock Service (project clean architecture) |
-| ADR-0004 | Feature slice | Self-contained under `lib/ui/features/schedule/` with own DI, bloc, views, widgets |
+| ADR-0001/2/3 | Pattern | Cubit → Service → Mock/API (pass-through repositories dropped 2026-08-05) |
+| ADR-0004 | Module slice | Self-contained under `lib/features/booking/` — own `di/`, `bloc/`, `data/`, `views/` |
 | — | State | `flutter_bloc` Cubit, immutable state classes (manual `copyWith`, no freezed for state) |
-| — | Navigation | `go_router`, `/schedule` initial route, public (no auth guard) |
-| — | Mock data | Single turf "Turf A" (Sector 12, Sports Complex); 7-day rolling window; 15 slots/day 07:00–22:00; ~50% booked, rotating pool of 5 team names; deterministic seeded hash |
-| — | DI/Routing | `ScheduleDependencies.register(GetIt)`; `AppRoutes.schedulePath = '/schedule'`; auth guard allows `/login` + `/schedule` public |
+| — | Navigation | `go_router`, `/schedule` initial route, public; booking guard routes guests through login and back (`0544514`) |
+| — | Data | Default `MockBookingService` (fresh clones, widget tests); real `BookingApiService` (commons `DioApiClient`) when `API_BASE_URL` set and `USE_MOCK_BOOKING != true`; mock = single turf "Turf A" (Sector 12, Sports Complex), 7-day rolling window, 15 slots/day 07:00–22:00, ~50% booked, rotating pool of 5 team names, deterministic seeded hash |
+| — | DI/Routing | `BookingDependencies.register(GetIt)`; `AppRoutes.schedulePath = '/schedule'`; `/login` + `/schedule` public, booking + home require auth |
 | — | Theme | `AppPalette` seeds + `AppComponentThemes`; no hardcoded colors; `surfaceContainerLow` cards |
 | — | Null safety | Strict: no `!`; `if case final x? = y` and `??` throughout |
 
@@ -72,6 +74,8 @@ Turf owners and operators need a visual schedule to view and manage bookings acr
 - [x] Common widgets → `lib/ui/common/`: `StatCard`, `SectionHeader`, `StatusBadge` (roster now 19 widgets)
 - [x] Loading/error states (switching dates, mock failures)
 - [x] Widget tests: `BookedSlotCard` (4), `AvailableSlotCard` (2)
+- [x] Real API integration: `BookingApiService` + DI opt-in (`API_BASE_URL` / `USE_MOCK_BOOKING`) (2026-08-05)
+- [x] Booking guard: guest slot tap → login → return (`0544514`, 2026-08-05)
 
 ## Test Plan
 
@@ -84,6 +88,7 @@ Turf owners and operators need a visual schedule to view and manage bookings acr
 
 - [x] Sliced implementation committed (2026-07-28 design → implementation in khelam)
 - [x] Migrated PRD → this feature README (2026-08-06)
+- [x] Real API + booking guard shipped (2026-08-05); Out-of-scope list refreshed (2026-08-07)
 
 ## Backlinks
 
