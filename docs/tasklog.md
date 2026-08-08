@@ -10,6 +10,7 @@ _Last updated: 2026-08-08_
 ## 🔴 Active queue
 | Card | Scope | Effort | Status |
 |---|---|---|---|
+| **Auto-digest reliability — catch-up + retry** (from 2026-08-08 brainstorm; spec `docs/superpowers/specs/2026-08-08-auto-digest-reliability-design.md`) | ops/scripts (forkable-first) | S | **Design approved 08-08** (user + @architect) — implement: RunAtLoad + marker/lock + retry + 14-day catch-up (parallel ops thread, no Flutter impact) |
 | **Theme + real-user-flow pass** (post-robustness; from 2026-08-08 session objective) | khelam | M | **NEXT pickup** — spec the theme/real-user-flow slice first |
 
 ## 🟡 Backlog (open, not scheduled)
