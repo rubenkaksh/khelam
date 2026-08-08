@@ -4,27 +4,28 @@
 # copies. Runs Mon-Fri 08:00 via launchd com.khelam.daily-digest (installed by the
 # user; templates in forkable/scripts/) AND at every login (RunAtLoad) for catch-up.
 #
-# Message layout (user decision 2026-08-08: split by section heading):
-#   msg 1: "Daily overview — <date>" (title/date heading) + 🔴 Active queue
-#   msg 2: 🟡 Backlog
-#   msg 3: 🟠 Parked
-#   msg 4: ⚪ Descoped
-# Each message = one live board section rendered Discord-friendly (## heading +
-# compact table rows). The 📋 Closed (history) section is dropped — it only grows
-# and is not decision input; history lives in the repo + the weekly review.
-# Token/cost/session analysis is ALSO out: per user 2026-08-08, cost accounting is
-# a weekly-review concern, not daily. The board is the daily decision surface
-# ("what to pick, what's parked").
+# Message layout (user decisions 2026-08-08):
+#   ONE message per day — "Daily overview — <date>" heading, then the curated
+#   board: 🔴 Active queue (all cards) + 🟡 Backlog (top 5); 🟠 Parked and
+#   ⚪ Descoped render ONLY when Active AND Backlog are both empty. Sections
+#   separate by a blank line + "## <emoji> <label>" heading; card rows are
+#   TRIMMED to *italic title* + subtitle + **short status** + date, bulleted.
+#   No dividers and no .md attachment: per user 2026-08-08, Discord renders
+#   dividers as plain text and a .md file as a download chip (not glanceable);
+#   the full board (Closed section, exact tables) stays in the repo.
+#   Token/cost/session analysis is OUT: per user 2026-08-08, cost accounting is
+#   a weekly-review concern, not daily.
 #
 # Reliability design (approved 2026-08-08): docs/superpowers/specs/2026-08-08-
-# auto-digest-reliability-design.md — idempotent delivery markers per
-# TARGET-DATE-PER-MESSAGE (~/Library/Application Support/khelam/daily-digest/
-# markers/YYYY-MM-DD-N.sent, written ONLY after a successful send of message N;
-# a partial failure re-sends ONLY the missing messages — no duplicates), atomic
-# mkdir lock (wake-coalesced 08:00 fire vs RunAtLoad login fire), 3-attempt backoff
-# retry (0/5/15s) + agent-errors report on exhaustion, 14-day oldest-first catch-up
-# scan, launchd RunAtLoad + Mon-Fri 08:00 calendar. Sleep at 08:00 → launchd
-# wake-coalescing fires it.
+# auto-digest-reliability-design.md — idempotent delivery markers per target date
+# (~/Library/Application Support/khelam/daily-digest/markers/YYYY-MM-DD-1.sent,
+# written ONLY after a successful send; the "-1" suffix is the per-message marker
+# scheme from the 4-message layout, kept for marker continuity — a missing marker
+# re-sends the whole day), atomic mkdir lock with stale (>30min) takeover
+# (SIGKILL on sleep/reboot skips EXIT traps and would otherwise wedge the digest),
+# 3-attempt backoff retry (0/5/15s) + agent-errors report on exhaustion, 14-day
+# oldest-first catch-up scan, launchd RunAtLoad + Mon-Fri 08:00 calendar. Sleep at
+# 08:00 → launchd wake-coalescing fires it.
 #
 # Due-set rule (D is a target date): D is due iff D < today AND D within the
 # 14-day lookback AND (D+1 is a weekday OR D is Friday). The Friday exception
@@ -35,7 +36,7 @@
 #   KHELAM_REPO      (default ~/projects/khel-service/khelam — the board owner)
 #   STATE_DIR        (default ~/Library/Application Support/khelam/daily-digest)
 #   DAILY_DIGEST_LOG (default $STATE_DIR/daily-digest.log)
-# A missing tasklog degrades to a single note message — the digest still ships.
+# A missing tasklog degrades to a note line — the digest still ships.
 #
 # Exit codes: 0 always after a fire completes (send failures degrade via
 # report_sink — fallback + log — and never abort this script). 1 only on a hard
@@ -102,76 +103,130 @@ is_due() {
   return 1
 }
 
-# marker_exists / write_marker — per-target-date-per-message delivery markers
-# (persistent; NOT /tmp — a reboot between a successful send and the marker write
-# would re-send).
+# marker_exists / write_marker — delivery markers (persistent; NOT /tmp — a reboot
+# between a successful send and the marker write would re-send).
 marker_exists() { [ -f "$MARKER_DIR/$1.sent" ]; }
 write_marker()  { : > "$MARKER_DIR/$1.sent"; }
 
-# render_tasklog_sections <file> — prints the LIVE board sections (🔴 Active queue,
-# 🟡 Backlog, 🟠 Parked, ⚪ Descoped — in board order) separated by sentinel lines
-# "--SECTION--". Each section = a compact "## <emoji> <label>" heading (Discord
-# heading; parenthetical policy text dropped — carried per-card in the rows) +
-# table rows (chrome dropped, cells rejoined with " — ") or bullets (Descoped).
-# The 📋 Closed section is excluded. ASCII section matching (Active/Backlog/
-# Parked/Descoped) — robust with UTF-8 emoji bytes under BSD awk.
-render_tasklog_sections() {
+# render_tasklog <file> — prints the curated daily board as ONE Discord-friendly
+# message (user decisions 2026-08-08):
+#   - Card rows are TRIMMED to: italic *title*, subtitle (text immediately after
+#     the title), **short status** (first segment of the status/note cell) and a
+#     date when one exists ("backlog 07-31" → 07-31, Parked revisit, etc.).
+#     Scope/effort/long notes are dropped.
+#   - Sections: 🔴 Active queue (all cards) + 🟡 Backlog (top 5). 🟠 Parked and
+#     ⚪ Descoped render ONLY when Active AND Backlog are both empty (same
+#     format). Empty sections are skipped; sections separate by a blank line
+#     (no dividers).
+#   - The 📋 Closed section is never sent; the full board stays in the repo (the
+#     digest is Discord comms, the repo is the agent console view).
+# Table chrome (header + separator rows) dropped; Descoped bullets render as
+# *title* + remainder. ASCII section matching — robust with UTF-8 emoji bytes
+# under BSD awk.
+render_tasklog() {
   awk '
+    BEGIN { nc["A"]=nc["B"]=nc["P"]=nc["D"]=0 }
     /^## / {
-      if ($0 ~ /Active queue|Backlog|Parked|Descoped/) {
-        if (seen) print "--SECTION--"
-        sub(/ \(.*/, "", $0)
-        print $0
-        seen=1; keep=1
-      } else { keep=0 }
+      if ($0 ~ /Active queue/) sec="A"
+      else if ($0 ~ /Backlog/) sec="B"
+      else if ($0 ~ /Parked/) sec="P"
+      else if ($0 ~ /Descoped/) sec="D"
+      else sec=""
       next
     }
-    keep && /^[[:space:]]*$/ { print ""; next }
-    keep && /^\|/ {
+    sec == "" { next }
+    /^\|/ {
+      if (sec == "D") next
       line=$0
       sub(/^\|/,"",line); sub(/\|[[:space:]]*$/,"",line)
       n=split(line,f,"|")
       for (i=1;i<=n;i++) gsub(/^[[:space:]]+|[[:space:]]+$/,"",f[i])
       if (f[1]=="Card" || f[1] ~ /^[-:[:space:]]+$/) next
-      out=f[1]
-      for (i=2;i<=n;i++) out=out " — " f[i]
-      print out
+      card=f[1]; title=card; sub_=""
+      if (match(card, /\*\*[^*]*\*\*/)) {
+        title=substr(card, RSTART+2, RLENGTH-4)
+        sub_=substr(card, RSTART+RLENGTH)
+        gsub(/^[[:space:]]+/,"",sub_)
+        sub(/^—[[:space:]]*/,"",sub_)
+      }
+      status=f[n]
+      sub(/ — .*/,"",status)
+      gsub(/\*\*/,"",status)
+      date=""
+      for (i=2;i<=n;i++) {
+        if (match(f[i], /[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/)) { date=substr(f[i],RSTART,RLENGTH); break }
+        if (match(f[i], /[0-9][0-9]-[0-9][0-9]/)) { date=substr(f[i],RSTART,RLENGTH); break }
+      }
+      out="- *" title "*"
+      if (sub_ != "") out=out " " sub_
+      if (status != "") out=out " — **" status "**"
+      if (date != "") out=out " — " date
+      R[sec, ++nc[sec]] = out
       next
     }
-    keep { print $0 }
+    sec == "D" && /^- / {
+      if (match($0, /\*\*[^*]*\*\*/)) {
+        title=substr($0, RSTART+2, RLENGTH-4)
+        sub_=substr($0, RSTART+RLENGTH)
+        gsub(/^[[:space:]]+/,"",sub_)
+        sub(/^—[[:space:]]*/,"",sub_)
+        R["D", ++nc["D"]] = "- *" title "* — " sub_
+      }
+      next
+    }
+    END {
+      if (nc["A"] > 0 || nc["B"] > 0) {
+        emit("A", "🔴 Active queue", 999999)
+        emit("B", "🟡 Backlog", 5)
+      } else {
+        emit("P", "🟠 Parked", 999999)
+        emit("D", "⚪ Descoped", 999999)
+      }
+    }
+    function emit(s, label, max) {
+      if (nc[s] == 0) return
+      print ""
+      print "## " label
+      for (j=1; j<=nc[s] && j<=max; j++) print R[s, j]
+    }
   ' "$1"
 }
 
-# build_sections <file> — fills the global SECTIONS array (one element per live
-# section, in board order; trailing blank lines trimmed).
-build_sections() {
-  local TL="$1" cur="" line
-  SECTIONS=()
-  while IFS= read -r line || [ -n "$line" ]; do
-    if [ "$line" = "--SECTION--" ]; then
-      SECTIONS+=("${cur%$'\n'}"); cur=""
-    else
-      cur="${cur}${line}"$'\n'
-    fi
-  done < <(render_tasklog_sections "$TL")
-  [ -n "$cur" ] && SECTIONS+=("${cur%$'\n'}")
+# generate_body <date YYYY-MM-DD> — prints the digest body: the date heading +
+# the curated board (≤1990 chars — Discord's hard cap is 2000; trimming keeps
+# the body ~800 chars so the cap is a backstop, not a normal constraint).
+generate_body() {
+  local D="$1"
+  local TL="$KHELAM_REPO/docs/tasklog.md"
+  local BODY
+  if [ -f "$TL" ]; then
+    BODY="$(render_tasklog "$TL")"
+  else
+    log "no tasklog at $TL — digest body is a note"
+    BODY="no tasklog found at $TL"
+  fi
+  BODY="Daily overview — $D"$'\n'"$BODY"
+  if [ "${#BODY}" -gt 1990 ]; then
+    log "body was ${#BODY} chars — truncating to 1990 (Discord 2000 hard cap)"
+    BODY="${BODY:0:1990}… [truncated]"
+  fi
+  printf '%s' "$BODY"
 }
 
-# send_with_retry <title> <body> <date> <msg-index> — 3 attempts (0/5/15s). Writes
-# the per-message marker only on a delivered send (send_report_to returns 1 when
-# the Discord post failed, after the macos_notification fallback). Returns 0 on
-# delivered, 1 after exhaustion (marker absent → the next fire re-sends only this
-# message).
+# send_with_retry <body> <date> — 3 attempts (0/5/15s). Writes the day marker
+# only on a delivered send (send_report_to returns 1 when the Discord post
+# failed, after the macos_notification fallback). Returns 0 on delivered, 1
+# after exhaustion (marker absent → next fire retries).
 send_with_retry() {
-  local title="$1" body="$2" D="$3" idx="$4"
+  local body="$1" D="$2"
   local attempt=1 delay=0
   while :; do
     if [ "$attempt" -gt 1 ]; then
       sleep "$delay"
     fi
-    if send_report_to daily-overview "$title" "$body"; then
-      write_marker "$D-$idx"
-      log "sent: $D ($idx/${#SECTIONS[@]})"
+    if send_report_to daily-overview "" "$body"; then
+      write_marker "$D-1"
+      log "sent: $D"
       return 0
     fi
     [ "$attempt" -ge "$RETRY_ATTEMPTS" ] && return 1
@@ -183,50 +238,26 @@ send_with_retry() {
 # --- main: lock → 14-day catch-up scan (oldest first) ------------------------------
 main() {
   log "=== daily digest fire started ==="
-  local sent=0 failed=0 skipped=0 D title idx i
-  local TL="$KHELAM_REPO/docs/tasklog.md"
-  local day_sent day_failed day_skip
-
-  if [ -f "$TL" ]; then
-    build_sections "$TL"
-  else
-    log "no tasklog at $TL — digest body is a note"
-    SECTIONS=("no tasklog found at $TL")
-  fi
-
+  local sent=0 failed=0 skipped=0 D body
+  local i
   for i in $(seq "$MAX_CATCHUP_DAYS" -1 1); do
     D="$(date -v-${i}d +%Y-%m-%d)"
+    if marker_exists "$D-1"; then
+      skipped=$((skipped + 1)); continue
+    fi
     if ! is_due "$D"; then
       skipped=$((skipped + 1)); continue
     fi
-    # any missing message marker for this day → (re)send the missing ones only
-    day_sent=0; day_failed=0; day_skip=0
-    for idx in $(seq 1 ${#SECTIONS[@]}); do
-      if marker_exists "$D-$idx"; then
-        day_skip=$((day_skip + 1)); continue
-      fi
-      if [ "$idx" -eq 1 ]; then
-        title="Daily overview — $D"
-      else
-        title=""
-      fi
-      if send_with_retry "$title" "${SECTIONS[$((idx - 1))]}" "$D" "$idx"; then
-        day_sent=$((day_sent + 1))
-      else
-        day_failed=$((day_failed + 1))
-      fi
-    done
-    if [ "$day_failed" -eq 0 ] && [ "$day_sent" -gt 0 ]; then
+    body="$(generate_body "$D")"
+    if send_with_retry "$body" "$D"; then
       sent=$((sent + 1))
-    elif [ "$day_failed" -gt 0 ]; then
-      failed=$((failed + 1))
-      log "FAILED: $D ($day_sent sent, $day_failed not delivered) — missing markers retry next fire"
-      send_error_report "Daily digest failed" "Could not deliver all messages for $D after $RETRY_ATTEMPTS attempts each" || true
     else
-      skipped=$((skipped + 1))
+      failed=$((failed + 1))
+      log "FAILED: $D after $RETRY_ATTEMPTS attempts — marker not written, next fire retries"
+      send_error_report "Daily digest failed" "Could not deliver the digest for $D after $RETRY_ATTEMPTS attempts" || true
     fi
   done
-  log "=== fire done: $sent days sent, $failed days failed, $skipped days skipped ==="
+  log "=== fire done: $sent sent, $failed failed, $skipped skipped ==="
 }
 
 main "$@"
