@@ -16,7 +16,9 @@
 # mode it returns 1 when the Discord post FAILED (the macos_notification fallback
 # still fires first — never drops — but callers that want to retry can see it).
 # Callers running under `set -e` must use it in a conditional or guard with
-# `|| true`.
+# `|| true`. An EMPTY title posts the body as-is (no " — " prefix) — used by the
+# daily digest's per-section messages where only message 1 carries the date
+# heading in its title.
 #
 # Channels (name → env key; all keys live in the shared env file, see Secret):
 #   default        → DISCORD_WEBHOOK_URL            (v1 alias, backward-compatible)
@@ -142,7 +144,13 @@ send_report_to() { # send_report_to <channel> <title> <body> [artifact...]
       echo "$(date): [report_sink] macos_notification sent: $title" >> "$LOG"
       ;;
     discord_webhook)
-      if _discord_post "$url" "${title} — ${body}" "$@" 2>>"$LOG"; then
+      local content
+      if [ -n "$title" ]; then
+        content="${title} — ${body}"
+      else
+        content="${body}"   # empty title → no " — " prefix (multi-message digests: only msg 1 carries the date heading)
+      fi
+      if _discord_post "$url" "$content" "$@" 2>>"$LOG"; then
         echo "$(date): [report_sink] discord_webhook sent to '$channel' ($# artifact(s)): $title" >> "$LOG"
       else
         echo "$(date): [report_sink] discord_webhook FAILED — fallback macos_notification: $title" >> "$LOG"

@@ -1,52 +1,41 @@
 #!/bin/bash
-# daily_digest.sh — cross-project daily overview for the Discord #daily-overview channel.
+# daily_digest.sh — daily delivery of the LIVE TASKLOG BOARD to Discord #daily-overview.
 # Canonical copy lives in forkable/scripts/ (base template); children pull synced
 # copies. Runs Mon-Fri 08:00 via launchd com.khelam.daily-digest (installed by the
 # user; templates in forkable/scripts/) AND at every login (RunAtLoad) for catch-up.
 #
-# Reports the PREVIOUS calendar day's activity across khelam / forkable / commons:
-#   1. Token deltas + session counts (opencode.db, local midnight→midnight of the
-#      target date; epoch convention mirrors weekly_review.sh session_boundary_check():
-#      time_created is UNIX ms).
-#   2. Open Actions in docs/reviews/review-memory.md that are NOT struck-through.
-#   3. Untriaged backlog items in docs/backlog.md (top-level bullets).
-#   4. Session activity: count of docs/sessions/<date>.md files across repos.
-# Each fire scans the 14-day lookback and sends ONE message per MISSED day (oldest
-# first). Catch-up + retry design: docs/superpowers/specs/2026-08-08-auto-digest-
-# reliability-design.md (approved 2026-08-08).
+# Message layout (user decision 2026-08-08: split by section heading):
+#   msg 1: "Daily overview — <date>" (title/date heading) + 🔴 Active queue
+#   msg 2: 🟡 Backlog
+#   msg 3: 🟠 Parked
+#   msg 4: ⚪ Descoped
+# Each message = one live board section rendered Discord-friendly (## heading +
+# compact table rows). The 📋 Closed (history) section is dropped — it only grows
+# and is not decision input; history lives in the repo + the weekly review.
+# Token/cost/session analysis is ALSO out: per user 2026-08-08, cost accounting is
+# a weekly-review concern, not daily. The board is the daily decision surface
+# ("what to pick, what's parked").
 #
-# Delivery is idempotent: a persistent marker per target date
-# (~/Library/Application Support/khelam/daily-digest/markers/YYYY-MM-DD.sent),
-# written ONLY after a successful send. Missed at 08:00 (off/logged-out) →
-# RunAtLoad catches up at next login. Asleep at 08:00 → launchd wake-coalescing.
-# Transient Discord/network failure → 3-attempt backoff retry (0/5/15s), then no
-# marker + an agent-errors report; the next fire retries.
+# Reliability design (approved 2026-08-08): docs/superpowers/specs/2026-08-08-
+# auto-digest-reliability-design.md — idempotent delivery markers per
+# TARGET-DATE-PER-MESSAGE (~/Library/Application Support/khelam/daily-digest/
+# markers/YYYY-MM-DD-N.sent, written ONLY after a successful send of message N;
+# a partial failure re-sends ONLY the missing messages — no duplicates), atomic
+# mkdir lock (wake-coalesced 08:00 fire vs RunAtLoad login fire), 3-attempt backoff
+# retry (0/5/15s) + agent-errors report on exhaustion, 14-day oldest-first catch-up
+# scan, launchd RunAtLoad + Mon-Fri 08:00 calendar. Sleep at 08:00 → launchd
+# wake-coalescing fires it.
 #
-# Due-set rule (D is a target date): D is due iff D < today AND no marker for D AND
-# D within the 14-day lookback AND (D+1 is a weekday OR D is Friday). The Friday
-# exception exists because the Mon–Fri 08:00 schedule reports Sun–Thu only.
-# Saturday is never a target (matches the normal schedule).
+# Due-set rule (D is a target date): D is due iff D < today AND D within the
+# 14-day lookback AND (D+1 is a weekday OR D is Friday). The Friday exception
+# exists because the Mon–Fri 08:00 schedule reports Sun–Thu only. Saturday is
+# never a target (matches the normal schedule).
 #
-# Repo paths (env overrides mirror weekly_review.sh):
-#   KHELAM_REPO    (default ~/projects/khel-service/khelam)
-#   FORKABLE_REPO  (default ~/projects/forkable)
-#   COMMONS_REPO   (default ~/projects/commons)
-#   DB_PATH        (default ~/.local/share/opencode/opencode.db)
-#   STATE_DIR      (default ~/Library/Application Support/khelam/daily-digest)
+# Env overrides:
+#   KHELAM_REPO      (default ~/projects/khel-service/khelam — the board owner)
+#   STATE_DIR        (default ~/Library/Application Support/khelam/daily-digest)
 #   DAILY_DIGEST_LOG (default $STATE_DIR/daily-digest.log)
-# A repo whose dir is missing is skipped with a note — the digest still ships.
-#
-# Heuristics (documented — robust-enough, not exhaustive):
-#   * Open Actions: lines inside the '## Open Actions...' section that are not
-#     struck through (no '~~'); excludes blockquotes, table chrome (header +
-#     separator rows), and placeholder rows whose title is empty/'—'. Titles: the
-#     first **...** span when present (else the stripped line), prefixed with the
-#     OA#/rank when the file carries one (e.g. "OA#8: …"), ~60 chars each. Count +
-#     up to 3 titles.
-#   * Backlog: top-level bullets matching '^- ' at column 0 anywhere in the file
-#     (this includes watchpoint/DONE-note bullets — a stricter untriaged-only
-#     filter is future work); '^- (empty)' placeholders excluded. Titles likewise
-#     the **...** span, ~60 chars each. Count + up to 3 titles.
+# A missing tasklog degrades to a single note message — the digest still ships.
 #
 # Exit codes: 0 always after a fire completes (send failures degrade via
 # report_sink — fallback + log — and never abort this script). 1 only on a hard
@@ -67,10 +56,7 @@ MAX_CATCHUP_DAYS=14
 RETRY_ATTEMPTS=3
 RETRY_BASE_DELAY=5    # seconds; delays between attempts: 5, 15 (×3 backoff)
 
-DB_PATH="${DB_PATH:-$HOME/.local/share/opencode/opencode.db}"
 KHELAM_REPO="${KHELAM_REPO:-$HOME/projects/khel-service/khelam}"
-FORKABLE_REPO="${FORKABLE_REPO:-$HOME/projects/forkable}"
-COMMONS_REPO="${COMMONS_REPO:-$HOME/projects/commons}"
 
 mkdir -p "$STATE_DIR" "$MARKER_DIR"
 
@@ -78,101 +64,25 @@ log() { echo "$(date): [daily_digest] $*" >> "$LOG"; }
 
 # --- Lock: atomic mkdir = single writer even when a wake-coalesced 08:00 fire races
 # a RunAtLoad login fire. The loser exits 0 silently; the holder runs the full scan.
+# Staleness guard: a fire killed with SIGKILL (sleep/reboot — skips EXIT traps)
+# leaves the lock behind; a lock older than 30min is abandoned (fires take
+# seconds) and taken over.
 if ! mkdir "$LOCKDIR" 2>/dev/null; then
-  exit 0
+  if find "$LOCKDIR" -maxdepth 0 -mmin +30 -print -quit 2>/dev/null | grep -q .; then
+    echo "$(date): [daily_digest] stale lock ($LOCKDIR, >30min) — taking over" >> "$LOG"
+    rmdir "$LOCKDIR" 2>/dev/null
+    mkdir "$LOCKDIR" 2>/dev/null || exit 0
+  else
+    exit 0   # concurrent fire holds a fresh lock
+  fi
 fi
 trap 'rmdir "$LOCKDIR" 2>/dev/null' EXIT
 
 # --- helpers -----------------------------------------------------------------------
-join() { # join <sep> <item>...
-  local sep="$1"; shift
-  local out=""
-  for it in "$@"; do out="${out:+$out$sep}$it"; done
-  printf '%s' "$out"
-}
-
-# local_midnight_window <date YYYY-MM-DD> — prints "WIN_START WIN_END" (epoch ms,
-# local midnight→midnight). python3 is a HARD dependency (aborts under set -e if
-# missing — ops issue, logged to launchd stdout/stderr).
-local_midnight_window() {
-  python3 - "$1" <<'PY'
-import datetime, sys
-day = datetime.datetime.strptime(sys.argv[1], '%Y-%m-%d')
-nxt = day + datetime.timedelta(days=1)
-print(int(day.timestamp() * 1000), int(nxt.timestamp() * 1000))
-PY
-}
-
-# open_actions <file> — prints count on line 1, then up to 3 titles (one per line).
-open_actions() {
-  awk '
-    function clean(t,   s){ s=t; sub(/^[-*+>#[:space:]]+/,"",s); sub(/^[0-9]+\.?[[:space:]]*/,"",s); gsub(/[[:space:]]+$/,"",s); return substr(s,1,60) }
-    BEGIN{ insec=0; n=0 }
-    /^## / { insec = ( $0 ~ /^## Open Actions/ ); next }
-    insec && /^[[:space:]]*$/ { next }
-    insec && /^>/ { next }
-    insec && /~~/ { next }
-    insec {
-      line=$0; t=""; oaid=""
-      if (line ~ /^\|/) {
-        nf=split(line,f,"|")
-        oaid=f[2]; gsub(/^[[:space:]]+|[[:space:]]+$/,"",oaid)
-        t=f[3]; gsub(/^[[:space:]]+|[[:space:]]+$/,"",t)
-        if (oaid == "OA#" || oaid ~ /^[[:space:]:-]+$/) next   # table chrome: header/separator
-        if (t == "" || t ~ /^[[:space:]:-]+$/ || t == "(none yet)") next
-        if (oaid !~ /^OA#/) oaid=""
-      } else if (line ~ /^[0-9]+\./) {
-        oaid="OA#" substr(line,1,index(line,".")-1)
-      }
-      if (t=="") {
-        if (line ~ /\*\*/) {
-          i=index(line,"**"); rest=substr(line,i+2); j=index(rest,"**")
-          if (j>0) t=substr(rest,1,j-1)
-        }
-      }
-      if (t=="") t=clean(line)
-      if (t=="") next                      # all-dash rules / empty after cleaning
-      if (oaid!="") t=oaid ": " t
-      t=substr(t,1,60)
-      n++
-      if (n<=3) ttl[n]=t
-    }
-    END{ printf "%d\n", n; for(i=1;i<=3 && i<=n;i++) printf "%s\n", ttl[i] }
-  ' "$1"
-}
-
-# backlog_items <file> — prints count on line 1, then up to 3 titles (one per line).
-backlog_items() {
-  awk '
-    function clean(t,   s){ s=t; sub(/^[-*+>#[:space:]]+/,"",s); sub(/^[0-9]+\.?[[:space:]]*/,"",s); gsub(/[[:space:]]+$/,"",s); return substr(s,1,60) }
-    BEGIN{ n=0 }
-    /^-[[:space:]]/ {
-      line=$0
-      body=substr(line,2); gsub(/^[[:space:]]+/,"",body)
-      if (body=="(empty)" || body=="_empty_") next
-      t=""
-      if (body ~ /\*\*/) {
-        i=index(body,"**"); rest=substr(body,i+2); j=index(rest,"**")
-        if (j>0) t=substr(rest,1,j-1)
-      }
-      if (t=="") t=clean(body)
-      t=substr(t,1,60)
-      n++
-      if (n<=3) ttl[n]=t
-    }
-    END{ printf "%d\n", n; for(i=1;i<=3 && i<=n;i++) printf "%s\n", ttl[i] }
-  ' "$1"
-}
-
-# marker_exists / write_marker — per-target-date delivery markers (persistent; NOT
-# /tmp — a reboot between a successful send and the marker write would re-send).
-marker_exists() { [ -f "$MARKER_DIR/$1.sent" ]; }
-write_marker()  { : > "$MARKER_DIR/$1.sent"; }
-
 # day_info <date YYYY-MM-DD> — prints "DOW DOW_PLUS1" (Mon=1..Sun=7, %u convention).
-# python3 is already a hard dependency (local_midnight_window) — single date-math
-# source of truth; avoids BSD `date -j -v` arg-order fragility (bug found 08-08:
-# `-v+1d` after the parsed date made date print the full default format).
+# python3 is already a hard dependency (used here) — single date-math source of
+# truth; avoids BSD `date -j -v` arg-order fragility (bug found 08-08: `-v+1d`
+# after the parsed date made date print the full default format).
 day_info() {
   python3 - "$1" <<'PY'
 import datetime, sys
@@ -192,105 +102,76 @@ is_due() {
   return 1
 }
 
-# generate_body <date YYYY-MM-DD> — prints the digest body (≤1900 chars).
-generate_body() {
-  local D="$1"
-  local WIN_START WIN_END
-  read -r WIN_START WIN_END <<< "$(local_midnight_window "$D")"
+# marker_exists / write_marker — per-target-date-per-message delivery markers
+# (persistent; NOT /tmp — a reboot between a successful send and the marker write
+# would re-send).
+marker_exists() { [ -f "$MARKER_DIR/$1.sent" ]; }
+write_marker()  { : > "$MARKER_DIR/$1.sent"; }
 
-  # --- Signal 1: token deltas + session counts (opencode.db) -----------------------
-  declare -a tok_parts
-  if [ ! -f "$DB_PATH" ]; then
-    log "opencode.db missing at $DB_PATH — token signal skipped"
-  elif ! command -v sqlite3 >/dev/null 2>&1; then
-    log "sqlite3 unavailable — token signal skipped"
-  else
-    for r in "$KHELAM_REPO" "$FORKABLE_REPO" "$COMMONS_REPO"; do
-      [ -d "$r" ] || { log "repo dir missing, skipped: $r"; continue; }
-      base="$(basename "$r")"
-      [[ "$base" =~ ^[A-Za-z0-9_-]+$ ]] || { log "invalid repo basename for token query: '$base'"; continue; }
-      row="$(sqlite3 -separator '|' "$DB_PATH" "
-        SELECT COALESCE(SUM(tokens_input + tokens_output + tokens_cache_read),0), COUNT(*)
-        FROM session
-        WHERE directory LIKE '%/' || '$base'
-          AND time_created >= $WIN_START
-          AND time_created < $WIN_END;" 2>/dev/null || true)"
-      [ -z "$row" ] && { log "no token rows for '$base'"; continue; }
-      toks="${row%%|*}"
-      sess="${row#*|}"
-      ht="$(printf '%s' "$toks" | awk '{ n=$1+0; if (n>=1000000) printf "%.1fM", n/1000000; else printf "%.1fk", n/1000 }')"
-      tok_parts+=("$base $ht ($sess)")
-    done
-  fi
-  TOK_LINE="$(join ' | ' "${tok_parts[@]}")"
-  [ -z "$TOK_LINE" ] && TOK_LINE="no token data (opencode.db unavailable)"
-
-  # --- Signal 2: Open Actions (review-memory.md) + Signal 3: Backlog (backlog.md) --
-  declare -a oa_parts bl_parts
-  for r in "$KHELAM_REPO" "$FORKABLE_REPO" "$COMMONS_REPO"; do
-    [ -d "$r" ] || { log "repo dir missing, skipped: $r"; continue; }
-    base="$(basename "$r")"
-    if [ -f "$r/docs/reviews/review-memory.md" ]; then
-      out="$(open_actions "$r/docs/reviews/review-memory.md")"
-      cnt="$(printf '%s\n' "$out" | sed -n '1p')"
-      rest="$(printf '%s\n' "$out" | sed -n '2,4p' | awk 'NF')"
-      if [ "${cnt:-0}" -gt 0 ]; then
-        oa_parts+=("$base $cnt ($(printf '%s' "$rest" | paste -sd ';' - | sed 's/;/; /g'))")
-      else
-        oa_parts+=("$base 0")
-      fi
-    else
-      log "no review-memory.md in $r — open-actions signal skipped"
-    fi
-    if [ -f "$r/docs/backlog.md" ]; then
-      bout="$(backlog_items "$r/docs/backlog.md")"
-      bcnt="$(printf '%s\n' "$bout" | sed -n '1p')"
-      brest="$(printf '%s\n' "$bout" | sed -n '2,4p' | awk 'NF')"
-      if [ "${bcnt:-0}" -gt 0 ]; then
-        bl_parts+=("$base $bcnt ($(printf '%s' "$brest" | paste -sd ';' - | sed 's/;/; /g'))")
-      else
-        bl_parts+=("$base 0")
-      fi
-    else
-      log "no backlog.md in $r — backlog signal skipped"
-    fi
-  done
-  OA_LINE="$(join ', ' "${oa_parts[@]}")"
-  [ -z "$OA_LINE" ] && OA_LINE="none"
-  BL_LINE="$(join ', ' "${bl_parts[@]}")"
-  [ -z "$BL_LINE" ] && BL_LINE="none"
-
-  # --- Signal 4: session activity count for the target date -------------------------
-  ACT=0
-  for r in "$KHELAM_REPO" "$FORKABLE_REPO" "$COMMONS_REPO"; do
-    [ -f "$r/docs/sessions/$D.md" ] && ACT=$((ACT + 1))
-  done
-
-  # --- Assemble ----------------------------------------------------------------------
-  BODY="🔥 Yesterday's agent tokens — $TOK_LINE"
-  BODY+=$'\n'"📋 Open Actions: $OA_LINE"
-  BODY+=$'\n'"🗂 Backlog: $BL_LINE"
-  BODY+=$'\n'"📄 Sessions yesterday: $ACT"
-  if [ "${#BODY}" -gt 1900 ]; then
-    log "body was ${#BODY} chars — truncating to 1900 (Discord 2000 cap)"
-    BODY="${BODY:0:1900}… [truncated]"
-  fi
-  printf '%s' "$BODY"
+# render_tasklog_sections <file> — prints the LIVE board sections (🔴 Active queue,
+# 🟡 Backlog, 🟠 Parked, ⚪ Descoped — in board order) separated by sentinel lines
+# "--SECTION--". Each section = a compact "## <emoji> <label>" heading (Discord
+# heading; parenthetical policy text dropped — carried per-card in the rows) +
+# table rows (chrome dropped, cells rejoined with " — ") or bullets (Descoped).
+# The 📋 Closed section is excluded. ASCII section matching (Active/Backlog/
+# Parked/Descoped) — robust with UTF-8 emoji bytes under BSD awk.
+render_tasklog_sections() {
+  awk '
+    /^## / {
+      if ($0 ~ /Active queue|Backlog|Parked|Descoped/) {
+        if (seen) print "--SECTION--"
+        sub(/ \(.*/, "", $0)
+        print $0
+        seen=1; keep=1
+      } else { keep=0 }
+      next
+    }
+    keep && /^[[:space:]]*$/ { print ""; next }
+    keep && /^\|/ {
+      line=$0
+      sub(/^\|/,"",line); sub(/\|[[:space:]]*$/,"",line)
+      n=split(line,f,"|")
+      for (i=1;i<=n;i++) gsub(/^[[:space:]]+|[[:space:]]+$/,"",f[i])
+      if (f[1]=="Card" || f[1] ~ /^[-:[:space:]]+$/) next
+      out=f[1]
+      for (i=2;i<=n;i++) out=out " — " f[i]
+      print out
+      next
+    }
+    keep { print $0 }
+  ' "$1"
 }
 
-# send_with_retry <body> <date> — 3 attempts (0/5/15s). Writes the marker only on a
-# delivered send (send_report_to returns 1 when the Discord post failed, after the
-# macos_notification fallback). Returns 0 on delivered, 1 after exhaustion.
+# build_sections <file> — fills the global SECTIONS array (one element per live
+# section, in board order; trailing blank lines trimmed).
+build_sections() {
+  local TL="$1" cur="" line
+  SECTIONS=()
+  while IFS= read -r line || [ -n "$line" ]; do
+    if [ "$line" = "--SECTION--" ]; then
+      SECTIONS+=("${cur%$'\n'}"); cur=""
+    else
+      cur="${cur}${line}"$'\n'
+    fi
+  done < <(render_tasklog_sections "$TL")
+  [ -n "$cur" ] && SECTIONS+=("${cur%$'\n'}")
+}
+
+# send_with_retry <title> <body> <date> <msg-index> — 3 attempts (0/5/15s). Writes
+# the per-message marker only on a delivered send (send_report_to returns 1 when
+# the Discord post failed, after the macos_notification fallback). Returns 0 on
+# delivered, 1 after exhaustion (marker absent → the next fire re-sends only this
+# message).
 send_with_retry() {
-  local body="$1" D="$2"
+  local title="$1" body="$2" D="$3" idx="$4"
   local attempt=1 delay=0
   while :; do
     if [ "$attempt" -gt 1 ]; then
       sleep "$delay"
     fi
-    if send_report_to daily-overview "Daily overview — $D" "$body"; then
-      write_marker "$D"
-      log "sent: $D"
+    if send_report_to daily-overview "$title" "$body"; then
+      write_marker "$D-$idx"
+      log "sent: $D ($idx/${#SECTIONS[@]})"
       return 0
     fi
     [ "$attempt" -ge "$RETRY_ATTEMPTS" ] && return 1
@@ -302,26 +183,50 @@ send_with_retry() {
 # --- main: lock → 14-day catch-up scan (oldest first) ------------------------------
 main() {
   log "=== daily digest fire started ==="
-  local sent=0 failed=0 skipped=0 D body
-  local i
+  local sent=0 failed=0 skipped=0 D title idx i
+  local TL="$KHELAM_REPO/docs/tasklog.md"
+  local day_sent day_failed day_skip
+
+  if [ -f "$TL" ]; then
+    build_sections "$TL"
+  else
+    log "no tasklog at $TL — digest body is a note"
+    SECTIONS=("no tasklog found at $TL")
+  fi
+
   for i in $(seq "$MAX_CATCHUP_DAYS" -1 1); do
     D="$(date -v-${i}d +%Y-%m-%d)"
-    if marker_exists "$D"; then
-      skipped=$((skipped + 1)); continue
-    fi
     if ! is_due "$D"; then
       skipped=$((skipped + 1)); continue
     fi
-    body="$(generate_body "$D")"
-    if send_with_retry "$body" "$D"; then
+    # any missing message marker for this day → (re)send the missing ones only
+    day_sent=0; day_failed=0; day_skip=0
+    for idx in $(seq 1 ${#SECTIONS[@]}); do
+      if marker_exists "$D-$idx"; then
+        day_skip=$((day_skip + 1)); continue
+      fi
+      if [ "$idx" -eq 1 ]; then
+        title="Daily overview — $D"
+      else
+        title=""
+      fi
+      if send_with_retry "$title" "${SECTIONS[$((idx - 1))]}" "$D" "$idx"; then
+        day_sent=$((day_sent + 1))
+      else
+        day_failed=$((day_failed + 1))
+      fi
+    done
+    if [ "$day_failed" -eq 0 ] && [ "$day_sent" -gt 0 ]; then
       sent=$((sent + 1))
-    else
+    elif [ "$day_failed" -gt 0 ]; then
       failed=$((failed + 1))
-      log "FAILED: $D after $RETRY_ATTEMPTS attempts — marker not written, next fire retries"
-      send_error_report "Daily digest failed" "Could not deliver the digest for $D after $RETRY_ATTEMPTS attempts" || true
+      log "FAILED: $D ($day_sent sent, $day_failed not delivered) — missing markers retry next fire"
+      send_error_report "Daily digest failed" "Could not deliver all messages for $D after $RETRY_ATTEMPTS attempts each" || true
+    else
+      skipped=$((skipped + 1))
     fi
   done
-  log "=== fire done: $sent sent, $failed failed, $skipped skipped ==="
+  log "=== fire done: $sent days sent, $failed days failed, $skipped days skipped ==="
 }
 
 main "$@"
