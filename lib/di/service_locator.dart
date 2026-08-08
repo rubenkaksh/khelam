@@ -38,6 +38,15 @@ void configureDependencies({GetIt? getIt, Samseer? samseer}) {
       if (inspector != null) {
         client.raw.interceptors.add(inspector.dioInterceptor);
       }
+      // Retry transient GET failures (timeouts, connection errors, HTTP >=
+      // 500) once with backoff. Added last so its onError runs first; POSTs
+      // are never retried (a retry could double-book a slot).
+      client.raw.interceptors.add(
+        RetryInterceptor(
+          dio: client.raw,
+          baseDelay: const Duration(milliseconds: 300),
+        ),
+      );
       return client;
     },
   );
