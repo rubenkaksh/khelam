@@ -33,7 +33,7 @@ _Last updated: 2026-08-08_
 | **macOS DMG verification** | **2026-08-16** | release DMG launches to a **blank screen** (user 08-07) — diagnose or drop macOS distribution |
 
 ## ⚠️ User actions (flagged, not agent tasks)
-1. **Discord go-live**: fill webhook URLs into `~/.config/opencode/discord.env` (sample created 08-08, keys pre-written, chmod 600) + set `REPORT_SINK=discord_webhook` in both plists + install digest plist (agent never auto-installs launchd jobs).
+1. **Discord go-live — 2 steps left**: (a) update the **installed** `~/Library/LaunchAgents/com.khelam.weekly-review.plist` with `REPORT_SINK=discord_webhook` (templates updated forkable `acbbf04` + khelam `d072c6c`, but the installed copy predates it — re-copy + reload), (b) install digest plist (`com.khelam.daily-digest`, Mon–Fri 08:00) + run one E2E `daily_digest.sh`. Env file `~/.config/opencode/discord.env` is filled (mode 600). Agent never auto-installs launchd jobs.
 
 ## ⚪ Descoped (reopen when user decides)
 - **Google sign-in + credential rotation (Action #1)** — DESCOPED 2026-08-08 (user: google_sign_in had issues, low priority; pick up when he decides). Server client ID `91250679358-frejgd…` is **still leaked in git history + live** — rotation NOT done; reopen this card with the rotation runbook when Google login returns.
