@@ -5,14 +5,12 @@
 > Source of detail: `docs/backlog.md` (per-item history) + `docs/reviews/review-memory.md` (Open Actions). Cards here link back; do not duplicate their full text.
 > **Discord comms must mirror this structure** (`#daily-overview` + `#weekly-reviews`) so the channels read like this board.
 
-_Last updated: 2026-08-07_
+_Last updated: 2026-08-08_
 
 ## 🔴 Active queue
 | Card | Scope | Effort | Status |
 |---|---|---|---|
-| **T2 — Shared error mapping** (`AppException` + `DioApiClient` 4xx/5xx/timeout mapping; drop `catch (_)` in `schedule_cubit.dart:95,121,156` + `turf_selection_cubit.dart:78`; `EmptyView` for zero slots) | commons-first → khelam | M | **NEXT pickup** |
-| **T3 — Retry + connectivity-aware** (`RetryInterceptor`, backoff; kill stale-turf masking in `TurfsApiRepository`) | commons-first | M | after T2 |
-| **T5 — In-session GET cache** (~30s TTL, re-selects served from memory) | commons-first | M | after T3 |
+| **T5 — In-session GET cache** (~30s TTL, re-selects served from memory) | commons-first | M | **NEXT pickup** |
 
 ## 🟡 Backlog (open, not scheduled)
 | Card | Source | Status |
@@ -42,3 +40,5 @@ _Last updated: 2026-08-07_
 - **Real auth/JWT wiring** (07-31) — CLOSED: `setBearerToken` wired (`auth_api_service.dart:107,143`); `booking_flow` integration 2/2 live on iOS sim.
 - **UI screenshot verification** (08-06) — CLOSED: superseded by OA#6 `capture_screens.sh` (`ec178eb`, `b815d6c`).
 - **[T1] Security gate** — CLOSED: `.env` de-tracked + gitignored (khelam `9445e2d`, forkable `c067908`).
+- **T2 — Shared error mapping** (08-08) — CLOSED: `AppException` sealed hierarchy + `DioApiClient.mapDioException` (commons v0.7.0 `827f940`), cubit/service surface `e.message`, EmptyView; khelam `b1ecd81`; suites green.
+- **T3 — Retry + connectivity-aware** (08-08) — CLOSED: commons `RetryInterceptor` GET-only retry (v0.7.1 `203af79`), TurfsApiRepository 404-only fallback (offline/5xx now propagate typed), wired in DI; khelam `d513184`; suites green.
