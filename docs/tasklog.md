@@ -33,8 +33,10 @@ _Last updated: 2026-08-08_
 | **macOS DMG verification** | **2026-08-16** | release DMG launches to a **blank screen** (user 08-07) — diagnose or drop macOS distribution |
 
 ## ⚠️ User actions (flagged, not agent tasks)
-1. **Rotate leaked Google SERVER client ID** on Google Cloud Console (from T1; optional `filter-repo` history purge later)
-2. **Discord go-live**: create `~/.config/opencode/discord.env` + install digest plist (agent never auto-installs launchd jobs)
+1. **Discord go-live**: fill webhook URLs into `~/.config/opencode/discord.env` (sample created 08-08, keys pre-written, chmod 600) + set `REPORT_SINK=discord_webhook` in both plists + install digest plist (agent never auto-installs launchd jobs).
+
+## ⚪ Descoped (reopen when user decides)
+- **Google sign-in + credential rotation (Action #1)** — DESCOPED 2026-08-08 (user: google_sign_in had issues, low priority; pick up when he decides). Server client ID `91250679358-frejgd…` is **still leaked in git history + live** — rotation NOT done; reopen this card with the rotation runbook when Google login returns.
 
 ## 📋 Closed / superseded (2026-08-07)
 - **Real auth/JWT wiring** (07-31) — CLOSED: `setBearerToken` wired (`auth_api_service.dart:107,143`); `booking_flow` integration 2/2 live on iOS sim.
