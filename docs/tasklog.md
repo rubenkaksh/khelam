@@ -29,6 +29,7 @@ _Last updated: 2026-08-08_
 | **T4 — Analytics** (was DESCOPED → parked 08-07) | **2026-08-16** | plan properly or drop |
 | **T6 — Perf/rebuild hygiene + Samseer-in-prod gate** (was DESCOPED → parked 08-07) | **2026-08-16** | re-add when needed |
 | **macOS DMG verification** | **2026-08-16** | release DMG launches to a **blank screen** (user 08-07) — diagnose or drop macOS distribution |
+| **Melos workspace → generic/cross-device** (parked 08-08) | **2026-08-16** | melos.yaml/pubspec.yaml currently machine-local at `~/projects/khel-service/` (not a git repo). Parked for: commit canonical config to forkable + make it **generic so any device that clones forkable/khelam can bootstrap** (paths/env-var indirection for repo locations, not just this machine) — see session 08-08 Decisions |
 
 ## ⚪ Descoped (reopen when user decides)
 - **Google sign-in + credential rotation (Action #1)** — DESCOPED 2026-08-08 (user: google_sign_in had issues, low priority; pick up when he decides). Server client ID `91250679358-frejgd…` is **still leaked in git history + live** — rotation NOT done; reopen this card with the rotation runbook when Google login returns.
