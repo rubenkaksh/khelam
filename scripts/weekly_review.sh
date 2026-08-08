@@ -117,6 +117,94 @@ session_boundary_check() {
   fi
 }
 
+# Index-freshness verification (codegraph + graphify auto-refresh guard).
+# HARD FAIL: any codegraph index stale > FRESHNESS_DAYS (default 7) or
+# pendingChanges > 0 (a sync did not complete). Advisory only: graphify
+# check-update flags semantic re-extraction pending → Open Action (never
+# hard-fails; extract never runs unattended).
+# Covers the indexed repos on this machine: the current repo + siblings
+# commons + forkable (machine-local paths, override via $COMMONS_REPO /
+# $FORKABLE_REPO). hook-only design (2026-08-08) — no launchd timer backs
+# the hook, so this is the safety net that catches a broken hook.
+freshness_check() {
+  local threshold="${FRESHNESS_DAYS:-7}"
+  local out="" fail=0
+
+  # Indexed repos (all have .codegraph/). commons has no scripts/ so its hook
+  # falls back to forkable's codegraph_refresh.sh — covered here regardless.
+  local repos=()
+  [ -d "${REPO}/.codegraph" ] && repos+=("$REPO")
+  [ -d "${COMMONS:-/Users/rubenk/projects/commons}/.codegraph" ] && \
+      repos+=("${COMMONS:-/Users/rubenk/projects/commons}")
+  [ -d "${FORKABLE:-/Users/rubenk/projects/forkable}/.codegraph" ] && \
+      repos+=("${FORKABLE:-/Users/rubenk/projects/forkable}")
+
+  if [ "${#repos[@]}" -eq 0 ]; then
+    echo "SKIPPED: no indexed repos (.codegraph/) found."
+    return
+  fi
+
+  for repo in "${repos[@]}"; do
+    local name; name="$(basename "$repo")"
+
+    # --- CodeGraph freshness (hard fail) ---
+    # status --json → lastIndexed (ISO-8601) + pendingChanges{added,modified,removed}.
+    local cg_st="false" cg_pending=1 cg_last="" agedays=0
+    if ! command -v codegraph >/dev/null 2>&1 || ! command -v python3 >/dev/null 2>&1; then
+      out+="  FAILED: $name — codegraph/python3 unavailable\n"; fail=1
+    elif ! cg="$(codegraph status --json "$repo" 2>/dev/null)"; then
+      out+="  FAILED: $name — codegraph status errored\n"; fail=1
+    else
+      # Capture the python parse into a var first, THEN read — nesting a
+      # multi-line $($(...)) inside a here-string <<< is mis-parsed by bash.
+      local _parsed
+      _parsed="$(printf '%s' "$cg" | python3 -c 'import json,sys
+try:
+    d=json.load(sys.stdin)
+    pc=d.get("pendingChanges",{})
+    total=int(pc.get("added",0))+int(pc.get("modified",0))+int(pc.get("removed",0))
+    print(str(d.get("initialized",False)).lower(), total, d.get("lastIndexed",""))
+except Exception:
+    print("false 1 \"")
+' 2>/dev/null || printf 'false 1 \"\"')"
+      read -r cg_st cg_pending cg_last <<< "$_parsed"
+      if [ "$cg_st" = "true" ] && [ -n "$cg_last" ]; then
+        local last_epoch now_epoch
+        last_epoch="$(python3 -c 'from datetime import datetime,sys
+ts=sys.argv[1].replace("Z","+00:00")
+print(int(datetime.fromisoformat(ts).timestamp()))' "$cg_last" 2>/dev/null || echo 0)"
+        now_epoch="$(date +%s)"
+        [ "$last_epoch" -gt 0 ] && agedays=$(( (now_epoch - last_epoch) / 86400 ))
+      fi
+    fi
+
+    if [ "$cg_st" = "true" ]; then
+      if [ "${cg_pending:-0}" -gt 0 ]; then
+        out+="  FAILED: $name — codegraph pendingChanges=${cg_pending} (sync did not complete)\n"; fail=1
+      elif [ "$agedays" -gt "$threshold" ]; then
+        out+="  FAILED: $name — codegraph lastIndexed ${agedays}d ago (> ${threshold}d)\n"; fail=1
+      else
+        out+="  OK: $name — codegraph fresh (lastIndexed ${cg_last}, pending=${cg_pending}, ${agedays}d old)\n"
+      fi
+    fi
+
+    # --- Graphify freshness (advisory → Open Action; never hard-fail) ---
+    if [ -d "$repo/graphify-out" ]; then
+      if graphify check-update "$repo" >/dev/null 2>&1; then
+        out+="  OK: $name — graphify up to date\n"
+      else
+        out+="  OPEN-ACTION: $name — graphify check-update flags semantic re-extraction pending (run: graphify extract $repo)\n"
+      fi
+    fi
+  done
+
+    if [ "$fail" -ne 0 ]; then
+        printf 'FAILED\n%b' "$out"
+    else
+        printf 'OK\n%b' "$out"
+    fi
+}
+
 # Forkable-sync tripwire (base-template policy): shared tooling (scripts/,
 # pre-commit gate) is canonical in forkable; children pull synced copies.
 # Flags child-only drift mechanically for the user's sign-off.
@@ -272,6 +360,8 @@ Inputs (this week's session files): $SESSION_FILES
 $(if [ -n "$CONSUMER_NOTE" ]; then echo "Consumer health note (from the script): $CONSUMER_NOTE"; fi)
 
 MECHANICAL CHECK (computed by the script, not by you): $(mechanical_check)
+
+INDEX FRESHNESS CHECK (computed by the script): $(freshness_check)
 
 SESSION-BOUNDARY CHECK (computed by the script): $(session_boundary_check)
 
