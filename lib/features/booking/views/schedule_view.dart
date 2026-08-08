@@ -79,6 +79,16 @@ class _ScheduleViewState extends m.State<ScheduleView> {
       );
     }
 
+    // A loaded day with zero slots is a legitimately empty state, not an
+    // error — show the empty view instead of a bare timeline. (`turf != null`
+    // keeps the pre-load frame from flashing it before `load()` starts.)
+    if (!state.isLoading &&
+        state.turf != null &&
+        state.slots.isEmpty &&
+        state.errorMessage == null) {
+      return const EmptyView(message: 'No slots available for this date.');
+    }
+
     final List<DateTime> dates = _generateDateRange();
 
     return m.ListView(

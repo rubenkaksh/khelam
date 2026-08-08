@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 
 import 'package:commons/commons.dart';
@@ -41,13 +42,20 @@ class BookingApiService implements BookingService {
     required String turfId,
     required DateTime date,
   }) async {
-    final List<Map<String, dynamic>> jsonList = await _apiClient.getJsonList(
-      '/slots',
-      queryParameters: <String, dynamic>{
-        'turfId': turfId,
-        'date': _dateFormat.format(date),
-      },
-    );
+    final List<Map<String, dynamic>> jsonList;
+    try {
+      jsonList = await _apiClient.getJsonList(
+        '/slots',
+        queryParameters: <String, dynamic>{
+          'turfId': turfId,
+          'date': _dateFormat.format(date),
+        },
+      );
+    } on DioException catch (e) {
+      // Raw dio failures → typed, user-facing exceptions (offline/timeout/
+      // server/client) that the cubit surfaces by message.
+      throw _apiClient.mapDioException(e);
+    }
 
     return jsonList
         .map((Map<String, dynamic> json) => _toScheduleSlotItem(json, turfId))
@@ -64,7 +72,11 @@ class BookingApiService implements BookingService {
     // app), so customerPhone is intentionally not sent. Requires a bearer
     // token via DioApiClient.setBearerToken; without one the call returns 401.
     // The response booking/slot is not used: the cubit refetches the schedule.
-    await _apiClient.postJson('/slots/$slotId/book');
+    try {
+      await _apiClient.postJson('/slots/$slotId/book');
+    } on DioException catch (e) {
+      throw _apiClient.mapDioException(e);
+    }
   }
 
   /// Parses an API slot row into the domain [Slot] and wraps it in a

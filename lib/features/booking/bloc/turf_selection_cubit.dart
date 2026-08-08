@@ -1,3 +1,4 @@
+import 'package:commons/commons.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../data/storage/preferences.dart';
@@ -74,6 +75,13 @@ class TurfSelectionCubit extends Cubit<TurfSelectionState> {
       final List<TurfSummary> turfs = await _repository.getTurfs();
       emit(
         state.copyWith(turfs: turfs, isLoading: false, clearError: true),
+      );
+    } on AppException catch (e) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: e.message,
+        ),
       );
     } catch (_) {
       emit(

@@ -1,3 +1,4 @@
+import 'package:commons/commons.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:khelam/features/booking/bloc/turf_selection_cubit.dart';
@@ -12,9 +13,13 @@ class FakeTurfsRepository implements TurfsRepository {
   final List<TurfSummary> turfs;
   bool shouldThrow = false;
 
+  /// When set, [shouldThrow] throws this typed error instead of a generic one
+  /// (exercises the cubit's typed-error surfacing).
+  AppException? typedError;
+
   @override
   Future<List<TurfSummary>> getTurfs() async {
-    if (shouldThrow) throw Exception('Network error');
+    if (shouldThrow) throw typedError ?? Exception('Network error');
     return turfs;
   }
 }
@@ -81,6 +86,21 @@ void main() {
 
       expect(cubit.state.errorMessage, 'Could not load turfs.');
       expect(cubit.state.turfs, isEmpty);
+      expect(cubit.state.isLoading, isFalse);
+    });
+
+    test('load surfaces the typed AppException message', () async {
+      repository.shouldThrow = true;
+      repository.typedError = const AppOfflineException(
+        'You appear to be offline. Check your connection and try again.',
+      );
+      final cubit = buildCubit();
+      await cubit.load();
+
+      expect(
+        cubit.state.errorMessage,
+        'You appear to be offline. Check your connection and try again.',
+      );
       expect(cubit.state.isLoading, isFalse);
     });
 

@@ -120,6 +120,39 @@ void main() {
       expect(request?.path, '/slots/s1/book');
       expect(request?.data, isNull);
     });
+
+    test('getSchedule maps HTTP 503 to AppServerException', () async {
+      final _RecordingAdapter adapter = _RecordingAdapter(
+        (RequestOptions options) async => ResponseBody.fromString(
+          jsonEncode(<String, dynamic>{'message': 'Service Unavailable'}),
+          503,
+          headers: <String, List<String>>{
+            Headers.contentTypeHeader: <String>[Headers.jsonContentType],
+          },
+        ),
+      );
+      final BookingApiService service = _service(adapter);
+
+      await expectLater(
+        () => service.getSchedule(turfId: 'turf-1', date: DateTime(2026, 7, 31)),
+        throwsA(isA<AppServerException>()),
+      );
+    });
+
+    test('bookSlot maps connection errors to AppOfflineException', () async {
+      final _RecordingAdapter adapter = _RecordingAdapter(
+        (RequestOptions options) async => throw DioException(
+          requestOptions: options,
+          type: DioExceptionType.connectionError,
+        ),
+      );
+      final BookingApiService service = _service(adapter);
+
+      await expectLater(
+        () => service.bookSlot(turfId: 'turf-1', slotId: 's1'),
+        throwsA(isA<AppOfflineException>()),
+      );
+    });
   });
 }
 

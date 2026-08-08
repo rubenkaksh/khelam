@@ -1,3 +1,4 @@
+import 'package:commons/commons.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:khelam/features/booking/bloc/schedule_cubit.dart';
 import 'package:khelam/features/booking/booking_service.dart';
@@ -13,13 +14,17 @@ class FakeBookingService implements BookingService {
 
   bool shouldThrow = false;
 
+  /// When set, [shouldThrow] throws this typed error instead of a generic one
+  /// (exercises the cubit's typed-error surfacing).
+  AppException? typedError;
+
   /// Slot ids that were booked; `getSchedule` reflects them so the cubit's
   /// post-book refetch sees the slot as booked (server-as-source-of-truth).
   final Set<String> bookedSlotIds = <String>{};
 
   @override
   Future<TurfSummary> getTurf(String turfId) async {
-    if (shouldThrow) throw Exception('Network error');
+    if (shouldThrow) throw typedError ?? Exception('Network error');
     return const TurfSummary(id: 'turf-a', name: 'Turf A');
   }
 
@@ -28,7 +33,7 @@ class FakeBookingService implements BookingService {
     required String turfId,
     required DateTime date,
   }) async {
-    if (shouldThrow) throw Exception('Network error');
+    if (shouldThrow) throw typedError ?? Exception('Network error');
     final Slot slot = Slot(
       id: 's1',
       turfId: turfId,
@@ -64,7 +69,7 @@ class FakeBookingService implements BookingService {
     required String slotId,
     String? customerPhone,
   }) async {
-    if (shouldThrow) throw Exception('Network error');
+    if (shouldThrow) throw typedError ?? Exception('Network error');
     bookedSlotIds.add(slotId);
   }
 }
@@ -103,6 +108,43 @@ void main() {
 
       expect(cubit.state.errorMessage, isNotNull);
       expect(cubit.state.turf, isNull);
+      expect(cubit.state.isLoading, isFalse);
+    });
+
+    test('load surfaces the typed AppException message', () async {
+      fakeService.shouldThrow = true;
+      fakeService.typedError = const AppOfflineException(
+        'You appear to be offline. Check your connection and try again.',
+      );
+      final cubit = ScheduleCubit(service: fakeService, turfId: 'turf-a');
+      await cubit.load();
+
+      expect(
+        cubit.state.errorMessage,
+        'You appear to be offline. Check your connection and try again.',
+      );
+      expect(cubit.state.turf, isNull);
+      expect(cubit.state.isLoading, isFalse);
+    });
+
+    test('bookSlot surfaces the typed AppException message', () async {
+      final cubit = ScheduleCubit(service: fakeService, turfId: 'turf-a');
+      await cubit.load();
+
+      fakeService.shouldThrow = true;
+      fakeService.typedError = const AppTimeoutException(
+        'The server took too long to respond. Please try again.',
+      );
+
+      final available = cubit.state.slots.firstWhere(
+        (item) => item.booking == null,
+      );
+      await cubit.bookSlot(available.slot.id);
+
+      expect(
+        cubit.state.errorMessage,
+        'The server took too long to respond. Please try again.',
+      );
       expect(cubit.state.isLoading, isFalse);
     });
 

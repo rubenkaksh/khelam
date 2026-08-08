@@ -1,3 +1,4 @@
+import 'package:commons/commons.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../booking_service.dart';
@@ -92,7 +93,14 @@ class ScheduleCubit extends Cubit<ScheduleState> {
           clearError: true,
         ),
       );
-    } catch (e) {
+    } on AppException catch (e) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: e.message,
+        ),
+      );
+    } catch (_) {
       emit(
         state.copyWith(
           isLoading: false,
@@ -116,6 +124,13 @@ class ScheduleCubit extends Cubit<ScheduleState> {
           slots: slots,
           dayStats: _computeStats(slots),
           isLoading: false,
+        ),
+      );
+    } on AppException catch (e) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: e.message,
         ),
       );
     } catch (_) {
@@ -151,6 +166,13 @@ class ScheduleCubit extends Cubit<ScheduleState> {
           dayStats: _computeStats(updatedSlots),
           isLoading: false,
           clearError: true,
+        ),
+      );
+    } on AppException catch (e) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: e.message,
         ),
       );
     } catch (_) {
