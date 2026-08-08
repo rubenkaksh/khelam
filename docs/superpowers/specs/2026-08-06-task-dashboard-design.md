@@ -1,6 +1,6 @@
 # Design — Task/Ticket Breakdown Dashboard (v2, standalone project, Supabase pivot)
 
-> Date: 2026-08-06. Status: PROPOSED — awaiting approval. Spec lives at `docs/superpowers/specs/` (not a declared feature; matches the 2026-08-06 screenshot-verification precedent). Implementation target: **standalone Flutter project** at `~/projects/task-dashboard`.
+> Date: 2026-08-06. Status: **RETAINED — DROPPED 2026-08-08 (user: "we won't be picking it")**; spec kept for possible revival. Drop criterion fired: Discord comms (`#daily-overview` + `#weekly-reviews`) cover the review surface this app was built for. Reopen = user decides to revisit; pick up from this locked design, no re-design needed. Spec lives at `docs/superpowers/specs/` (not a declared feature; matches the 2026-08-06 screenshot-verification precedent). Implementation target: **standalone Flutter project** at `~/projects/task-dashboard`.
 >
 > **Changelog** (2026-08-06, user decisions):
 > - **v1** (user pivot): storage moved **local Isar → Supabase** to enable a *bidirectional* task queue (user flips a ticket in the app → status lands in the DB → the agent picks it up as the worker).

@@ -26,7 +26,6 @@ _Last updated: 2026-08-08_
 ## 🟠 Parked (revisit at the 2026-08-16 review unless noted)
 | Card | Revisit | Note |
 |---|---|---|
-| **Task dashboard** (standalone Flutter + Supabase, est ~28–34k) | **2026-08-16** | DROP if Discord covers the review surface, else re-estimate |
 | **T4 — Analytics** (was DESCOPED → parked 08-07) | **2026-08-16** | plan properly or drop |
 | **T6 — Perf/rebuild hygiene + Samseer-in-prod gate** (was DESCOPED → parked 08-07) | **2026-08-16** | re-add when needed |
 | **macOS DMG verification** | **2026-08-16** | release DMG launches to a **blank screen** (user 08-07) — diagnose or drop macOS distribution |
@@ -35,6 +34,7 @@ _Last updated: 2026-08-08_
 - **Google sign-in + credential rotation (Action #1)** — DESCOPED 2026-08-08 (user: google_sign_in had issues, low priority; pick up when he decides). Server client ID `91250679358-frejgd…` is **still leaked in git history + live** — rotation NOT done; reopen this card with the rotation runbook when Google login returns.
 
 ## 📋 Closed / superseded (2026-08-07)
+- **Task dashboard (standalone Flutter + Supabase queue)** — CLOSED 2026-08-08 (user: "we won't be picking it"): the 08-16 DROP criterion fired — Discord comms (`#daily-overview` + `#weekly-reviews`, spec `2026-08-07-comms-discord-design.md`) cover the review surface. **Spec RETAINED for revival**: `docs/superpowers/specs/2026-08-06-task-dashboard-design.md` (195 lines, v2 Supabase pivot, decisions 1–10 locked — auth email/password, `~/.config/khelam/sb.env`, seed manual v1). Reopen = user decides to revisit; no re-design needed.
 - **Real auth/JWT wiring** (07-31) — CLOSED: `setBearerToken` wired (`auth_api_service.dart:107,143`); `booking_flow` integration 2/2 live on iOS sim.
 - **UI screenshot verification** (08-06) — CLOSED: superseded by OA#6 `capture_screens.sh` (`ec178eb`, `b815d6c`).
 - **Auto-digest reliability — catch-up + retry** (08-08) — CLOSED: spec `docs/superpowers/specs/2026-08-08-auto-digest-reliability-design.md` (approved by user + @architect). Forkable-first impl: `daily_digest.sh` refactor (per-date body, 14-day oldest-first catch-up, persistent markers `~/Library/Application Support/khelam/daily-digest/markers/<date>.sent`, atomic mkdir lock, 3×backoff retry), `report_sink.sh` `send_report_to` returns 1 on Discord failure (fallback kept), `weekly_review.sh`/`capture_screens.sh` `|| true` guards, plist `RunAtLoad=true`. **Live launchd E2E caught a real bug**: BSD `date -j -v` arg order → weekday test silently failed → fixed with python3 `day_info`. Verified: due-set 12/2, idempotency, catch-up, retry exhaustion (no marker → retries next fire), kickstart 0/14. 10 pre-service markers seeded; 2 real Friday posts (07-31, 08-07) went out on first bootstrap. Job live; first scheduled fire Mon 08-10 08:00.
