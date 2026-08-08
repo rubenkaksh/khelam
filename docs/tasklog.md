@@ -27,13 +27,9 @@ _Last updated: 2026-08-08_
 | Card | Revisit | Note |
 |---|---|---|
 | **Task dashboard** (standalone Flutter + Supabase, est ~28–34k) | **2026-08-16** | DROP if Discord covers the review surface, else re-estimate |
-| **Discord go-live steps** (env file, plist install, live E2E) | user request | OA#8 impl is the next queue; must mirror this board's structure |
 | **T4 — Analytics** (was DESCOPED → parked 08-07) | **2026-08-16** | plan properly or drop |
 | **T6 — Perf/rebuild hygiene + Samseer-in-prod gate** (was DESCOPED → parked 08-07) | **2026-08-16** | re-add when needed |
 | **macOS DMG verification** | **2026-08-16** | release DMG launches to a **blank screen** (user 08-07) — diagnose or drop macOS distribution |
-
-## ⚠️ User actions (flagged, not agent tasks)
-1. **Discord go-live — 2 steps left**: (a) update the **installed** `~/Library/LaunchAgents/com.khelam.weekly-review.plist` with `REPORT_SINK=discord_webhook` (templates updated forkable `acbbf04` + khelam `d072c6c`, but the installed copy predates it — re-copy + reload), (b) install digest plist (`com.khelam.daily-digest`, Mon–Fri 08:00) + run one E2E `daily_digest.sh`. Env file `~/.config/opencode/discord.env` is filled (mode 600). Agent never auto-installs launchd jobs.
 
 ## ⚪ Descoped (reopen when user decides)
 - **Google sign-in + credential rotation (Action #1)** — DESCOPED 2026-08-08 (user: google_sign_in had issues, low priority; pick up when he decides). Server client ID `91250679358-frejgd…` is **still leaked in git history + live** — rotation NOT done; reopen this card with the rotation runbook when Google login returns.
@@ -41,6 +37,7 @@ _Last updated: 2026-08-08_
 ## 📋 Closed / superseded (2026-08-07)
 - **Real auth/JWT wiring** (07-31) — CLOSED: `setBearerToken` wired (`auth_api_service.dart:107,143`); `booking_flow` integration 2/2 live on iOS sim.
 - **UI screenshot verification** (08-06) — CLOSED: superseded by OA#6 `capture_screens.sh` (`ec178eb`, `b815d6c`).
+- **Discord go-live** (08-08) — CLOSED: `~/.config/opencode/discord.env` filled (mode 600), `REPORT_SINK=discord_webhook` in both plists (forkable `acbbf04`, khelam `d072c6c`), digest plist installed + weekly plist reloaded, E2E digest run. **All 5 webhooks live-verified 08-08**: daily-overview ✅, weekly-reviews ✅, screenshots ✅ (multipart — real 1320×2868 screenshot uploaded), agent-errors ✅, default ✅ (after fixing missing leading `h` in `DISCORD_WEBHOOK_URL` → `curl: Protocol "ttps" not supported`). First auto-digest: Mon 08-10 08:00.
 - **[T1] Security gate** — CLOSED: `.env` de-tracked + gitignored (khelam `9445e2d`, forkable `c067908`).
 - **T2 — Shared error mapping** (08-08) — CLOSED: `AppException` sealed hierarchy + `DioApiClient.mapDioException` (commons v0.7.0 `827f940`), cubit/service surface `e.message`, EmptyView; khelam `b1ecd81`; suites green.
 - **T3 — Retry + connectivity-aware** (08-08) — CLOSED: commons `RetryInterceptor` GET-only retry (v0.7.1 `203af79`), TurfsApiRepository 404-only fallback (offline/5xx now propagate typed), wired in DI; khelam `d513184`; suites green.
