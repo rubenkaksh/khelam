@@ -10,7 +10,6 @@ _Last updated: 2026-08-08_
 ## 🔴 Active queue
 | Card | Scope | Effort | Status |
 |---|---|---|---|
-| **Auto-digest reliability — catch-up + retry** (from 2026-08-08 brainstorm; spec `docs/superpowers/specs/2026-08-08-auto-digest-reliability-design.md`) | ops/scripts (forkable-first) | S | **Design approved 08-08** (user + @architect) — implement: RunAtLoad + marker/lock + retry + 14-day catch-up (parallel ops thread, no Flutter impact) |
 | **Theme + real-user-flow pass** (post-robustness; from 2026-08-08 session objective) | khelam | M | **NEXT pickup** — spec the theme/real-user-flow slice first |
 
 ## 🟡 Backlog (open, not scheduled)
@@ -38,6 +37,7 @@ _Last updated: 2026-08-08_
 ## 📋 Closed / superseded (2026-08-07)
 - **Real auth/JWT wiring** (07-31) — CLOSED: `setBearerToken` wired (`auth_api_service.dart:107,143`); `booking_flow` integration 2/2 live on iOS sim.
 - **UI screenshot verification** (08-06) — CLOSED: superseded by OA#6 `capture_screens.sh` (`ec178eb`, `b815d6c`).
+- **Auto-digest reliability — catch-up + retry** (08-08) — CLOSED: spec `docs/superpowers/specs/2026-08-08-auto-digest-reliability-design.md` (approved by user + @architect). Forkable-first impl: `daily_digest.sh` refactor (per-date body, 14-day oldest-first catch-up, persistent markers `~/Library/Application Support/khelam/daily-digest/markers/<date>.sent`, atomic mkdir lock, 3×backoff retry), `report_sink.sh` `send_report_to` returns 1 on Discord failure (fallback kept), `weekly_review.sh`/`capture_screens.sh` `|| true` guards, plist `RunAtLoad=true`. **Live launchd E2E caught a real bug**: BSD `date -j -v` arg order → weekday test silently failed → fixed with python3 `day_info`. Verified: due-set 12/2, idempotency, catch-up, retry exhaustion (no marker → retries next fire), kickstart 0/14. 10 pre-service markers seeded; 2 real Friday posts (07-31, 08-07) went out on first bootstrap. Job live; first scheduled fire Mon 08-10 08:00.
 - **Discord go-live** (08-08) — CLOSED: `~/.config/opencode/discord.env` filled (mode 600), `REPORT_SINK=discord_webhook` in both plists (forkable `acbbf04`, khelam `d072c6c`), digest plist installed + weekly plist reloaded, E2E digest run. **All 5 webhooks live-verified 08-08**: daily-overview ✅, weekly-reviews ✅, screenshots ✅ (multipart — real 1320×2868 screenshot uploaded), agent-errors ✅, default ✅ (after fixing missing leading `h` in `DISCORD_WEBHOOK_URL` → `curl: Protocol "ttps" not supported`). First auto-digest: Mon 08-10 08:00.
 - **[T1] Security gate** — CLOSED: `.env` de-tracked + gitignored (khelam `9445e2d`, forkable `c067908`).
 - **T2 — Shared error mapping** (08-08) — CLOSED: `AppException` sealed hierarchy + `DioApiClient.mapDioException` (commons v0.7.0 `827f940`), cubit/service surface `e.message`, EmptyView; khelam `b1ecd81`; suites green.

@@ -12,6 +12,12 @@
 #   slack_webhook — stub (v3 reserved; kept for option value, no behavior yet)
 #   noop — testing; logs to $WEEKLY_LOG only
 #
+# send_report_to returns 0 when the message reached its sink; in discord_webhook
+# mode it returns 1 when the Discord post FAILED (the macos_notification fallback
+# still fires first — never drops — but callers that want to retry can see it).
+# Callers running under `set -e` must use it in a conditional or guard with
+# `|| true`.
+#
 # Channels (name → env key; all keys live in the shared env file, see Secret):
 #   default        → DISCORD_WEBHOOK_URL            (v1 alias, backward-compatible)
 #   daily-overview → DAILY_OVERVIEW_WEBHOOK_URL
@@ -141,6 +147,7 @@ send_report_to() { # send_report_to <channel> <title> <body> [artifact...]
       else
         echo "$(date): [report_sink] discord_webhook FAILED — fallback macos_notification: $title" >> "$LOG"
         _notify_macos "$title" "${body}${artifacts}"
+        return 1   # Discord failed (fallback already fired) — lets callers retry
       fi
       ;;
     slack_webhook)

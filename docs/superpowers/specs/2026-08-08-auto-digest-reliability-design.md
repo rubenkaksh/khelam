@@ -132,6 +132,13 @@ The parameterized entry points (`generate_body(D)`, `is_due(D)`, plus optional `
    - launchd E2E: `launchctl kickstart gui/$(id -u)/com.khelam.daily-digest` → post to #daily-overview + marker created + persistent log written
 5. **Bookkeeping**: tasklog card, session file, review-memory if needed; commits pass the pre-commit gate (docs-only for the spec commit).
 
+## Implementation notes (08-08 — executed, all verified live)
+
+- **report_sink.sh contract addition (necessary for retry)**: `send_report_to` in `discord_webhook` mode now returns **1** when the Discord post fails (the macos_notification fallback still fires first — delivery never drops). Previously it always returned 0 (the fallback swallowed the failure), which would have made the retry design dead code. Backward-compatible: callers that ignore the status are unaffected; the two standalone callers (`weekly_review.sh`, `capture_screens.sh`) got explicit `|| true` guards so `set -e` behavior is unchanged. Doc-comment updated.
+- **BSD `date -j -v` arg-order bug (caught by the live launchd E2E)**: `date -j -f '%Y-%m-%d' "$D" -v+1d '+%u'` (with `-v` AFTER the parsed date) prints the full default date string → `[: integer expression expected` → the weekday test silently failed for every day. The Friday-exception line (no `-v`) still worked, so the first bootstrap fire sent exactly the 2 Fridays (07-31, 08-07 — real posts, markers written). **Fix**: `is_due` now uses a python3 `day_info` helper (isoweekday; Mon=1..Sun=7) — single date-math source of truth alongside `local_midnight_window`.
+- **Initial-state seeding**: at rollout, markers for all due days in the 14-day lookback were seeded (pre-service days are not "missed"; the digest only went live today). Catch-up applies to days missed *after* the job is live. Seeded: 07-26..07-30, 08-02..08-06 (10) + existing 07-31, 08-07 (2) = 12 markers.
+- **Verified live**: due-set (12 sent / 2 Sat skipped via noop), idempotency (second run 0 sent / 14 skipped), catch-up (11 seeded markers → only the missing day attempted), retry backoff (3 attempts at 0/5/15s, marker NOT written on exhaustion → next fire retries, agent-errors report fired), real launchd kickstart (0 sent / 14 skipped, exit 0).
+
 ## Out of scope
 
 - Weekly review catch-up/hardening

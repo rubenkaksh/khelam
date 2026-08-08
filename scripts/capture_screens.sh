@@ -249,5 +249,5 @@ cat <<EOF
 
 saved: $OUT_FILE
 EOF
-send_report_to screenshots "capture_screens.sh done" "captured $SCREEN ($size bytes)" "$OUT_FILE"
+send_report_to screenshots "capture_screens.sh done" "captured $SCREEN ($size bytes)" "$OUT_FILE" || true   # send_report_to returns 1 on Discord fail (fallback already fired)
 exit 0

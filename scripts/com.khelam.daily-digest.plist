@@ -54,6 +54,6 @@
   <key>StandardErrorPath</key>
   <string>/tmp/daily-digest.log</string>
   <key>RunAtLoad</key>
-  <false/>
+  <true/>
 </dict>
 </plist>
