@@ -1,0 +1,119 @@
+{
+  "themeData": {
+    "useMaterial3": true,
+    "colorScheme": {
+      "brightness": "light",
+      "primary": "#097339",
+      "onPrimary": "#FFFFFF",
+      "primaryContainer": "#E6F2EB",
+      "onPrimaryContainer": "#097339",
+      "secondary": "#FFFFFF",
+      "onSecondary": "#1A1A1A",
+      "background": "#F9FAFA",
+      "onBackground": "#1A1A1A",
+      "surface": "#FFFFFF",
+      "onSurface": "#1A1A1A",
+      "surfaceVariant": "#F3F4F3",
+      "onSurfaceVariant": "#6B7280",
+      "error": "#D9534F",
+      "onError": "#FFFFFF",
+      "errorContainer": "#FDEAEA",
+      "onErrorContainer": "#D9534F",
+      "outline": "#E5E7EB"
+    },
+    "typography": {
+      "fontFamily": "System", 
+      "headlineSmall": {
+        "description": "Used for section titles like 'Select Date' and 'Available Slots'",
+        "fontSize": 18,
+        "fontWeight": "w700",
+        "color": "onSurface"
+      },
+      "titleMedium": {
+        "description": "Used for main card titles like 'The Arena Premium Turf'",
+        "fontSize": 16,
+        "fontWeight": "w600",
+        "color": "onSurface"
+      },
+      "titleSmall": {
+        "description": "Used for slot times '06:00 PM - 07:00 PM'",
+        "fontSize": 14,
+        "fontWeight": "w600",
+        "color": "onSurface"
+      },
+      "bodyMedium": {
+        "description": "Used for subtitle text like location and prices",
+        "fontSize": 13,
+        "fontWeight": "w400",
+        "color": "onSurfaceVariant"
+      },
+      "labelLarge": {
+        "description": "Used for primary button text 'Book Now'",
+        "fontSize": 16,
+        "fontWeight": "w700",
+        "color": "onPrimary"
+      },
+      "labelSmall": {
+        "description": "Used for amenity labels like 'Parking', 'Showers'",
+        "fontSize": 11,
+        "fontWeight": "w500",
+        "color": "onSurfaceVariant"
+      }
+    },
+    "components": {
+      "cardTheme": {
+        "color": "surface",
+        "elevation": 2,
+        "shadowColor": "#0000001A",
+        "shape": {
+          "type": "RoundedRectangleBorder",
+          "borderRadius": 24
+        }
+      },
+      "elevatedButtonTheme": {
+        "style": {
+          "backgroundColor": "primary",
+          "foregroundColor": "onPrimary",
+          "elevation": 0,
+          "padding": { "vertical": 16, "horizontal": 24 },
+          "shape": {
+            "type": "RoundedRectangleBorder",
+            "borderRadius": 100
+          }
+        }
+      },
+      "outlinedButtonTheme": {
+        "style": {
+          "backgroundColor": "surface",
+          "foregroundColor": "primary",
+          "side": { "color": "outline", "width": 1 },
+          "padding": { "vertical": 8, "horizontal": 16 },
+          "shape": {
+            "type": "RoundedRectangleBorder",
+            "borderRadius": 100
+          }
+        }
+      },
+      "containerTheme": {
+        "description": "Used for the date selection tiles and time slot rows",
+        "defaultShape": {
+          "type": "RoundedRectangleBorder",
+          "borderRadius": 16
+        },
+        "timeSlotContainer": {
+          "backgroundColor": "surfaceVariant",
+          "borderRadius": 16,
+          "padding": { "vertical": 16, "horizontal": 20 }
+        },
+        "dateTileSelected": {
+          "backgroundColor": "primary",
+          "borderRadius": 16
+        },
+        "dateTileUnselected": {
+          "backgroundColor": "surfaceVariant",
+          "borderRadius": 16
+        }
+      }
+    }
+  }
+}
