@@ -5,12 +5,12 @@
 > Source of detail: `docs/backlog.md` (per-item history) + `docs/reviews/review-memory.md` (Open Actions). Cards here link back; do not duplicate their full text.
 > **Discord comms must mirror this structure** (`#daily-overview` + `#weekly-reviews`) so the channels read like this board.
 
-_Last updated: 2026-08-08_
+_Last updated: 2026-08-09_
 
 ## 🔴 Active queue
 | Card | Scope | Effort | Status |
 |---|---|---|---|
-| **Theme + real-user-flow pass** (post-robustness; from 2026-08-08 session objective) | khelam | M | **NEXT pickup** — spec the theme/real-user-flow slice first |
+| **Theme + real-user-flow pass** (post-robustness; from 2026-08-08 session objective) | khelam | M | **Theme-config slice DONE 08-09** (spec `2026-08-09-theme-config-design.md` — light palette #097339, typography, card/button themes, canvas #F9FAFA; dark untouched). Remaining: **containerTheme widget pass** (JSON timeSlot/dateTile values → `DateChip`/`AvailableSlotCard`, spec §7 follow-up), then real-user-flow pass |
 
 ## 🟡 Backlog (open, not scheduled)
 | Card | Source | Status |
@@ -35,6 +35,7 @@ _Last updated: 2026-08-08_
 - **Google sign-in + credential rotation (Action #1)** — DESCOPED 2026-08-08 (user: google_sign_in had issues, low priority; pick up when he decides). Server client ID `91250679358-frejgd…` is **still leaked in git history + live** — rotation NOT done; reopen this card with the rotation runbook when Google login returns.
 
 ## 📋 Closed / superseded (2026-08-07)
+- **Theme config implementation** (08-09) — CLOSED: user's `gemini-code-1786262983859.json` light Material 3 theme → khelam AppTheme via brainstorming gate (spec `docs/superpowers/specs/2026-08-09-theme-config-design.md`, JSON copy `2026-08-09-theme-config.json`). AppPalette +18 constants (17 JSON slots + cardShadow; `error` → #D9534F); `lightColorScheme` fromSeed(seed #097339) + 14 explicit slots; typography layer (6 styles, role-colored, both brightnesses); light-only card (r24/e2/shadow 0x1A000000)/elevated (pill-100, e0, v16/h24)/outlined (pill-100, outline side, v8/h16) overrides; scaffold canvas #F9FAFA. **SDK deviation**: Flutter 3.32 deprecates `ColorScheme` `background`/`onBackground`/`surfaceVariant` — skipped (inert, zero consumers), background via scaffold, surfaceVariant kept for containerTheme follow-up. Dark untouched; commons untouched. Analyze clean + pre-commit gate green. **Follow-up**: containerTheme widget pass (DateChip/AvailableSlotCard) on the Active card.
 - **Task dashboard (standalone Flutter + Supabase queue)** — CLOSED 2026-08-08 (user: "we won't be picking it"): the 08-16 DROP criterion fired — Discord comms (`#daily-overview` + `#weekly-reviews`, spec `2026-08-07-comms-discord-design.md`) cover the review surface. **Spec RETAINED for revival**: `docs/superpowers/specs/2026-08-06-task-dashboard-design.md` (195 lines, v2 Supabase pivot, decisions 1–10 locked — auth email/password, `~/.config/khelam/sb.env`, seed manual v1). Reopen = user decides to revisit; no re-design needed.
 - **Real auth/JWT wiring** (07-31) — CLOSED: `setBearerToken` wired (`auth_api_service.dart:107,143`); `booking_flow` integration 2/2 live on iOS sim.
 - **UI screenshot verification** (08-06) — CLOSED: superseded by OA#6 `capture_screens.sh` (`ec178eb`, `b815d6c`).

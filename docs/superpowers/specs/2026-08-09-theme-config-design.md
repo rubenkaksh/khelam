@@ -57,6 +57,8 @@ ColorScheme.fromSeed(
 - `AppPalette.error` value changes `#BA1A1A` → `#D9534F`. Verified light-only: dark's error slot uses `AppPalette.errorDark` (#FFB4AB); `AppPalette.error` has no consumers outside `app_theme.dart` (grep-verified).
 - `AppPalette.seed` (#1A5F7A), `secondarySeed`, `tertiarySeed`, `surfaceTintLight` (currently unused), `surfaceTintDark` remain; they back the dark scheme. `seed`'s light-scheme role moves to `AppPalette.primary`.
 
+> **Amendment (implementation, 2026-08-09):** Flutter 3.32 deprecates the `ColorScheme.fromSeed` params `background` / `onBackground` (use `surface` / `onSurface`) and `surfaceVariant` (use `surfaceContainerHighest`) — deprecated after v3.18. These three slots are **inert** in khelam/commons (grep-verified: zero consumers), so the implemented scheme omits them: `background #F9FAFA` is delivered via `scaffoldBackgroundColor` (§4.1), `surfaceVariant #F3F4F3` stays as an `AppPalette` constant for the containerTheme follow-up (§7). No visible deviation from the approved design.
+
 ### 4.1 Scaffold background (user-approved adjustment)
 
 `scaffoldBackgroundColor` → `AppPalette.background` (#F9FAFA) via a khelam `copyWith` (commons hardcodes `colorScheme.surface` — leave commons alone; the khelam override wins). The JSON's `background` slot is therefore **not** inert; the app canvas becomes the warm off-white. `canvasColor` (surfaceContainerLow, generated) stays as commons sets it.
