@@ -1,9 +1,67 @@
+import 'package:flutter/services.dart' show PlatformException;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:khelam/features/auth/data/auth_token_store.dart';
 import 'package:khelam/features/auth/models/auth_session.dart';
 import 'package:khelam/features/auth/models/auth_user.dart';
 
 import '../../../helpers/fake_secure_storage.dart';
+
+/// [FakeSecureStorage] whose keychain always fails like the iOS simulator
+/// without a `keychain-access-groups` entitlement (`-34018`).
+class _UnavailableKeychainStorage extends FakeSecureStorage {
+  @override
+  Future<void> write({
+    required String key,
+    required String? value,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    throw PlatformException(
+      code: 'Unexpected security result code',
+      message: 'A required entitlement isnt present.',
+      details: -34018,
+    );
+  }
+
+  @override
+  Future<String?> read({
+    required String key,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    throw PlatformException(
+      code: 'Unexpected security result code',
+      message: 'A required entitlement isnt present.',
+      details: -34018,
+    );
+  }
+
+  @override
+  Future<void> delete({
+    required String key,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    throw PlatformException(
+      code: 'Unexpected security result code',
+      message: 'A required entitlement isnt present.',
+      details: -34018,
+    );
+  }
+}
 
 void main() {
   group('AuthTokenStore', () {
@@ -60,6 +118,19 @@ void main() {
       );
 
       expect(await store.restoreSession(), isNull);
+    });
+
+    test('keychain PlatformException degrades to a no-op, not a crash', () async {
+      final AuthTokenStore store = AuthTokenStore(
+        storage: _UnavailableKeychainStorage(),
+      );
+
+      // Startup restore must not throw — the app starts logged-out instead.
+      await expectLater(store.restoreSession(), completion(isNull));
+
+      // Login-time save and logout clear must not throw either.
+      await expectLater(store.saveSession(session), completes);
+      await expectLater(store.clear(), completes);
     });
   });
 }

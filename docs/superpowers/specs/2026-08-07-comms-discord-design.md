@@ -500,3 +500,37 @@ Beyond the v1 §14.1–14.4 cases (v1 regression: `send_report`/`send_error_repo
 ### V7. Rollout
 
 v2 ships additive over v1 (no consumer of v1 is broken; only the `DISCORD_ENV_FILE` **default** moves — the override var and inline-var behavior are unchanged). Reference checkpoint commit (implemented, NOT to be committed by the implementer): `comms/discord-v2-multi-channel`. Post-review: user creates `~/.config/opencode/discord.env`, sets `REPORT_SINK=discord_webhook`, and installs the daily-digest plist.
+
+---
+
+## Amendment — 2026-08-10 (weekly-review delivery v2: summary + chart)
+
+User sign-off via question tool ("Summary + charts", 2026-08-10). Amends the *implementation* of Decision #8 (its rationale — 2000c cap, doc never inlined — is untouched):
+
+- **Message body**: the review agent now writes a purpose-built Discord summary (`docs/reviews/<date>.discord.txt`, SECTION D in `weekly_review.sh`'s prompt, **≤1600 chars**, plain Discord markdown: bolded headline numbers line + 3-6 shipped bullets + one ⚠ waste/cut line + the full-review pointer). The script clamps it to 1900c as a safety net; falls back to the old pointer text if the file is missing. The review doc itself is still NOT inlined.
+- **Real attachments** (previously text-only path tokens per §6 — they resolved against `$REPO` and never uploaded): weekly CSV, `performance-summary.md`, `update-log.md`, and the new chart PNG, all passed as absolute paths → multipart `files[]`.
+- **Chart**: new `scripts/review_chart.py` (uv inline-script metadata, matplotlib via uv cache — no system install). Stacked per-day token bars (input/output/cache-read/reasoning) from the weekly CSV + totals annotation. Failure degrades to a no-chart post (WARNING log), never blocks delivery.
+- **Bug fix**: the old call referenced `weekly/$REVIEW_DATE.csv` which **never exists** — the collector names week files by `date -v-1d`. `weekly_review.sh` now resolves the real latest week file (`WEEK_CSV_NAME`, computed after the collector) and uses it in the prompt + attachment.
+- Consumers unaffected: `daily_digest.sh` (own body), `capture_screens.sh`, `send_error_report`.
+
+### Amendment 2 — 2026-08-10 (delivery fixes after live v2 review)
+
+User feedback on the live v2 post (2026-08-10):
+- **Multipart bug fixed in `report_sink.sh` `_discord_post`**: files were posted as unindexed `files[]` with NO `attachments` array in `payload_json` — Discord attached only the FIRST file and silently dropped the rest (v2 post showed the CSV, lost the PNG + .md chips; single-file screenshot posts had masked the bug). Now: `payload_json` carries `attachments: [{id, filename}]` and files are posted as `files[<id>]`. Verified live against the real API (3/3 files attached, PNG content-type + dimensions returned).
+- **Summary format tightened (SECTION D v2)**: headline numbers only (sessions · tokens · cost); "Shipped:" ONE comma-separated sentence of short deliverable names (no batch codenames, no clauses); up to 3 numbered lines ≤12 words for waste/cuts; 900c hard cap (was 1600 + bullets).
+- **Chart XOR CSV**: when the chart PNG renders, the raw CSV is NOT attached (chart is the data viz); CSV returns as fallback if chart generation fails.
+
+### Amendment 3 — 2026-08-10 (v3: three beautified text messages, no attachments)
+
+User decision (2026-08-10): no .md files on Discord; each section = a separate message; meaningful metrics only; skip update-log; pause chart/PNG (re-plan later); agent + user metrics formatted properly. @architect design approved.
+
+- **Delivery**: 3 sequential messages, ZERO attachments — Summary / Agent Metrics / User Metrics. `weekly_review.sh` SECTION D now writes `docs/reviews/<date>.discord.{summary,agent,user}.txt`; delivery sends each via `send_report_to weekly-reviews "" <body>` (empty title — body leads with emoji headline), clamped to 1900c per message (Discord cap 2000); missing file → pointer fallback; never blocks.
+- **Message 1 Summary**: `📊 **Weekly Review <date> — N sessions · XM tokens · $Y cost**` headline; `🚀 **What shipped this week** (<N> groups)` — numbered lines `N. **Group** — one short sentence`, batched by CONCERN (robustness / user-facing feature / comms / tooling / governance), max 5 groups, no batch codenames; `⚠️ **Top waste**` (≤2 lines); `✅ **Resolved this cycle**` (already-fixed items go here, NOT in Focus); `🎯 **Focus next week** (what / why / who)` — ≤3 numbered plain-language items, `_Held to <date>._` when done-but-uncommitted; final `📄 Full review:` pointer.
+- **Message 2 Agent metrics**: 🤖 headline; sessions (total + per-repo + top-level/subagent), tokens (input/output/cache + cost), cache efficiency, model mix, 4-week trend, top 3 token hogs, verification runs, codegraph/graphify lookups, waste incidents by category, estimate accuracy.
+- **Message 3 User metrics**: 🧑 headline; sessions initiated (opencode.db `parent_id IS NULL`), active days + cadence, longest idle gap + most active day, sidetrack patterns (✅ 0 / 🎯 N — cause), nudges issued, cheaper-phrasing example, data-source caveat. NEW `user_session_stats()` shell helper computes the DB stats into the PROMPT (modeled on `session_boundary_check`).
+- **Chart**: PAUSED — `review_chart.py` retained on disk but never called; CSV attachment also dropped (no attachments at all).
+- **report_sink.sh fixes surfaced by the first v3 delivery**: (1) bash 3.2 (macOS system bash) `set -u` "unbound variable" on the ZERO-artifact path (`"${upload_files[@]}"` on an empty array) — the v3 flow was the first to post artifact-less; fixed with `${arr[@]+"${arr[@]}"}`. (2) `_notify_macos` AppleScript escaping (backslash + double-quote) — the "never drops" fallback was producing osascript syntax errors (-2740) on emoji/quotes bodies and silently showing NOTHING.
+
+### FINALIZED — 2026-08-10
+
+User ratified the v3 structure ("Finalize this as weekly review structure") — the three-message delivery (📊 Summary / 🤖 Agent metrics / 🧑 User metrics, no attachments, no update-log, chart paused) is the **standing weekly-review structure** from 2026-08-10 onward. The live 10:16 delivery is the canonical example (message bodies archived at `docs/reviews/2026-08-10.discord.{summary,agent,user}.txt`). Any future format change goes through a design round again.

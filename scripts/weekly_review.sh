@@ -25,6 +25,11 @@ SCRIPTS_DIR="$REPO/scripts"
 
 REVIEW_DATE="$(date +%F)"
 REVIEW_FILE="$REVIEWS_DIR/$REVIEW_DATE.md"
+# v3 delivery: SECTION D writes THREE files, one per Discord message
+# (Summary / Agent Metrics / User Metrics) — no attachments in the flow.
+SUMMARY_FILE_SUMMARY="$REVIEWS_DIR/$REVIEW_DATE.discord.summary.txt"
+SUMMARY_FILE_AGENT="$REVIEWS_DIR/$REVIEW_DATE.discord.agent.txt"
+SUMMARY_FILE_USER="$REVIEWS_DIR/$REVIEW_DATE.discord.user.txt"
 mkdir -p "$REVIEWS_DIR"
 
 # Source report_sink for delivery abstraction (REPORT_SINK env honored).
@@ -34,6 +39,11 @@ mkdir -p "$REVIEWS_DIR"
 # I/O data. Degrades gracefully (logs to $LOG) — never blocks the review.
 bash "$SCRIPTS_DIR/ccusage_collect.sh" >> "$LOG" 2>&1 || \
   echo "$(date): WARNING — analytics collector failed; review proceeds without I/O data" >> "$LOG"
+
+# The collector names its week file by `date -v-1d` (NOT the review date —
+# on a Sunday run the file is Saturday's date). Resolve the actual latest
+# week file so the prompt and the Discord attachment point at the real CSV.
+WEEK_CSV_NAME="$(basename "$(ls -t "$ANALYTICS_DIR"/weekly/*.csv 2>/dev/null | head -1)" 2>/dev/null || true)"
 
 # Sessions for the last 7 days, selected by FILENAME date (not mtime —
 # editing an old session file would otherwise drag it into a later week).
@@ -61,12 +71,25 @@ fi
 CONSUMER_NOTE=""
 COMMONS="${COMMONS_REPO:-/Users/rubenk/projects/commons}"
 FORKABLE="${FORKABLE_REPO:-/Users/rubenk/projects/forkable}"
-if [ -d "$COMMONS/.git" ] && git -C "$COMMONS" log --oneline --since="7 days ago" 2>/dev/null | rg -q .; then
+# NOTE on the two guards below (Aug 2026 root-cause of the silent 18:00 failure):
+# 1) `git log | rg -q .` is a SIGPIPE race — rg -q exits on its first match and
+#    SIGPIPEs git (exit 141), which pipefail turns into a FALSE; whether the
+#    branch fires is nondeterministic. Select by output length instead.
+# 2) flutter lives under ~/fvm, which is NOT on the launchd PATH. A missing
+#    binary inside $(...) (via pipefail) aborts the WHOLE review under set -e,
+#    silently, with exit 127 and no report. So flutter must be guarded and the
+#    analyze pipeline must never fail the substitution — degrade to a WARNING.
+if [ -d "$COMMONS/.git" ] && [ -n "$(git -C "$COMMONS" log --oneline --since='7 days ago' 2>/dev/null)" ]; then
   CONSUMER_NOTE="Commons had commits this week. Origin + consumer check:"$'\n'
-  CONSUMER_NOTE+="- commons flutter analyze (origin): $(cd "$COMMONS" && flutter analyze 2>&1 | tail -1)"$'\n'
-  CONSUMER_NOTE+="- $REPO_NAME flutter analyze: $(cd "$REPO" && flutter analyze 2>&1 | tail -1)"$'\n'
-  if [ -d "$FORKABLE/.git" ]; then
-    CONSUMER_NOTE+="- forkable flutter analyze: $(cd "$FORKABLE" && flutter analyze 2>&1 | tail -1)"
+  if command -v flutter >/dev/null 2>&1; then
+    CONSUMER_NOTE+="- commons flutter analyze (origin): $(cd "$COMMONS" && flutter analyze 2>&1 | tail -1 || true)"$'\n'
+    CONSUMER_NOTE+="- $REPO_NAME flutter analyze: $(cd "$REPO" && flutter analyze 2>&1 | tail -1 || true)"$'\n'
+    if [ -d "$FORKABLE/.git" ]; then
+      CONSUMER_NOTE+="- forkable flutter analyze: $(cd "$FORKABLE" && flutter analyze 2>&1 | tail -1 || true)"
+    fi
+  else
+    echo "$(date): WARNING — flutter not on PATH; skipping commons consumer analyze check (launchd PATH lacks fvm shim)" >> "$LOG"
+    CONSUMER_NOTE+="flutter not on PATH — analyze check skipped"
   fi
 fi
 
@@ -115,6 +138,30 @@ session_boundary_check() {
     echo "FAILED: long sessions with heavy cache reads (violates fresh-session-per-batch):"
     echo "$rows" | sed 's/^/  - /'
   fi
+}
+
+# User-session stats (v3 delivery): top-level (user-driven) vs subagent split,
+# active days, longest idle gap between user sessions, most active day by
+# tokens — feeds the User Metrics Discord message. Computed from opencode.db
+# (parent_id IS NULL = user-driven); degrades gracefully like the checks above.
+user_session_stats() {
+  local db="$HOME/.local/share/opencode/opencode.db"
+  if [[ ! -f "$db" || ! -x "$(command -v sqlite3)" ]]; then
+    echo "SKIPPED: opencode.db or sqlite3 unavailable — user-session stats not computed"
+    return
+  fi
+  local since total top active gap day
+  since="CAST(strftime('%s','now','-7 day') AS INTEGER)*1000"
+  total="$(sqlite3 "$db" "SELECT COUNT(*) FROM session WHERE time_created > $since;" 2>/dev/null || true)"
+  top="$(sqlite3 "$db" "SELECT COUNT(*) FROM session WHERE parent_id IS NULL AND time_created > $since;" 2>/dev/null || true)"
+  active="$(sqlite3 "$db" "SELECT COUNT(DISTINCT date(time_created/1000,'unixepoch','localtime')) FROM session WHERE parent_id IS NULL AND time_created > $since;" 2>/dev/null || true)"
+  gap="$(sqlite3 "$db" "SELECT printf('%.1fh', MAX((t2-t1)/3600000.0)) FROM (SELECT time_created AS t1, LEAD(time_created) OVER (ORDER BY time_created) AS t2 FROM session WHERE parent_id IS NULL AND time_created > $since);" 2>/dev/null || true)"
+  day="$(sqlite3 "$db" "SELECT date(time_created/1000,'unixepoch','localtime') || ' (' || printf('%.1fM', SUM(COALESCE(tokens_input,0)+COALESCE(tokens_output,0)+COALESCE(tokens_cache_read,0)+COALESCE(tokens_cache_write,0)+COALESCE(tokens_reasoning,0))/1000000.0) || ')' FROM session WHERE parent_id IS NULL AND time_created > $since GROUP BY date(time_created/1000,'unixepoch','localtime') ORDER BY SUM(COALESCE(tokens_input,0)+COALESCE(tokens_output,0)+COALESCE(tokens_cache_read,0)+COALESCE(tokens_cache_write,0)+COALESCE(tokens_reasoning,0)) DESC LIMIT 1;" 2>/dev/null || true)"
+  if [[ -z "${total:-}" ]]; then
+    echo "SKIPPED: no session rows in the last 7 days"
+    return
+  fi
+  echo "Total sessions: ${total:-0} · Top-level (user-driven): ${top:-0} · Subagent: $(( ${total:-0} - ${top:-0} )) · Active days: ${active:-0} · Longest idle gap between user sessions: ${gap:-n/a} · Most active user day: ${day:-n/a}"
 }
 
 # Index-freshness verification (codegraph + graphify auto-refresh guard).
@@ -365,13 +412,15 @@ INDEX FRESHNESS CHECK (computed by the script): $(freshness_check)
 
 SESSION-BOUNDARY CHECK (computed by the script): $(session_boundary_check)
 
+USER-SESSION STATS (computed by the script — feeds the User Metrics Discord message): $(user_session_stats)
+
 FORKABLE-SYNC CHECK (computed by the script, base-template policy): $(forkable_sync_check)
 
 DENY-DEFERRED SURVEY (computed by the script, sandbox policy): $(deny_deferred_survey)
 
 CONFIG-GUARD CHECK (computed by the script, sandbox policy): $(config_guard_check)
 
-WEEKLY I/O DATA (from the analytics collector): weekly CSV at $ANALYTICS_DIR/weekly/$REVIEW_DATE.csv (may not exist yet on the first run of a week — then note that). Monthly rollup at $ANALYTICS_DIR/monthly/.
+WEEKLY I/O DATA (from the analytics collector): weekly CSV at $ANALYTICS_DIR/weekly/$WEEK_CSV_NAME (may be absent on the first run of a week — then note that). Monthly rollup at $ANALYTICS_DIR/monthly/.
 
 Audit checklist — be specific, quote file names and commit hashes:
 1. Redundant verification: full 'flutter test'/'flutter analyze' runs that were not needed; integration tests re-run without the live path changing; anything re-verified that was already green.
@@ -384,7 +433,7 @@ Audit checklist — be specific, quote file names and commit hashes:
 8. Sandbox/guard health: the DENY-DEFERRED SURVEY lists tasks that hit a denied path — check the session files named in each entry and the opencode logs to confirm the agent did NOT retry the denied path (a retry is a guard violation). The CONFIG-GUARD CHECK validates the permission invariants (no '*' key, denies after allows, grants omit external_directory, .env denied in grants) — if it reports ISSUES, flag them for the user immediately, they are security-relevant. Also confirm no project config gained an 'external_directory' key this week (a config that declares it can override the global boundary). Flag all of the above for the user.
 9. Grill Gate usage: for each major-drift trigger this period (breaking changes / major diversion from a locked plan / mid-task scope change), verify a full @architect brainstorm + grill-me occurred with user sign-off; skipped/rushed grills = finding. Protocol: ~/.config/opencode/AGENTS.md '### Major drift escalation — Architect Grill Gate'.
 
-SECTION A — ANALYTICS (v2): read the week's CSV ($ANALYTICS_DIR/weekly/$REVIEW_DATE.csv if it exists, else note its absence) and the monthly rollup ($ANALYTICS_DIR/monthly/). Write $ANALYTICS_DIR/performance-summary.md (OVERWRITE each week) with EXACT structure:
+SECTION A — ANALYTICS (v2): read the week's CSV ($ANALYTICS_DIR/weekly/$WEEK_CSV_NAME if it exists, else note its absence) and the monthly rollup ($ANALYTICS_DIR/monthly/). Write $ANALYTICS_DIR/performance-summary.md (OVERWRITE each week) with EXACT structure:
 # Performance Summary — $REVIEW_DATE
 ## Agent Metrics (table)
 Columns: Metric | This Week | 4-Week Trend
@@ -397,6 +446,17 @@ SECTION B — UPDATE LOG (v2): append '## $REVIEW_DATE' entries to $ANALYTICS_DI
 
 SECTION C — FEATURE AUDIT (v2): for each docs/features/<feature>/README.md touched this week: checklist completion %, ADRs added, scope drift (sessions on untracked items), stale (>7 days no progress → flag for CEO review). If no features are declared yet, write 'No declared features this week'.
 
+SECTION D — DISCORD DELIVERY (v3): write THREE plain-text files, one per Discord message. Discord markdown only: **bold** + emoji; NO tables, NO code fences, NO • bullets, NO attachments, NO update-log content. Each file is a complete message body (no title prefix needed — the body leads with its emoji headline). HARD LIMIT: 1900 characters each — count before writing.
+1. $SUMMARY_FILE_SUMMARY (📊 Summary):
+   - Headline: '📊 **Weekly Review $REVIEW_DATE — <sessions> sessions · <tokens> tokens · $<cost> cost**' (tokens rounded to 1 decimal, M).
+   - '🚀 **What shipped this week** (<N> groups):' then numbered lines 'N. **GroupName** — one short sentence (what + where it landed)'. Batch by CONCERN — robustness / user-facing feature / comms / tooling / governance — max 5 groups, merge related items; NO batch codenames (T2/T5).
+   - '⚠️ **Top waste** — <single biggest burn + cause, ≤2 lines>'.
+   - '✅ **Resolved this cycle** — <items finished this week that weren't in last week's outlook>'. Items already fixed before posting (e.g. drift re-pulls) go HERE, not in Focus.
+   - '🎯 **Focus next week** (what / why / who):' then ≤3 numbered items, plain language, no jargon: 'N. **Title** — <one sentence what>. _Why: <cause>. Who: <role>._'. If an item is done-but-uncommitted/pending-sign-off, append '_Held to <date>._'.
+   - Final line: '📄 Full review: docs/reviews/$REVIEW_DATE.md'.
+2. $SUMMARY_FILE_AGENT (🤖 Agent metrics): headline '🤖 **Agent metrics — $REVIEW_DATE**'; then from $ANALYTICS_DIR/performance-summary.md + the weekly CSV + USER-SESSION STATS: '📈 **Sessions run**: N total (khelam · backend · forkable) + subagent / top-level split'; '🔢 **Tokens**: N.NM · Cost: $X' with input/output/cache-read split; '🖥️ **Cache efficiency**: NN%'; '🏗️ **Model mix**: per-model token share'; '📊 **4-week trend**: a → b → c → d'; '🔥 **Top 3 token hogs**: numbered lines (title — Mtokens, cause)'; '🧪 **Verification**: N full-suite/analyze · N integration runs'; '🔍 **Tooling lookups**: N codegraph/graphify'; '⚠️ **Waste** (N incidents): category ×count · category ×count'; '🎯 **Estimate accuracy**: ≈N% (N/N within/under)'.
+3. $SUMMARY_FILE_USER (🧑 User metrics): headline '🧑 **User metrics — $REVIEW_DATE**'; then: '📱 **Sessions initiated**: N top-level · N with delegation' + active days + cadence (from USER-SESSION STATS); '⏱️ **Session gaps**: longest idle + most active day'; '🧭 **Prompt drift (sidetrack guard)**: one line per pattern found — '✅ <pattern>: 0' or '🎯 <pattern>: N — <brief cause>' (from your SECTION A User Metrics table); '💬 **Nudges issued**: N'; '💡 **Cheaper phrasing** seen this week: <one example>'; '📋 **Data source note**: <what came from DB vs CSV vs text analysis>'.
+
 Then write $REVIEW_FILE with this exact structure (plain language, under 60 lines):
 # Weekly Review — $REVIEW_DATE
 ## What shipped this week (5-8 bullets)
@@ -407,16 +467,65 @@ Then write $REVIEW_FILE with this exact structure (plain language, under 60 line
 ## Performance Summary (see $ANALYTICS_DIR/performance-summary.md)
 ## Feature Audit
 
-Do NOT commit, push, or modify any file other than $REVIEW_FILE, $ANALYTICS_DIR/performance-summary.md, and $ANALYTICS_DIR/update-log.md."
+Do NOT commit, push, or modify any file other than $REVIEW_FILE, $SUMMARY_FILE_SUMMARY, $SUMMARY_FILE_AGENT, $SUMMARY_FILE_USER, $ANALYTICS_DIR/performance-summary.md, and $ANALYTICS_DIR/update-log.md."
 
 cd "$REPO"
-opencode run --auto --dir "$REPO" "$PROMPT" >> "$LOG" 2>&1
+
+# Failure guarantee: the EXIT trap is the single safety net. It fires
+# send_error_report whenever the script exits without a review file and the
+# explicit failure path did not already report. Previously a `set -e` abort
+# mid-script (e.g. the Aug 9 flutter/127) skipped ALL reporting — launchd
+# recorded the 127 and nothing was notified. _reported_failure prevents
+# double-reporting when the explicit path below already fired.
+_reported_failure=0
+_on_exit() {
+  local code=$?
+  if [ "$_reported_failure" -eq 1 ] || [ -f "$REVIEW_FILE" ]; then
+    return 0
+  fi
+  echo "$(date): ERROR — weekly review FAILED (exit $code) without producing $REVIEW_FILE" >> "$LOG"
+  send_error_report "$REPO_NAME Weekly Review" "Weekly review FAILED (exit $code) — check /tmp/weekly-review.log" || true
+}
+trap _on_exit EXIT
+
+# Run the review agent, retrying transient failures (agent/CLI hiccups, PATH
+# races): up to WEEKLY_REVIEW_ATTEMPTS (default 3), with a delay between
+# attempts. All attempts exhausted → the EXIT trap reports the failure.
+MAX_ATTEMPTS="${WEEKLY_REVIEW_ATTEMPTS:-3}"
+for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+  opencode run --auto --dir "$REPO" "$PROMPT" >> "$LOG" 2>&1 || true
+  [ -f "$REVIEW_FILE" ] && break
+  echo "$(date): weekly review attempt $attempt/$MAX_ATTEMPTS produced no $REVIEW_FILE" >> "$LOG"
+  if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
+    sleep "${WEEKLY_REVIEW_RETRY_DELAY:-90}"
+  fi
+done
 
 if [ -f "$REVIEW_FILE" ]; then
-  send_report_to weekly-reviews "$REPO_NAME Weekly Review" "Weekly review ready: docs/reviews/$REVIEW_DATE.md" \
-    "performance-summary.md" "update-log.md" "weekly/$REVIEW_DATE.csv" || true   # send_report_to returns 1 on Discord fail (fallback already fired)
+  # --- Discord delivery (v3): 3 separate text messages, NO attachments -----
+  # SECTION D writes three files (Summary / Agent Metrics / User Metrics),
+  # each a complete message body. Clamp to 1900c as a safety net (Discord
+  # caps at 2000; the sink falls back to a macos notification on a 400).
+  # Missing files degrade to a pointer message — never block delivery.
+  send_review_message() { # <file> <fallback-body>
+    local f="$1" body=""
+    if [ -f "$f" ]; then
+      body="$(cat "$f")"
+      if [ "${#body}" -gt 1900 ]; then
+        body="${body:0:1900}"
+        body="${body%$'\n'*}"
+      fi
+    else
+      body="$2"
+    fi
+    send_report_to weekly-reviews "" "$body" || true
+  }
+  send_review_message "$SUMMARY_FILE_SUMMARY" "Weekly review ready: docs/reviews/$REVIEW_DATE.md"
+  send_review_message "$SUMMARY_FILE_AGENT" "🤖 Agent metrics: see docs/reviews/$REVIEW_DATE.md"
+  send_review_message "$SUMMARY_FILE_USER" "🧑 User metrics: see docs/reviews/$REVIEW_DATE.md"
   echo "$(date): review written to $REVIEW_FILE" >> "$LOG"
 else
-  echo "$(date): ERROR — review agent did not produce $REVIEW_FILE" >> "$LOG"
-  send_error_report "$REPO_NAME Weekly Review" "Weekly review FAILED — check /tmp/weekly-review.log"
+  _reported_failure=1
+  echo "$(date): ERROR — review agent did not produce $REVIEW_FILE after $MAX_ATTEMPTS attempts" >> "$LOG"
+  send_error_report "$REPO_NAME Weekly Review" "Weekly review FAILED after $MAX_ATTEMPTS attempts — check /tmp/weekly-review.log" || true
 fi

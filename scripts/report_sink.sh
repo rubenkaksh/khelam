@@ -69,6 +69,12 @@ _DISCORD_FILE_CAP=$((25 * 1024 * 1024))   # 25 MiB free-tier cap
 # --- helpers -----------------------------------------------------------------------
 _notify_macos() { # _notify_macos <title> <body> [sound]
   local title="$1" body="$2" sound="${3:-}"
+  # AppleScript string escaping: bodies carry emoji, double quotes, and
+  # newlines — unescaped they produce osascript syntax errors (-2740) and the
+  # "never drops" fallback silently shows NOTHING. Escape backslashes first
+  # (so the quote-escape isn't doubled by a pre-existing backslash).
+  title="${title//\\/\\\\}"; title="${title//\"/\\\"}"
+  body="${body//\\/\\\\}"; body="${body//\"/\\\"}"
   if [ -n "$sound" ]; then
     osascript -e "display notification \"${body}\" with title \"${title}\" sound name \"${sound}\""
   else
@@ -112,17 +118,35 @@ _discord_post() (
   done
 
   local json
-  json="$(python3 - "$content" <<'PY'
+  # bash 3.2 (macOS system bash) + set -u: expanding an EMPTY array as
+  # positional args ("${upload_files[@]}") errors "unbound variable" — the
+  # ${arr[@]+"${arr[@]}"} idiom keeps the no-artifact path safe (the v3
+  # weekly-review flow posts text-only messages with zero files).
+  json="$(python3 - "$content" "${upload_files[@]+"${upload_files[@]}"}" <<'PY'
 import json, sys
-print(json.dumps({"content": sys.argv[1]}))
+content = sys.argv[1]
+files = sys.argv[2:]
+payload = {"content": content}
+if files:
+    # Discord requires an `attachments` array in payload_json that references
+    # every uploaded file by id (files are posted as files[<id>]). Without it,
+    # multi-file webhook posts attach ONLY the first file and silently drop the
+    # rest (observed 2026-08-10: weekly review posted the CSV, lost the PNG +
+    # .md chips). Single-file posts (screenshots) tolerated the omission.
+    payload["attachments"] = [
+        {"id": i, "filename": f.split("/")[-1]} for i, f in enumerate(files)
+    ]
+print(json.dumps(payload))
 PY
 )"
   if [ "${#upload_files[@]}" -gt 0 ]; then
     local tmpjson; tmpjson="$(mktemp "${TMPDIR:-/tmp}/discord.XXXXXX.json")"
     printf '%s' "$json" > "$tmpjson"
     local args=(-F "payload_json=<${tmpjson}")
+    local i=0 f
     for f in "${upload_files[@]}"; do
-      args+=(-F "files[]=@${f};filename=$(basename "$f")")
+      args+=(-F "files[$i]=@${f};filename=$(basename "$f")")
+      i=$((i + 1))
     done
     curl -sS -f "${args[@]}" "$url"
     rm -f "$tmpjson"

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../models/auth_session.dart';
@@ -18,6 +19,13 @@ import '../models/auth_user.dart';
 /// wired — the sandbox denies keychain access without a
 /// `keychain-access-groups` entitlement, and that entitlement requires
 /// signing with a development certificate (the release DMG is ad-hoc signed).
+///
+/// Keychain failures degrade the same way at runtime: any
+/// [PlatformException] from the platform storage (e.g. iOS simulator
+/// `-34018` "a required entitlement isn't present" on a fresh install) is
+/// swallowed — persistence silently becomes a no-op and the app starts
+/// logged-out instead of crashing (found 2026-08-09: unhandled exception in
+/// `AuthService.init()` killed the app before `runApp`).
 class AuthTokenStore {
   AuthTokenStore({FlutterSecureStorage? storage, bool persist = true})
     : _storage = storage ?? const FlutterSecureStorage(),
@@ -28,26 +36,37 @@ class AuthTokenStore {
 
   static const String _sessionKey = 'auth_session';
 
-  Future<void> saveSession(AuthSession session) {
+  Future<void> saveSession(AuthSession session) async {
     if (!_persist) {
-      return Future<void>.value();
+      return;
     }
-    return _storage.write(
-      key: _sessionKey,
-      value: jsonEncode(<String, Object?>{
-        'access_token': session.accessToken,
-        'user': session.user.toJson(),
-      }),
-    );
+    try {
+      await _storage.write(
+        key: _sessionKey,
+        value: jsonEncode(<String, Object?>{
+          'access_token': session.accessToken,
+          'user': session.user.toJson(),
+        }),
+      );
+    } on PlatformException {
+      // Keychain unavailable — degrade to an in-memory session.
+    }
   }
 
   /// Returns the persisted session, or null when none is stored or the stored
-  /// payload is unreadable.
+  /// payload is unreadable (including when the keychain itself is
+  /// unavailable).
   Future<AuthSession?> restoreSession() async {
     if (!_persist) {
       return null;
     }
-    final String? raw = await _storage.read(key: _sessionKey);
+    final String? raw;
+    try {
+      raw = await _storage.read(key: _sessionKey);
+    } on PlatformException {
+      // Keychain unavailable — cold start; login can still proceed.
+      return null;
+    }
     if (raw == null) {
       return null;
     }
@@ -70,10 +89,14 @@ class AuthTokenStore {
     }
   }
 
-  Future<void> clear() {
+  Future<void> clear() async {
     if (!_persist) {
-      return Future<void>.value();
+      return;
     }
-    return _storage.delete(key: _sessionKey);
+    try {
+      await _storage.delete(key: _sessionKey);
+    } on PlatformException {
+      // Keychain unavailable — nothing to clear.
+    }
   }
 }

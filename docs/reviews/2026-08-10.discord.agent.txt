@@ -1,0 +1,23 @@
+🤖 **Agent metrics — 2026-08-10**
+
+📈 **Sessions run**: 47 (39 khelam · 7 backend · 1 forkable) — 16 user-driven · 31 subagent (20 architect · 5 librarian · 4 general · 1 scout · 1 speedrun)
+
+🔢 **Tokens**: 306.5M · Cost: $0 (all free-tier)
+   Input 19.1M · Output 1.4M · Cache-read 284.2M (93%)
+
+🖥️ **Cache efficiency**: 93% — cache reads drive almost all growth
+
+🏗️ **Model mix** (token share): deepseek-v4-flash 49% · big-pickle 43% · laguna-s 8% · others <1%
+
+📊 **4-week trend**: 167.5M → 210.2M → 301.6M → 306.5M
+
+🔥 **Top 3 token hogs**:
+1. "List all skills" — 151.1M (49% of week · 129h · 140.8M cache)
+2. "Continuing previous conversation" — 41.8M (7.2h · 39.8M cache)
+3. "Picking up where we left off" — 36.1M (6.6h · 34.6M cache)
+
+🧪 **Verification**: ~17–19 full-suite/analyze · 3 integration (all justified; 1 redundant triple-analyze)
+🔍 **Tooling lookups**: ~18–20 codegraph/graphify (vs 0 last week)
+
+⚠️ **Waste** (7 incidents): verification ×2 · output ×2 · scope ×2 · process ×1
+🎯 **Estimate accuracy**: ≈43% mean |error| (15/19 within/under; worst Discord v2 est 12–18k → ~35k)

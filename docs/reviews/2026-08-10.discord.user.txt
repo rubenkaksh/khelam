@@ -1,0 +1,16 @@
+🧑 **User metrics — 2026-08-10**
+
+📱 **Sessions initiated**: 16 top-level · 47 total with subagent delegation
+   Active days: 6 of 7 (08-05 → 08-10) · Cadence: ~2.7 user sessions/day
+
+⏱️ **Session gaps**: longest idle 22.7h · most active 08-07 (7 user sessions · 56.8M tokens)
+
+🧭 **Prompt drift (sidetrack guard)**:
+   ✅ destination layer missing: 0 · missing acceptance bar: 0 · praise-then-creep: 0
+   🎯 follow-up scope extension: 1 — digest layout spec arrived after the first build → 2 E2E cycles + 12→48 marker migration. Cheaper: state the full layout up front.
+   ⏸️ deferred decision: 2 — Google SERVER client-ID rotation parked UNDATED (security-relevant; set a date or accept the risk); melos cross-device parked to 08-16 (deliberate, dated)
+   💬 Nudges issued: 0
+
+💡 **Cheaper phrasing** this week: "We do send the tasklog to daily channel right?" → "one message vs per-section, attachments yes/no, dividers, card fields, Closed section" — saved a rework cycle
+
+📋 **Data source note**: top-level = opencode.db parent_id IS NULL (16, matches CSV build rows); gaps from session timestamps; drift counts from session-file text analysis; est. accuracy from the review agent's estimate log

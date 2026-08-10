@@ -1,0 +1,19 @@
+📊 **Weekly Review 2026-08-10 — 47 sessions · 306.5M tokens · $0 cost**
+
+🚀 **What shipped this week** (5 groups):
+1. **Robustness** — AppException hierarchy + GET-only retry + GET cache + EmptyView (commons v0.7.0→v0.7.2)
+2. **Turf selection** — /select-turf initial route + shared Preferences store; logout clears prefs
+3. **Comms v2** — multi-channel report_sink + daily digest + reliability fixes (5 webhooks live-verified)
+4. **Tooling** — auto index-refresh hooks + melos batch runner + theme light palette + commons +977
+5. **Sandbox v2** — 18-denies guard + .env deny + deny-deferral log + test-window revoke 08-21
+
+⚠️ **Top waste** — "List all skills" session: 151.1M tokens (49% of week) over 129h; silent 08-09 review failure (fixed, uncommitted)
+
+✅ **Resolved this cycle** — bootstrap.sh drift re-pulled (scripts byte-identical); first digest auto-fire 08-10 08:06 (1 msg, 0 dupes); multipart attachment bug fixed + verified live
+
+🎯 **Focus next week** (what / why / who):
+1. **Commit the review-machinery fix** — work is done but uncommitted. _Why: closes sync drift + freshness failure. Who: you (sign-off)._ Held to 08-16.
+2. **End 129-hour sessions** — 49% of the week's tokens in one session. _Why: long sessions burn cache reads. Who: all agents._
+3. **Lock specs before build** — digest churned 3 layouts in one day. _Why: rework = 2 live E2E cycles. Who: architect._
+
+📄 Full review: docs/reviews/2026-08-10.md

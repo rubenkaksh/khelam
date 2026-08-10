@@ -207,8 +207,10 @@ cat <<'CHECKLIST'
   [ ] Launchd jobs (optional, for auto-digest/review):
         sudo cp forkable/scripts/com.khelam.daily-digest.plist  ~/Library/LaunchAgents/
         sudo cp forkable/scripts/com.khelam.weekly-review.plist ~/Library/LaunchAgents/
+        sudo cp forkable/scripts/com.khelam.weekly-review.retry.plist ~/Library/LaunchAgents/
         launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.khelam.daily-digest.plist
         launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.khelam.weekly-review.plist
+        launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.khelam.weekly-review.retry.plist
 CHECKLIST
 
 echo ""
