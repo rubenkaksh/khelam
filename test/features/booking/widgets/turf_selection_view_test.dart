@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' as m;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -42,14 +42,14 @@ void main() {
     preferences = RecordingPreferences();
   });
 
-  m.Widget app(TurfSelectionCubit cubit) {
+  Widget app(TurfSelectionCubit cubit) {
     final GoRouter router = GoRouter(
       initialLocation: AppRoutes.turfSelectionPath,
       routes: <RouteBase>[
         GoRoute(
           path: AppRoutes.turfSelectionPath,
           name: AppRoutes.turfSelection,
-          builder: (m.BuildContext c, GoRouterState s) =>
+          builder: (BuildContext c, GoRouterState s) =>
               BlocProvider<TurfSelectionCubit>.value(
                 value: cubit,
                 child: const TurfSelectionView(),
@@ -58,12 +58,12 @@ void main() {
         GoRoute(
           path: AppRoutes.schedulePath,
           name: AppRoutes.schedule,
-          builder: (m.BuildContext c, GoRouterState s) =>
-              const m.Scaffold(body: m.Text('SCHEDULE_PLACEHOLDER')),
+          builder: (BuildContext c, GoRouterState s) =>
+              const Scaffold(body: Text('SCHEDULE_PLACEHOLDER')),
         ),
       ],
     );
-    return m.MaterialApp.router(routerConfig: router);
+    return MaterialApp.router(routerConfig: router);
   }
 
   TurfSelectionCubit buildCubit() {
@@ -83,10 +83,10 @@ void main() {
     expect(find.text('Select Turf'), findsOneWidget);
     expect(find.text('Choose your turf'), findsOneWidget);
 
-    final m.FilledButton continueButton = tester.widget<m.FilledButton>(
+    final FilledButton continueButton = tester.widget<FilledButton>(
       find.ancestor(
         of: find.text('Continue'),
-        matching: find.byType(m.FilledButton),
+        matching: find.byType(FilledButton),
       ),
     );
     expect(continueButton.onPressed, isNull);
@@ -100,7 +100,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Raw turf ids are the dropdown labels.
-    await tester.tap(find.byType(m.DropdownButtonFormField<String>));
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
     await tester.pumpAndSettle();
     expect(find.text(firstTurf.id), findsWidgets);
     expect(find.text(secondTurf.id), findsWidgets);
@@ -108,10 +108,10 @@ void main() {
     await tester.tap(find.text(firstTurf.id).last);
     await tester.pumpAndSettle();
 
-    final m.FilledButton continueButton = tester.widget<m.FilledButton>(
+    final FilledButton continueButton = tester.widget<FilledButton>(
       find.ancestor(
         of: find.text('Continue'),
-        matching: find.byType(m.FilledButton),
+        matching: find.byType(FilledButton),
       ),
     );
     expect(continueButton.onPressed, isNotNull);

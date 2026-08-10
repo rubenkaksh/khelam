@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart' as m;
+import 'package:flutter/material.dart';
 
 import 'date_chip.dart';
 
-class DateStrip extends m.StatelessWidget {
+class DateStrip extends StatelessWidget {
   const DateStrip({
     super.key,
     required this.dates,
@@ -15,15 +15,15 @@ class DateStrip extends m.StatelessWidget {
   final void Function(DateTime) onDateSelected;
 
   @override
-  m.Widget build(m.BuildContext context) {
-    return m.SizedBox(
+  Widget build(BuildContext context) {
+    return SizedBox(
       height: 84,
-      child: m.ListView.separated(
-        scrollDirection: m.Axis.horizontal,
-        padding: const m.EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         itemCount: dates.length,
-        separatorBuilder: (_, __) => const m.SizedBox(width: 8),
-        itemBuilder: (m.BuildContext context, int index) {
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (BuildContext context, int index) {
           final DateTime date = dates[index];
           return DateChip(
             date: date,

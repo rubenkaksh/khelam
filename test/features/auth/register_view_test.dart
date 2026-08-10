@@ -1,5 +1,5 @@
 import 'package:commons/commons.dart';
-import 'package:flutter/material.dart' as m;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -34,31 +34,31 @@ void main() {
     );
   });
 
-  m.Widget app() {
+  Widget app() {
     final GoRouter router = GoRouter(
       initialLocation: AppRoutes.registerPath,
       routes: <RouteBase>[
         GoRoute(
           path: AppRoutes.loginPath,
           name: AppRoutes.login,
-          builder: (m.BuildContext c, GoRouterState s) =>
-              const m.Scaffold(body: m.Text('LOGIN_PLACEHOLDER')),
+          builder: (BuildContext c, GoRouterState s) =>
+              const Scaffold(body: Text('LOGIN_PLACEHOLDER')),
         ),
         GoRoute(
           path: AppRoutes.registerPath,
           name: AppRoutes.register,
-          builder: (m.BuildContext c, GoRouterState s) =>
+          builder: (BuildContext c, GoRouterState s) =>
               BlocProvider<AuthCubit>.value(value: cubit, child: const RegisterView()),
         ),
         GoRoute(
           path: AppRoutes.homePath,
           name: AppRoutes.home,
-          builder: (m.BuildContext c, GoRouterState s) =>
-              const m.Scaffold(body: m.Text('HOME_PLACEHOLDER')),
+          builder: (BuildContext c, GoRouterState s) =>
+              const Scaffold(body: Text('HOME_PLACEHOLDER')),
         ),
       ],
     );
-    return m.MaterialApp.router(routerConfig: router);
+    return MaterialApp.router(routerConfig: router);
   }
 
   testWidgets('renders the registration form fields', (tester) async {
@@ -87,15 +87,15 @@ void main() {
     await tester.pumpWidget(app());
 
     await tester.enterText(
-      find.byType(m.TextFormField).at(0),
+      find.byType(TextFormField).at(0),
       'New Player',
     );
     await tester.enterText(
-      find.byType(m.TextFormField).at(1),
+      find.byType(TextFormField).at(1),
       '9801237999',
     );
     await tester.enterText(
-      find.byType(m.TextFormField).at(2),
+      find.byType(TextFormField).at(2),
       'khelam123',
     );
     await tester.tap(find.text('Create account'));

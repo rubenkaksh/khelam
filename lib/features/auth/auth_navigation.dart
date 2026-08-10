@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' as m;
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../ui/navigation/app_routes.dart';
@@ -9,7 +9,7 @@ import '../../ui/navigation/app_routes.dart';
 ///
 /// The router's redirect guard re-evaluates on every navigation, so once the
 /// cubit is authenticated the guarded destination passes.
-void goAfterAuth(m.BuildContext context) {
+void goAfterAuth(BuildContext context) {
   final GoRouterState state = GoRouterState.of(context);
   final String? redirectTo = state.uri.queryParameters['redirectTo'];
   if (redirectTo != null && redirectTo.isNotEmpty) {

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' as m;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -64,14 +64,14 @@ class _PendingBookingService implements BookingService {
 }
 
 void main() {
-  m.Widget app(ScheduleCubit cubit) {
+  Widget app(ScheduleCubit cubit) {
     final GoRouter router = GoRouter(
       initialLocation: AppRoutes.schedulePath,
       routes: <RouteBase>[
         GoRoute(
           path: AppRoutes.schedulePath,
           name: AppRoutes.schedule,
-          builder: (m.BuildContext c, GoRouterState s) =>
+          builder: (BuildContext c, GoRouterState s) =>
               BlocProvider<ScheduleCubit>.value(
                 value: cubit,
                 child: const ScheduleView(),
@@ -79,7 +79,7 @@ void main() {
         ),
       ],
     );
-    return m.MaterialApp.router(routerConfig: router);
+    return MaterialApp.router(routerConfig: router);
   }
 
   testWidgets('shows the empty view when a loaded day has no slots', (

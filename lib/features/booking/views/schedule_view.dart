@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' as m;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -14,14 +14,14 @@ import '../widgets/date_strip.dart';
 import '../widgets/day_stats_section.dart';
 import '../widgets/turf_header.dart';
 
-class ScheduleView extends m.StatefulWidget {
+class ScheduleView extends StatefulWidget {
   const ScheduleView({super.key});
 
   @override
-  m.State<ScheduleView> createState() => _ScheduleViewState();
+  State<ScheduleView> createState() => _ScheduleViewState();
 }
 
-class _ScheduleViewState extends m.State<ScheduleView> {
+class _ScheduleViewState extends State<ScheduleView> {
   @override
   void initState() {
     super.initState();
@@ -30,7 +30,7 @@ class _ScheduleViewState extends m.State<ScheduleView> {
     // constructor id (the router guards against the missing case).
     // GoRouterState.of must run after initState (it depends on ModalRoute).
     final ScheduleCubit cubit = context.read<ScheduleCubit>();
-    m.WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       final String? turfId = GoRouterState.of(
         context,
       ).uri.queryParameters['turfId'];
@@ -39,19 +39,19 @@ class _ScheduleViewState extends m.State<ScheduleView> {
   }
 
   @override
-  m.Widget build(m.BuildContext context) {
+  Widget build(BuildContext context) {
     return BlocBuilder<ScheduleCubit, ScheduleState>(
-      builder: (m.BuildContext context, ScheduleState state) {
-        return m.Scaffold(
-          appBar: m.AppBar(
-            title: const m.Text('Schedule'),
+      builder: (BuildContext context, ScheduleState state) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Schedule'),
             actions: [
               // Testing aid: sign out and land on the login screen. The
               // session is also cleared from storage, so the next launch
               // starts logged out.
-              m.IconButton(
+              IconButton(
                 tooltip: 'Logout',
-                icon: const m.Icon(m.Icons.logout),
+                icon: const Icon(Icons.logout),
                 onPressed: () async {
                   await serviceLocator<AuthCubit>().logout();
                   if (context.mounted) {
@@ -67,12 +67,12 @@ class _ScheduleViewState extends m.State<ScheduleView> {
     );
   }
 
-  m.Widget _buildBody(m.BuildContext context, ScheduleState state) {
+  Widget _buildBody(BuildContext context, ScheduleState state) {
     final List<DateTime> dates = _generateDateRange();
 
-    return m.ListView(
-      children: <m.Widget>[
-        m.SizedBox(height: 10),
+    return ListView(
+      children: <Widget>[
+        SizedBox(height: 10),
         DateStrip(
           dates: dates,
           selectedDate: state.selectedDate ?? DateTime.now(),
@@ -97,14 +97,14 @@ class _ScheduleViewState extends m.State<ScheduleView> {
             state.turf != null &&
             state.slots.isEmpty &&
             state.errorMessage == null)
-          const m.Center(
+          const Center(
             child: EmptyView(message: 'No slots available for this date.'),
           )
         else ...[
           if (state.isLoading && state.slots.isNotEmpty)
-            const m.Padding(
-              padding: m.EdgeInsets.all(16),
-              child: m.CircularProgressIndicator(),
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: CircularProgressIndicator(),
             ),
           BookingTimeline(
             items: state.slots,

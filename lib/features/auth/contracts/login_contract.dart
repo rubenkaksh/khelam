@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:commons/commons.dart';
-import 'package:flutter/material.dart' as m;
+import 'package:flutter/material.dart';
 
 import '../../../di/service_locator.dart';
 import '../../auth/auth_navigation.dart';
@@ -47,10 +47,10 @@ class LoginStringsImpl implements LoginStrings {
   String get demoPassword => MockAuthService.demoPassword;
 
   @override
-  m.FormFieldValidator<String> get emailValidator => _validatePhone;
+  FormFieldValidator<String> get emailValidator => _validatePhone;
 
   @override
-  m.FormFieldValidator<String> get passwordValidator => _validatePassword;
+  FormFieldValidator<String> get passwordValidator => _validatePassword;
 
   /// The shared screen's first field carries the phone number (the backend's
   /// users login with phone + password).
@@ -84,13 +84,13 @@ class LoginAsyncDataImpl implements LoginAsyncData {
   late final StreamSubscription<AuthState> _subscription;
 
   @override
-  final m.ValueNotifier<bool> isLoading = m.ValueNotifier<bool>(false);
+  final ValueNotifier<bool> isLoading = ValueNotifier<bool>(false);
 
   @override
-  final m.ValueNotifier<String?> errorMessage = m.ValueNotifier<String?>(null);
+  final ValueNotifier<String?> errorMessage = ValueNotifier<String?>(null);
 
   @override
-  final m.ValueNotifier<bool> isAuthenticated = m.ValueNotifier<bool>(false);
+  final ValueNotifier<bool> isAuthenticated = ValueNotifier<bool>(false);
 
   void _sync(AuthState state) {
     isLoading.value = state.isLoading;
@@ -129,7 +129,7 @@ class LoginServiceCallbacksImpl extends LoginServiceCallbacks {
   }
 
   @override
-  void navigateForward(m.BuildContext context) {
+  void navigateForward(BuildContext context) {
     // Land back where the user was when the guard redirected to login
     // (e.g. the schedule screen after tapping a slot), or home by default.
     goAfterAuth(context);

@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart' as m;
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'package:commons/commons.dart';
@@ -22,19 +21,19 @@ class BookingResult {
 ///
 /// Composes the reusable [FormBottomSheet], [TextInput] and [PhoneInput]
 /// widgets. Returns a [BookingResult] on confirm, or null if dismissed.
-class BookingConfirmationSheet extends m.StatefulWidget {
+class BookingConfirmationSheet extends StatefulWidget {
   const BookingConfirmationSheet({super.key, required this.slot});
 
   final Slot slot;
 
   @override
-  m.State<BookingConfirmationSheet> createState() =>
+  State<BookingConfirmationSheet> createState() =>
       _BookingConfirmationSheetState();
 }
 
-class _BookingConfirmationSheetState extends m.State<BookingConfirmationSheet> {
-  final m.TextEditingController _nameController = m.TextEditingController();
-  final m.TextEditingController _phoneController = m.TextEditingController();
+class _BookingConfirmationSheetState extends State<BookingConfirmationSheet> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   String? _nameError;
   String? _phoneError;
   bool _isValid = false;
@@ -62,7 +61,7 @@ class _BookingConfirmationSheetState extends m.State<BookingConfirmationSheet> {
       });
       return;
     }
-    m.Navigator.pop(
+    Navigator.pop(
       context,
       BookingResult(
         slotId: widget.slot.id,
@@ -73,7 +72,7 @@ class _BookingConfirmationSheetState extends m.State<BookingConfirmationSheet> {
   }
 
   @override
-  m.Widget build(m.BuildContext context) {
+  Widget build(BuildContext context) {
     final DateFormat timeFormat = DateFormat('hh:mm a');
     final String startTime = timeFormat.format(widget.slot.startTime);
     final String endTime = timeFormat.format(widget.slot.endTime);
@@ -81,19 +80,19 @@ class _BookingConfirmationSheetState extends m.State<BookingConfirmationSheet> {
     return FormBottomSheet(
       title: 'Confirm Booking',
       subtitle: '$startTime – $endTime',
-      body: m.Column(
+      body: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: m.CrossAxisAlignment.stretch,
-        children: <m.Widget>[
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
           TextInput(
             label: 'Name',
             hint: 'e.g. Rohan Shrestha',
             controller: _nameController,
             error: _nameError,
             onChanged: (_) => _onChanged(),
-            textInputAction: m.TextInputAction.next,
+            textInputAction: TextInputAction.next,
           ),
-          const m.SizedBox(height: 12),
+          const SizedBox(height: 12),
           PhoneInput(
             controller: _phoneController,
             onChanged: (_) => _onChanged(),

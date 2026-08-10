@@ -1,5 +1,5 @@
 import 'package:commons/commons.dart';
-import 'package:flutter/material.dart' as m;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -9,14 +9,14 @@ import '../contracts/login_contract.dart';
 
 /// Thin app-side wrapper: owns the [LoginAsyncDataImpl] lifecycle and feeds
 /// the contract implementations into the shared commons [LoginScreen].
-class LoginView extends m.StatefulWidget {
+class LoginView extends StatefulWidget {
   const LoginView({super.key});
 
   @override
-  m.State<LoginView> createState() => _LoginViewState();
+  State<LoginView> createState() => _LoginViewState();
 }
 
-class _LoginViewState extends m.State<LoginView> {
+class _LoginViewState extends State<LoginView> {
   late final LoginAsyncDataImpl _asyncData;
 
   @override
@@ -32,7 +32,7 @@ class _LoginViewState extends m.State<LoginView> {
   }
 
   @override
-  m.Widget build(m.BuildContext context) {
+  Widget build(BuildContext context) {
     return LoginScreen(
       displayTexts: const LoginStringsImpl(),
       asyncData: _asyncData,

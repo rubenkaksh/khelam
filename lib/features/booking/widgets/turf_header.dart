@@ -1,56 +1,56 @@
-import 'package:flutter/material.dart' as m;
+import 'package:flutter/material.dart';
 
 import '../models/turf_summary.dart';
 
-class TurfHeader extends m.StatelessWidget {
+class TurfHeader extends StatelessWidget {
   const TurfHeader({super.key, required this.turf});
 
   final TurfSummary turf;
 
   @override
-  m.Widget build(m.BuildContext context) {
-    final m.ColorScheme colors = m.Theme.of(context).colorScheme;
-    return m.Padding(
-      padding: const m.EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: m.Row(
-        children: <m.Widget>[
-          m.CircleAvatar(
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: <Widget>[
+          CircleAvatar(
             backgroundColor: colors.primaryContainer,
-            child: m.Text(
+            child: Text(
               turf.name.isNotEmpty ? turf.name[0] : '?',
-              style: m.TextStyle(color: colors.onPrimaryContainer),
+              style: TextStyle(color: colors.onPrimaryContainer),
             ),
           ),
-          const m.SizedBox(width: 12),
-          m.Expanded(
-            child: m.Column(
-              crossAxisAlignment: m.CrossAxisAlignment.start,
-              children: <m.Widget>[
-                m.Text(
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
                   turf.name,
-                  style: m.Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: m.FontWeight.w600,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 if (turf.address case final String address)
-                  m.Text(
+                  Text(
                     address,
-                    style: m.Theme.of(context).textTheme.bodySmall?.copyWith(
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: colors.onSurfaceVariant,
                     ),
                   ),
               ],
             ),
           ),
-          m.Container(
-            padding: const m.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: m.BoxDecoration(
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
               color: colors.surfaceContainerHighest,
-              borderRadius: m.BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: m.Text(
+            child: Text(
               'All Day',
-              style: m.Theme.of(context).textTheme.labelMedium,
+              style: Theme.of(context).textTheme.labelMedium,
             ),
           ),
         ],

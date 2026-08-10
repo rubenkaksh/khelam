@@ -1,5 +1,5 @@
 import 'package:commons/commons.dart';
-import 'package:flutter/material.dart' as m;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,18 +12,18 @@ import '../bloc/auth_cubit.dart';
 /// The backend auto-authenticates on register (the reply includes an
 /// `accessToken`), so on success the screen navigates straight home — the
 /// same post-auth behaviour as login.
-class RegisterView extends m.StatefulWidget {
+class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
 
   @override
-  m.State<RegisterView> createState() => _RegisterViewState();
+  State<RegisterView> createState() => _RegisterViewState();
 }
 
-class _RegisterViewState extends m.State<RegisterView> {
-  final m.GlobalKey<m.FormState> _formKey = m.GlobalKey<m.FormState>();
-  final m.TextEditingController _nameController = m.TextEditingController();
-  final m.TextEditingController _phoneController = m.TextEditingController();
-  final m.TextEditingController _passwordController = m.TextEditingController();
+class _RegisterViewState extends State<RegisterView> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   void dispose() {
@@ -34,7 +34,7 @@ class _RegisterViewState extends m.State<RegisterView> {
   }
 
   Future<void> _onSubmit() async {
-    final m.FormState? formState = _formKey.currentState;
+    final FormState? formState = _formKey.currentState;
     if (formState == null || !formState.validate()) {
       return;
     }
@@ -73,82 +73,82 @@ class _RegisterViewState extends m.State<RegisterView> {
   }
 
   @override
-  m.Widget build(m.BuildContext context) {
-    return m.Scaffold(
-      appBar: m.AppBar(title: const m.Text('Khelam Registration')),
-      body: m.SafeArea(
-        child: m.Center(
-          child: m.SingleChildScrollView(
-            padding: const m.EdgeInsets.all(24),
-            child: m.ConstrainedBox(
-              constraints: const m.BoxConstraints(maxWidth: 440),
-              child: m.Form(
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Khelam Registration')),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Form(
                 key: _formKey,
-                child: m.Column(
-                  crossAxisAlignment: m.CrossAxisAlignment.stretch,
-                  children: <m.Widget>[
-                    m.Text(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Text(
                       'Create your account',
-                      style: m.Theme.of(context).textTheme.headlineMedium,
+                      style: Theme.of(context).textTheme.headlineMedium,
                     ),
-                    const m.SizedBox(height: 8),
-                    m.Text(
+                    const SizedBox(height: 8),
+                    Text(
                       'Sign up with your phone number — no email needed.',
-                      style: m.Theme.of(context).textTheme.bodyLarge,
+                      style: Theme.of(context).textTheme.bodyLarge,
                     ),
-                    const m.SizedBox(height: 24),
+                    const SizedBox(height: 24),
                     TextInput(
                       label: 'Full name',
-                      keyboardType: m.TextInputType.name,
-                      textInputAction: m.TextInputAction.next,
+                      keyboardType: TextInputType.name,
+                      textInputAction: TextInputAction.next,
                       controller: _nameController,
                       validator: _validateName,
                     ),
-                    const m.SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     TextInput(
                       label: 'Phone number',
-                      keyboardType: m.TextInputType.phone,
-                      textInputAction: m.TextInputAction.next,
+                      keyboardType: TextInputType.phone,
+                      textInputAction: TextInputAction.next,
                       controller: _phoneController,
                       validator: _validatePhone,
                     ),
-                    const m.SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     PasswordInput(
                       label: 'Password',
-                      textInputAction: m.TextInputAction.done,
+                      textInputAction: TextInputAction.done,
                       controller: _passwordController,
                       validator: _validatePassword,
                       onFieldSubmitted: (String _) => _onSubmit(),
                     ),
                     BlocConsumer<AuthCubit, AuthState>(
-                      listener: (m.BuildContext c, AuthState state) {
+                      listener: (BuildContext c, AuthState state) {
                         if (state.isAuthenticated) {
                           // Registration auto-authenticates: return to where
                           // the flow started (booking guard) or go home.
                           goAfterAuth(c);
                         }
                       },
-                      builder: (m.BuildContext c, AuthState state) {
+                      builder: (BuildContext c, AuthState state) {
                         final String? message = state.errorMessage;
-                        return m.Column(
-                          children: <m.Widget>[
-                            if (message != null) ...<m.Widget>[
-                              m.Padding(
-                                padding: const m.EdgeInsets.only(top: 16),
-                                child: m.Text(
+                        return Column(
+                          children: <Widget>[
+                            if (message != null) ...<Widget>[
+                              Padding(
+                                padding: const EdgeInsets.only(top: 16),
+                                child: Text(
                                   message,
-                                  style: m.TextStyle(
-                                    color: m.Theme.of(c).colorScheme.error,
+                                  style: TextStyle(
+                                    color: Theme.of(c).colorScheme.error,
                                   ),
                                 ),
                               ),
                             ],
-                            const m.SizedBox(height: 24),
+                            const SizedBox(height: 24),
                             AppFilledButton(
                               text: 'Create account',
                               icon: state.isLoading
                                   ? null
-                                  : const m.Icon(m.Icons.person_add),
+                                  : const Icon(Icons.person_add),
                               isLoading: state.isLoading,
                               onPressed: state.isLoading ? null : _onSubmit,
                             ),
@@ -156,10 +156,10 @@ class _RegisterViewState extends m.State<RegisterView> {
                         );
                       },
                     ),
-                    const m.SizedBox(height: 12),
-                    m.TextButton(
+                    const SizedBox(height: 12),
+                    TextButton(
                       onPressed: () => context.goNamed(AppRoutes.login),
-                      child: const m.Text('Already have an account? Sign in'),
+                      child: const Text('Already have an account? Sign in'),
                     ),
                   ],
                 ),

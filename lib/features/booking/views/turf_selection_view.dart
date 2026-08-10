@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' as m;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -14,30 +14,30 @@ import '../models/turf_summary.dart';
 /// Named as the foundation for a future turf-selection screen: the dropdown
 /// is the placeholder UI; a richer picker can replace it while keeping this
 /// view's cubit contract.
-class TurfSelectionView extends m.StatefulWidget {
+class TurfSelectionView extends StatefulWidget {
   const TurfSelectionView({super.key});
 
   @override
-  m.State<TurfSelectionView> createState() => _TurfSelectionViewState();
+  State<TurfSelectionView> createState() => _TurfSelectionViewState();
 }
 
-class _TurfSelectionViewState extends m.State<TurfSelectionView> {
+class _TurfSelectionViewState extends State<TurfSelectionView> {
   @override
   void initState() {
     super.initState();
-    m.WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TurfSelectionCubit>().initialize();
     });
   }
 
   @override
-  m.Widget build(m.BuildContext context) {
+  Widget build(BuildContext context) {
     return BlocBuilder<TurfSelectionCubit, TurfSelectionState>(
-      builder: (m.BuildContext context, TurfSelectionState state) {
+      builder: (BuildContext context, TurfSelectionState state) {
         // A stored pick (returning user or just confirmed) sends the user
         // into the schedule flow with the chosen turf id.
         if (state.storedTurfId case final String storedTurfId) {
-          m.WidgetsBinding.instance.addPostFrameCallback((_) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) {
               context.goNamed(
                 AppRoutes.schedule,
@@ -47,15 +47,15 @@ class _TurfSelectionViewState extends m.State<TurfSelectionView> {
           });
         }
 
-        return m.Scaffold(
-          appBar: m.AppBar(title: const m.Text('Select Turf')),
+        return Scaffold(
+          appBar: AppBar(title: const Text('Select Turf')),
           body: _buildBody(context, state),
         );
       },
     );
   }
 
-  m.Widget _buildBody(m.BuildContext context, TurfSelectionState state) {
+  Widget _buildBody(BuildContext context, TurfSelectionState state) {
     if (state.isLoading && state.turfs.isEmpty) {
       return const LoadingView();
     }
@@ -68,11 +68,11 @@ class _TurfSelectionViewState extends m.State<TurfSelectionView> {
     }
 
     final TurfSelectionCubit cubit = context.read<TurfSelectionCubit>();
-    return m.Padding(
-      padding: const m.EdgeInsets.all(16),
-      child: m.Column(
-        crossAxisAlignment: m.CrossAxisAlignment.stretch,
-        children: <m.Widget>[
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
           DropdownInput<String>(
             label: 'Turf',
             hint: 'Choose your turf',
@@ -82,7 +82,7 @@ class _TurfSelectionViewState extends m.State<TurfSelectionView> {
             value: state.selectedTurfId,
             onChanged: cubit.selectTurf,
           ),
-          const m.SizedBox(height: 24),
+          const SizedBox(height: 24),
           AppFilledButton(
             text: 'Continue',
             onPressed: state.selectedTurfId == null

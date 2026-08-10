@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' as m;
+import 'package:flutter/material.dart';
 
 import '../models/schedule_slot_item.dart';
 import '../models/slot_status.dart';
@@ -7,7 +7,7 @@ import 'booked_slot_card.dart';
 
 /// A simple vertical stack of slot cards — one per slot, no hour label column
 /// or timeline rail. The slot's time range is shown inside each card.
-class BookingTimeline extends m.StatelessWidget {
+class BookingTimeline extends StatelessWidget {
   const BookingTimeline({
     super.key,
     required this.items,
@@ -20,19 +20,19 @@ class BookingTimeline extends m.StatelessWidget {
   final void Function(ScheduleSlotItem)? onAvailableSlotTap;
 
   @override
-  m.Widget build(m.BuildContext context) {
-    return m.ListBody(
-      children: <m.Widget>[
-        for (int i = 0; i < items.length; i++) ...<m.Widget>[
+  Widget build(BuildContext context) {
+    return ListBody(
+      children: <Widget>[
+        for (int i = 0; i < items.length; i++) ...<Widget>[
           _buildCard(context, items[i]),
-          if (i < items.length - 1) const m.SizedBox(height: 8),
+          if (i < items.length - 1) const SizedBox(height: 8),
         ],
       ],
     );
   }
 
-  m.Widget _buildCard(m.BuildContext context, ScheduleSlotItem item) {
-    final m.Widget card;
+  Widget _buildCard(BuildContext context, ScheduleSlotItem item) {
+    final Widget card;
     // Booked is decided by slot status so API data (no booking object on
     // list slots) renders booked slots correctly; booking presence is kept
     // as a fallback for mocks/legacy data.
@@ -51,8 +51,8 @@ class BookingTimeline extends m.StatelessWidget {
         onTap: onTap == null ? null : () => onTap(item),
       );
     }
-    return m.Padding(
-      padding: const m.EdgeInsets.symmetric(horizontal: 16),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: card,
     );
   }
