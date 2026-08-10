@@ -66,14 +66,22 @@ class BookingApiService implements BookingService {
   Future<void> bookSlot({
     required String turfId,
     required String slotId,
+    String? customerName,
     String? customerPhone,
   }) async {
-    // The backend identifies the booker via the JWT (not yet wired in the
-    // app), so customerPhone is intentionally not sent. Requires a bearer
-    // token via DioApiClient.setBearerToken; without one the call returns 401.
-    // The response booking/slot is not used: the cubit refetches the schedule.
+    // The backend identifies the booker via the JWT (auth is not yet wired
+    // in the app, so without a bearer token this currently 401s). The
+    // booker's name and phone ride in the request body so the backend can
+    // persist them (the accepting DTO is a backend-side follow-up). The
+    // response booking/slot is not used: the cubit refetches the schedule.
     try {
-      await _apiClient.postJson('/slots/$slotId/book');
+      await _apiClient.postJson(
+        '/slots/$slotId/book',
+        body: <String, dynamic>{
+          if (customerName != null) 'customerName': customerName,
+          if (customerPhone != null) 'customerPhone': customerPhone,
+        },
+      );
     } on DioException catch (e) {
       throw _apiClient.mapDioException(e);
     }

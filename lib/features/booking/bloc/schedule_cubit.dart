@@ -143,12 +143,17 @@ class ScheduleCubit extends Cubit<ScheduleState> {
     }
   }
 
-  Future<void> bookSlot(String slotId, {String? customerPhone}) async {
+  Future<void> bookSlot(
+    String slotId, {
+    String? customerName,
+    String? customerPhone,
+  }) async {
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
       await _service.bookSlot(
         turfId: state.turf?.id ?? _turfId,
         slotId: slotId,
+        customerName: customerName,
         customerPhone: customerPhone,
       );
 

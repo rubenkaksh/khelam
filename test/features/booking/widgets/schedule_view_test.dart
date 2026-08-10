@@ -30,6 +30,7 @@ class _EmptySlotsBookingService implements BookingService {
   Future<void> bookSlot({
     required String turfId,
     required String slotId,
+    String? customerName,
     String? customerPhone,
   }) async {}
 }

@@ -130,6 +130,7 @@ class _ScheduleViewState extends m.State<ScheduleView> {
             if (result case final BookingResult confirmed) {
               cubit.bookSlot(
                 item.slot.id,
+                customerName: confirmed.customerName,
                 customerPhone: confirmed.customerPhone,
               );
             }

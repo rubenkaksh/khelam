@@ -4,9 +4,9 @@ import '../models/schedule_slot_item.dart';
 import '../models/slot_status.dart';
 import 'available_slot_card.dart';
 import 'booked_slot_card.dart';
-import 'timeline_hour_label.dart';
-import 'timeline_rail.dart';
 
+/// A simple vertical stack of slot cards — one per slot, no hour label column
+/// or timeline rail. The slot's time range is shown inside each card.
 class BookingTimeline extends m.StatelessWidget {
   const BookingTimeline({
     super.key,
@@ -21,41 +21,18 @@ class BookingTimeline extends m.StatelessWidget {
 
   @override
   m.Widget build(m.BuildContext context) {
-    return m.ListBody(children: _buildRows(context));
+    return m.ListBody(
+      children: <m.Widget>[
+        for (int i = 0; i < items.length; i++) ...<m.Widget>[
+          _buildCard(context, items[i]),
+          if (i < items.length - 1) const m.SizedBox(height: 8),
+        ],
+      ],
+    );
   }
 
-  List<m.Widget> _buildRows(m.BuildContext context) {
-    final List<m.Widget> rows = <m.Widget>[];
-    for (int i = 0; i < items.length; i++) {
-      final ScheduleSlotItem item = items[i];
-      rows.add(
-        m.Padding(
-          padding: const m.EdgeInsets.symmetric(horizontal: 16),
-          child: m.Row(
-            crossAxisAlignment: m.CrossAxisAlignment.start,
-            children: <m.Widget>[
-              m.SizedBox(
-                width: 64,
-                child: m.Padding(
-                  padding: const m.EdgeInsets.only(top: 14),
-                  child: TimelineHourLabel(time: item.slot.startTime),
-                ),
-              ),
-              const TimelineRail(),
-              const m.SizedBox(width: 8),
-              m.Expanded(child: _buildCard(item)),
-            ],
-          ),
-        ),
-      );
-      if (i < items.length - 1) {
-        rows.add(const m.SizedBox(height: 4));
-      }
-    }
-    return rows;
-  }
-
-  m.Widget _buildCard(ScheduleSlotItem item) {
+  m.Widget _buildCard(m.BuildContext context, ScheduleSlotItem item) {
+    final m.Widget card;
     // Booked is decided by slot status so API data (no booking object on
     // list slots) renders booked slots correctly; booking presence is kept
     // as a fallback for mocks/legacy data.
@@ -63,12 +40,20 @@ class BookingTimeline extends m.StatelessWidget {
         item.booking != null || item.slot.status == SlotStatus.booked;
     if (isBooked) {
       final void Function(ScheduleSlotItem)? onTap = onBookedSlotTap;
-      return BookedSlotCard(
+      card = BookedSlotCard(
         item: item,
         onTap: onTap == null ? null : () => onTap(item),
       );
+    } else {
+      final void Function(ScheduleSlotItem)? onTap = onAvailableSlotTap;
+      card = AvailableSlotCard(
+        slot: item.slot,
+        onTap: onTap == null ? null : () => onTap(item),
+      );
     }
-    final void Function(ScheduleSlotItem)? onTap = onAvailableSlotTap;
-    return AvailableSlotCard(onTap: onTap == null ? null : () => onTap(item));
+    return m.Padding(
+      padding: const m.EdgeInsets.symmetric(horizontal: 16),
+      child: card,
+    );
   }
 }

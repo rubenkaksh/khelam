@@ -104,7 +104,7 @@ void main() {
       expect(booked.customerName, 'Rahul Sharma');
     });
 
-    test('bookSlot POSTs to /slots/:id/book without a body', () async {
+    test('bookSlot POSTs name and phone in the request body', () async {
       final _RecordingAdapter adapter = _RecordingAdapter(
         (RequestOptions options) async => _jsonResponse(<String, dynamic>{
           'booking': <String, dynamic>{'id': 'b1'},
@@ -113,12 +113,20 @@ void main() {
       );
       final BookingApiService service = _service(adapter);
 
-      await service.bookSlot(turfId: 'turf-1', slotId: 's1');
+      await service.bookSlot(
+        turfId: 'turf-1',
+        slotId: 's1',
+        customerName: 'Rohan Shrestha',
+        customerPhone: '9876543210',
+      );
 
       final RequestOptions? request = adapter.lastRequest;
       expect(request?.method, 'POST');
       expect(request?.path, '/slots/s1/book');
-      expect(request?.data, isNull);
+      expect(request?.data, <String, dynamic>{
+        'customerName': 'Rohan Shrestha',
+        'customerPhone': '9876543210',
+      });
     });
 
     test('getSchedule maps HTTP 503 to AppServerException', () async {

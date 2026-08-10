@@ -67,6 +67,7 @@ class FakeBookingService implements BookingService {
   Future<void> bookSlot({
     required String turfId,
     required String slotId,
+    String? customerName,
     String? customerPhone,
   }) async {
     if (shouldThrow) throw typedError ?? Exception('Network error');
@@ -271,6 +272,7 @@ class _StaticSlotsService implements BookingService {
   Future<void> bookSlot({
     required String turfId,
     required String slotId,
+    String? customerName,
     String? customerPhone,
   }) async {
     // Never called by the tests that use this service (dayStats only).

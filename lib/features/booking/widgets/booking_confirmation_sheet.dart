@@ -6,16 +6,21 @@ import '../models/slot.dart';
 
 /// Result returned when the user confirms a booking via [BookingConfirmationSheet].
 class BookingResult {
-  const BookingResult({required this.slotId, required this.customerPhone});
+  const BookingResult({
+    required this.slotId,
+    required this.customerName,
+    required this.customerPhone,
+  });
 
   final String slotId;
+  final String customerName;
   final String customerPhone;
 }
 
-/// A bottom sheet that asks for the booker's phone number before confirming.
+/// A bottom sheet that asks for the booker's name and phone before confirming.
 ///
-/// Composes the reusable [FormBottomSheet] and [PhoneInput] widgets.
-/// Returns a [BookingResult] on confirm, or null if dismissed.
+/// Composes the reusable [FormBottomSheet], [TextInput] and [PhoneInput]
+/// widgets. Returns a [BookingResult] on confirm, or null if dismissed.
 class BookingConfirmationSheet extends m.StatefulWidget {
   const BookingConfirmationSheet({super.key, required this.slot});
 
@@ -27,21 +32,30 @@ class BookingConfirmationSheet extends m.StatefulWidget {
 }
 
 class _BookingConfirmationSheetState extends m.State<BookingConfirmationSheet> {
+  final m.TextEditingController _nameController = m.TextEditingController();
   final m.TextEditingController _phoneController = m.TextEditingController();
+  String? _nameError;
   String? _phoneError;
   bool _isValid = false;
 
-  void _onPhoneChanged(String value) {
+  void _onChanged() {
     setState(() {
-      _isValid = PhoneInput.isValid(value);
+      final String name = _nameController.text.trim();
+      _isValid = name.isNotEmpty && PhoneInput.isValid(_phoneController.text);
+      _nameError = null;
       _phoneError = null;
     });
   }
 
   void _onConfirm() {
-    if (!_isValid) {
+    final String name = _nameController.text.trim();
+    final bool nameValid = name.isNotEmpty;
+    final bool phoneValid = PhoneInput.isValid(_phoneController.text);
+    if (!nameValid || !phoneValid) {
       setState(() {
-        _phoneError = 'Enter a valid 10-digit mobile number';
+        _isValid = nameValid && phoneValid;
+        _nameError = nameValid ? null : "Enter the booker's name";
+        _phoneError = phoneValid ? null : 'Enter a valid 10-digit mobile number';
       });
       return;
     }
@@ -49,6 +63,7 @@ class _BookingConfirmationSheetState extends m.State<BookingConfirmationSheet> {
       context,
       BookingResult(
         slotId: widget.slot.id,
+        customerName: name,
         customerPhone: _phoneController.text,
       ),
     );
@@ -63,10 +78,24 @@ class _BookingConfirmationSheetState extends m.State<BookingConfirmationSheet> {
     return FormBottomSheet(
       title: 'Confirm Booking',
       subtitle: '$startTime – $endTime',
-      body: PhoneInput(
-        controller: _phoneController,
-        onChanged: _onPhoneChanged,
-        error: _phoneError,
+      body: m.Column(
+        crossAxisAlignment: m.CrossAxisAlignment.stretch,
+        children: <m.Widget>[
+          TextInput(
+            label: 'Name',
+            hint: 'e.g. Rohan Shrestha',
+            controller: _nameController,
+            error: _nameError,
+            onChanged: (_) => _onChanged(),
+            textInputAction: m.TextInputAction.next,
+          ),
+          const m.SizedBox(height: 12),
+          PhoneInput(
+            controller: _phoneController,
+            onChanged: (_) => _onChanged(),
+            error: _phoneError,
+          ),
+        ],
       ),
       confirmLabel: 'Confirm',
       confirmEnabled: _isValid,
@@ -76,6 +105,7 @@ class _BookingConfirmationSheetState extends m.State<BookingConfirmationSheet> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _phoneController.dispose();
     super.dispose();
   }

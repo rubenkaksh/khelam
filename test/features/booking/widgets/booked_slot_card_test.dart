@@ -64,7 +64,7 @@ void main() {
     expect(find.text('BK-0011'), findsOneWidget);
   });
 
-  testWidgets('BookedSlotCard shows Confirmed badge', (
+  testWidgets('BookedSlotCard shows time range and Confirmed badge', (
     WidgetTester tester,
   ) async {
     final ScheduleSlotItem item = ScheduleSlotItem(
@@ -79,6 +79,7 @@ void main() {
       ),
     );
 
+    expect(find.text('9:00 AM – 10:00 AM'), findsOneWidget);
     expect(find.text('Confirmed'), findsOneWidget);
   });
 

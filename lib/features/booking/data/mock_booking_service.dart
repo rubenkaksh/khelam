@@ -25,7 +25,9 @@ class MockBookingService implements BookingService {
     'Elite Academy',
   ];
 
-  final Set<String> _extraBookedSlotIds = <String>{};
+  /// Slots booked during this session (id → booker name, so the refetched
+  /// schedule shows the caller's name on the newly booked slot).
+  final Map<String, String> _extraBookedNames = <String, String>{};
 
   @override
   Future<TurfSummary> getTurf(String turfId) async {
@@ -57,7 +59,7 @@ class MockBookingService implements BookingService {
 
       final String sid = _slotId(hour, date);
       final bool isBooked =
-          _isSlotBooked(hour, date) || _extraBookedSlotIds.contains(sid);
+          _isSlotBooked(hour, date) || _extraBookedNames.containsKey(sid);
       final SlotStatus slotStatus = isBooked
           ? SlotStatus.booked
           : SlotStatus.available;
@@ -74,8 +76,8 @@ class MockBookingService implements BookingService {
       Booking? booking;
       String? customerName;
       if (isBooked) {
-        final int customerIndex = (hour * 7 + date.day) % _customerNames.length;
-        customerName = _customerNames[customerIndex];
+        customerName = _extraBookedNames[sid] ??
+            _customerNames[(hour * 7 + date.day) % _customerNames.length];
         booking = Booking(
           id: _bookingId(hour, date),
           bookingCode:
@@ -106,10 +108,11 @@ class MockBookingService implements BookingService {
   Future<void> bookSlot({
     required String turfId,
     required String slotId,
+    String? customerName,
     String? customerPhone,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 100));
-    _extraBookedSlotIds.add(slotId);
+    _extraBookedNames[slotId] = customerName ?? 'Guest';
   }
 
   bool _isSlotBooked(int hour, DateTime date) {

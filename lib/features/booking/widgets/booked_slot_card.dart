@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' as m;
 
 import 'package:commons/commons.dart';
 import '../models/schedule_slot_item.dart';
+import 'slot_time_range.dart';
 
 class BookedSlotCard extends m.StatelessWidget {
   const BookedSlotCard({super.key, required this.item, this.onTap});
@@ -43,10 +44,20 @@ class BookedSlotCard extends m.StatelessWidget {
                       ),
                     ),
                     const m.SizedBox(height: 4),
-                    StatusBadge(
-                      label: 'Confirmed',
-                      icon: const m.Icon(m.Icons.check_circle, size: 14),
-                      tone: BadgeTone.success,
+                    m.Row(
+                      children: <m.Widget>[
+                        m.Text(
+                          slotTimeRange(item.slot),
+                          style: m.Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: colors.onSurfaceVariant),
+                        ),
+                        const m.SizedBox(width: 8),
+                        StatusBadge(
+                          label: 'Confirmed',
+                          icon: const m.Icon(m.Icons.check_circle, size: 14),
+                          tone: BadgeTone.success,
+                        ),
+                      ],
                     ),
                   ],
                 ),

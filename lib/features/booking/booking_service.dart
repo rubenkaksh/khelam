@@ -16,6 +16,7 @@ abstract interface class BookingService {
   Future<void> bookSlot({
     required String turfId,
     required String slotId,
+    String? customerName,
     String? customerPhone,
   });
 }

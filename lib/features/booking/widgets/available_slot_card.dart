@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart' as m;
 
-class AvailableSlotCard extends m.StatelessWidget {
-  const AvailableSlotCard({super.key, this.onTap});
+import '../models/slot.dart';
+import 'slot_time_range.dart';
 
+class AvailableSlotCard extends m.StatelessWidget {
+  const AvailableSlotCard({super.key, required this.slot, this.onTap});
+
+  final Slot slot;
   final m.VoidCallback? onTap;
 
   @override
@@ -35,11 +39,22 @@ class AvailableSlotCard extends m.StatelessWidget {
               ),
               const m.SizedBox(width: 12),
               m.Expanded(
-                child: m.Text(
-                  '+ Available',
-                  style: m.Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: colors.onSurfaceVariant,
-                  ),
+                child: m.Column(
+                  crossAxisAlignment: m.CrossAxisAlignment.start,
+                  children: <m.Widget>[
+                    m.Text(
+                      slotTimeRange(slot),
+                      style: m.Theme.of(context).textTheme.titleSmall
+                          ?.copyWith(fontWeight: m.FontWeight.w600),
+                    ),
+                    const m.SizedBox(height: 4),
+                    m.Text(
+                      '+ Available',
+                      style: m.Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
