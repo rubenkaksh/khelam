@@ -10,6 +10,7 @@ Inherits the global software-engineer instructions at `~/.config/opencode/AGENTS
 - **Before starting any Cost-Discipline-flagged work, check `docs/reviews/review-memory.md` Open Actions table** — do not begin until outstanding actions are reviewed.
 - Keep the file updated continuously after each task, decision, or commit. Every symbol-level edit must include its codegraph/graphify lookup reference in the Work Log (per global rule).
 - **Lifecycle:** files in `docs/sessions/` older than 30 days may be archived to `docs/sessions/archive/YYYY-MM.md` (one file per month). The current day + previous 7 days remain unarchived. Archive at the start of a new day if needed.
+- **Session Hygiene (khelam teeth — hardens the global Session Hygiene umbrella):** subagents (any type) are **forbidden from writing session files at all** — they report content back to the main agent, which owns the file (documented waste pattern: subagent file-writes created orphaned/duplicated session content). The main agent's own day file is append/patch-only — never rewrite it in place. Sessions past ~24h active or 50M cache reads: propose a fresh session BEFORE the weekly review's `session_boundary_check()` flags it (mechanical flag = safety net, not trigger).
 
 ## Project Conventions
 
