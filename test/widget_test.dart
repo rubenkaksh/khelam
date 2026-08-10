@@ -111,7 +111,7 @@ void main() {
     overridePreferencesWithRecording();
     await bootAndPickTurf(tester);
 
-    await tester.tap(find.text('+ Available').first);
+    await tester.tap(find.text('Book Now').first);
     await tester.pumpAndSettle();
 
     expect(find.text('Khelam Login'), findsOneWidget);
@@ -128,7 +128,7 @@ void main() {
     await bootAndPickTurf(tester);
 
     // Guest taps an available slot → redirected to login.
-    await tester.tap(find.text('+ Available').first);
+    await tester.tap(find.text('Book Now').first);
     await tester.pumpAndSettle();
     expect(find.text('Khelam Login'), findsOneWidget);
 
@@ -138,7 +138,7 @@ void main() {
 
     // Landed back on the schedule, guard now passing.
     expect(find.text('Schedule'), findsOneWidget);
-    expect(find.text('+ Available'), findsWidgets);
+    expect(find.text('Book Now'), findsWidgets);
   });
 
   testWidgets('logout from the schedule clears preferences and lands on login', (

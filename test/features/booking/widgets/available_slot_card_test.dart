@@ -14,7 +14,7 @@ Slot _slot() => Slot(
 );
 
 void main() {
-  testWidgets('AvailableSlotCard shows time range and + Available text', (
+  testWidgets('AvailableSlotCard shows time range and a Book Now button', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -22,10 +22,10 @@ void main() {
     );
 
     expect(find.text('7:00 AM – 8:00 AM'), findsOneWidget);
-    expect(find.text('+ Available'), findsOneWidget);
+    expect(find.text('Book Now'), findsOneWidget);
   });
 
-  testWidgets('AvailableSlotCard fires onTap when tapped', (
+  testWidgets('AvailableSlotCard fires onTap when the Book Now button is tapped', (
     WidgetTester tester,
   ) async {
     bool tapped = false;
@@ -38,7 +38,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('+ Available'));
+    await tester.tap(find.text('Book Now'));
     expect(tapped, isTrue);
   });
 }

@@ -68,31 +68,11 @@ class _ScheduleViewState extends m.State<ScheduleView> {
   }
 
   m.Widget _buildBody(m.BuildContext context, ScheduleState state) {
-    if (state.isLoading && state.turf == null) {
-      return const LoadingView();
-    }
-
-    if (state.errorMessage case final String error when state.slots.isEmpty) {
-      return ErrorView(
-        message: error,
-        onRetry: () => context.read<ScheduleCubit>().load(),
-      );
-    }
-
-    // A loaded day with zero slots is a legitimately empty state, not an
-    // error — show the empty view instead of a bare timeline. (`turf != null`
-    // keeps the pre-load frame from flashing it before `load()` starts.)
-    if (!state.isLoading &&
-        state.turf != null &&
-        state.slots.isEmpty &&
-        state.errorMessage == null) {
-      return const EmptyView(message: 'No slots available for this date.');
-    }
-
     final List<DateTime> dates = _generateDateRange();
 
     return m.ListView(
       children: <m.Widget>[
+        m.SizedBox(height: 10),
         DateStrip(
           dates: dates,
           selectedDate: state.selectedDate ?? DateTime.now(),
@@ -100,43 +80,64 @@ class _ScheduleViewState extends m.State<ScheduleView> {
             context.read<ScheduleCubit>().selectDate(date);
           },
         ),
+
         if (state.turf case final TurfSummary turf) TurfHeader(turf: turf),
-        if (state.isLoading && state.slots.isNotEmpty)
-          const m.Padding(
-            padding: m.EdgeInsets.all(16),
-            child: m.CircularProgressIndicator(),
-          ),
-        BookingTimeline(
-          items: state.slots,
-          onAvailableSlotTap: (item) async {
-            // Booking requires a signed-in user. Send guests to login and
-            // remember the current location so the auth flow lands them back
-            // here (with the guard now passing).
-            if (!serviceLocator<AuthCubit>().state.isAuthenticated) {
-              context.goNamed(
-                AppRoutes.login,
-                queryParameters: <String, String>{
-                  'redirectTo': GoRouterState.of(context).uri.toString(),
-                },
-              );
-              return;
-            }
-            final ScheduleCubit cubit = context.read<ScheduleCubit>();
-            final BookingResult? result =
-                await showFormBottomSheet<BookingResult>(
-                  context: context,
-                  builder: (_) => BookingConfirmationSheet(slot: item.slot),
+        // Content slot — the loading/empty/error states render here, where
+        // the timeline renders, so the date strip and header stay visible
+        // instead of a state view replacing the whole body.
+        if (state.isLoading && state.slots.isEmpty)
+          const LoadingView()
+        else if (state.errorMessage case final String error
+            when state.slots.isEmpty)
+          ErrorView(
+            message: error,
+            onRetry: () => context.read<ScheduleCubit>().load(),
+          )
+        else if (!state.isLoading &&
+            state.turf != null &&
+            state.slots.isEmpty &&
+            state.errorMessage == null)
+          const m.Center(
+            child: EmptyView(message: 'No slots available for this date.'),
+          )
+        else ...[
+          if (state.isLoading && state.slots.isNotEmpty)
+            const m.Padding(
+              padding: m.EdgeInsets.all(16),
+              child: m.CircularProgressIndicator(),
+            ),
+          BookingTimeline(
+            items: state.slots,
+            onAvailableSlotTap: (item) async {
+              // Booking requires a signed-in user. Send guests to login and
+              // remember the current location so the auth flow lands them back
+              // here (with the guard now passing).
+              if (!serviceLocator<AuthCubit>().state.isAuthenticated) {
+                context.goNamed(
+                  AppRoutes.login,
+                  queryParameters: <String, String>{
+                    'redirectTo': GoRouterState.of(context).uri.toString(),
+                  },
                 );
-            if (result case final BookingResult confirmed) {
-              cubit.bookSlot(
-                item.slot.id,
-                customerName: confirmed.customerName,
-                customerPhone: confirmed.customerPhone,
-              );
-            }
-          },
-        ),
-        if (state.slots.isNotEmpty) DayStatsSection(stats: state.dayStats),
+                return;
+              }
+              final ScheduleCubit cubit = context.read<ScheduleCubit>();
+              final BookingResult? result =
+                  await showFormBottomSheet<BookingResult>(
+                    context: context,
+                    builder: (_) => BookingConfirmationSheet(slot: item.slot),
+                  );
+              if (result case final BookingResult confirmed) {
+                cubit.bookSlot(
+                  item.slot.id,
+                  customerName: confirmed.customerName,
+                  customerPhone: confirmed.customerPhone,
+                );
+              }
+            },
+          ),
+          if (state.slots.isNotEmpty) DayStatsSection(stats: state.dayStats),
+        ],
       ],
     );
   }

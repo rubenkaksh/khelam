@@ -1,4 +1,6 @@
+import 'package:commons/commons.dart';
 import 'package:flutter/material.dart' as m;
+import 'package:khelam/ui/core/theme/app_palette.dart';
 
 import '../models/slot.dart';
 import 'slot_time_range.dart';
@@ -21,42 +23,23 @@ class AvailableSlotCard extends m.StatelessWidget {
           strokeAlign: m.BorderSide.strokeAlignInside,
         ),
       ),
-      color: colors.surface,
+      color: AppPalette.cardBackground,
       child: m.InkWell(
         onTap: onTap,
         borderRadius: m.BorderRadius.circular(12),
         child: m.Padding(
-          padding: const m.EdgeInsets.all(12),
+          padding: const m.EdgeInsets.symmetric(horizontal: 24, vertical: 8),
           child: m.Row(
             children: <m.Widget>[
-              m.Container(
-                width: 4,
-                height: 48,
-                decoration: m.BoxDecoration(
-                  color: colors.outlineVariant,
-                  borderRadius: m.BorderRadius.circular(2),
+              m.Text(
+                slotTimeRange(slot),
+                style: m.Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: m.FontWeight.w500,
+                  color: colors.onSecondary,
                 ),
               ),
-              const m.SizedBox(width: 12),
-              m.Expanded(
-                child: m.Column(
-                  crossAxisAlignment: m.CrossAxisAlignment.start,
-                  children: <m.Widget>[
-                    m.Text(
-                      slotTimeRange(slot),
-                      style: m.Theme.of(context).textTheme.titleSmall
-                          ?.copyWith(fontWeight: m.FontWeight.w600),
-                    ),
-                    const m.SizedBox(height: 4),
-                    m.Text(
-                      '+ Available',
-                      style: m.Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              const m.Spacer(),
+              OutlineButton(text: 'Book Now', onPressed: onTap),
             ],
           ),
         ),

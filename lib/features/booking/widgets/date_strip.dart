@@ -17,10 +17,10 @@ class DateStrip extends m.StatelessWidget {
   @override
   m.Widget build(m.BuildContext context) {
     return m.SizedBox(
-      height: 80,
+      height: 84,
       child: m.ListView.separated(
         scrollDirection: m.Axis.horizontal,
-        padding: const m.EdgeInsets.symmetric(horizontal: 16),
+        padding: const m.EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         itemCount: dates.length,
         separatorBuilder: (_, __) => const m.SizedBox(width: 8),
         itemBuilder: (m.BuildContext context, int index) {

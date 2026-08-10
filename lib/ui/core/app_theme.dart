@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:commons/commons.dart';
+import 'package:commons/commons.dart' hide FilledButton;
 
 import 'theme/app_palette.dart';
 
@@ -35,12 +35,20 @@ class AppTheme {
       // Config typography: role-colored, safe for both brightnesses.
       textTheme: _configTextTheme(textTheme, colorScheme),
       // Config canvas (#F9FAFA); dark keeps the generated surface.
-      scaffoldBackgroundColor:
-          isLight ? AppPalette.background : colorScheme.surface,
+      scaffoldBackgroundColor: isLight
+          ? AppPalette.background
+          : colorScheme.surface,
       // Light-only component overrides — dark stays seed-derived.
       cardTheme: isLight ? _configCardTheme(colorScheme) : null,
-      elevatedButtonTheme: isLight ? _configElevatedButton(colorScheme) : null,
-      outlinedButtonTheme: isLight ? _configOutlinedButton(colorScheme) : null,
+      filledButtonTheme: isLight
+          ? _configFilledButton(colorScheme, textTheme)
+          : null,
+      elevatedButtonTheme: isLight
+          ? _configElevatedButton(colorScheme, textTheme)
+          : null,
+      outlinedButtonTheme: isLight
+          ? _configOutlinedButton(colorScheme, textTheme)
+          : null,
     );
   }
 
@@ -54,33 +62,33 @@ class AppTheme {
   /// `outlineVariant`, `inverse*`, `surfaceTint`, ...) are tone-generated from
   /// the seed so the shared [ComponentThemes] keep working.
   static ColorScheme get lightColorScheme => ColorScheme.fromSeed(
-        seedColor: AppPalette.primary,
-        brightness: Brightness.light,
-        primary: AppPalette.primary,
-        onPrimary: AppPalette.onPrimary,
-        primaryContainer: AppPalette.primaryContainer,
-        onPrimaryContainer: AppPalette.onPrimaryContainer,
-        secondary: AppPalette.secondary,
-        onSecondary: AppPalette.onSecondary,
-        surface: AppPalette.surface,
-        onSurface: AppPalette.onSurface,
-        onSurfaceVariant: AppPalette.onSurfaceVariant,
-        error: AppPalette.error,
-        onError: AppPalette.onError,
-        errorContainer: AppPalette.errorContainer,
-        onErrorContainer: AppPalette.onErrorContainer,
-        outline: AppPalette.outline,
-      );
+    seedColor: AppPalette.primary,
+    brightness: Brightness.light,
+    primary: AppPalette.primary,
+    onPrimary: AppPalette.onPrimary,
+    primaryContainer: AppPalette.primaryContainer,
+    onPrimaryContainer: AppPalette.onPrimaryContainer,
+    secondary: AppPalette.secondary,
+    onSecondary: AppPalette.onSecondary,
+    surface: AppPalette.surface,
+    onSurface: AppPalette.onSurface,
+    onSurfaceVariant: AppPalette.onSurfaceVariant,
+    error: AppPalette.error,
+    onError: AppPalette.onError,
+    errorContainer: AppPalette.errorContainer,
+    onErrorContainer: AppPalette.onErrorContainer,
+    outline: AppPalette.outline,
+  );
 
   /// Builds the dark [ColorScheme] from the khelam brand seeds.
   static ColorScheme get darkColorScheme => ColorScheme.fromSeed(
-        seedColor: AppPalette.seed,
-        brightness: Brightness.dark,
-        primary: AppPalette.surfaceTintDark,
-        secondary: AppPalette.secondarySeed,
-        tertiary: AppPalette.tertiarySeed,
-        error: AppPalette.errorDark,
-      );
+    seedColor: AppPalette.seed,
+    brightness: Brightness.dark,
+    primary: AppPalette.surfaceTintDark,
+    secondary: AppPalette.secondarySeed,
+    tertiary: AppPalette.tertiarySeed,
+    error: AppPalette.errorDark,
+  );
 
   // --- theme-config layers (2026-08-09) --------------------------------
 
@@ -128,39 +136,64 @@ class AppTheme {
       color: c.surface,
       elevation: 2,
       shadowColor: AppPalette.cardShadow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       // Keep the shared baseline's margin (config does not specify one).
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
     );
   }
 
   /// Elevated button: primary fill, pill shape, no elevation, config padding.
-  static ElevatedButtonThemeData _configElevatedButton(ColorScheme c) {
-    return ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(100),
-        ),
+  static FilledButtonThemeData _configFilledButton(ColorScheme c, TextTheme t) {
+    return FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        elevation: 2,
+        minimumSize: Size(0, 0),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
         backgroundColor: c.primary,
         foregroundColor: c.onPrimary,
+        textStyle: t.bodyMedium?.copyWith(
+          textBaseline: TextBaseline.alphabetic,
+        ),
+      ),
+    );
+  }
+
+  /// Elevated button: primary fill, pill shape, no elevation, config padding.
+  static ElevatedButtonThemeData _configElevatedButton(
+    ColorScheme c,
+    TextTheme t,
+  ) {
+    return ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        elevation: 2,
+        minimumSize: Size(0, 0),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+        backgroundColor: c.primary,
+        foregroundColor: c.onPrimary,
+        textStyle: t.bodyMedium?.copyWith(
+          textBaseline: TextBaseline.alphabetic,
+        ),
       ),
     );
   }
 
   /// Outlined button: surface fill, primary content, pill shape, outline side.
-  static OutlinedButtonThemeData _configOutlinedButton(ColorScheme c) {
+  static OutlinedButtonThemeData _configOutlinedButton(
+    ColorScheme c,
+    TextTheme t,
+  ) {
     return OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
+        minimumSize: Size(0, 0),
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(100),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
         backgroundColor: c.surface,
         foregroundColor: c.primary,
+        textStyle: t.bodyMedium?.copyWith(
+          textBaseline: TextBaseline.alphabetic,
+        ),
         side: BorderSide(color: c.outline, width: 1),
       ),
     );

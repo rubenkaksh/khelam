@@ -36,4 +36,5 @@ abstract final class AppPalette {
 
   // Component extras — theme config 2026-08-09.
   static const Color cardShadow = Color(0x1A000000);
+  static const Color cardBackground = Color(0x6DDEDEDE);
 }

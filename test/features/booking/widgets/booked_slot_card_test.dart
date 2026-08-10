@@ -29,7 +29,7 @@ Booking _booking(int hour) => Booking(
 );
 
 void main() {
-  testWidgets('BookedSlotCard shows customer name when provided', (
+  testWidgets('BookedSlotCard shows the customer first name when provided', (
     WidgetTester tester,
   ) async {
     final ScheduleSlotItem item = ScheduleSlotItem(
@@ -44,10 +44,10 @@ void main() {
       ),
     );
 
-    expect(find.text('Team Alpha'), findsOneWidget);
+    expect(find.text('by Team'), findsOneWidget);
   });
 
-  testWidgets('BookedSlotCard shows booking code when no customer name', (
+  testWidgets('BookedSlotCard shows N/A when no customer name', (
     WidgetTester tester,
   ) async {
     final ScheduleSlotItem item = ScheduleSlotItem(
@@ -61,10 +61,10 @@ void main() {
       ),
     );
 
-    expect(find.text('BK-0011'), findsOneWidget);
+    expect(find.text('by N/A'), findsOneWidget);
   });
 
-  testWidgets('BookedSlotCard shows time range and Confirmed badge', (
+  testWidgets('BookedSlotCard shows time range and Booked label', (
     WidgetTester tester,
   ) async {
     final ScheduleSlotItem item = ScheduleSlotItem(
@@ -80,7 +80,7 @@ void main() {
     );
 
     expect(find.text('9:00 AM – 10:00 AM'), findsOneWidget);
-    expect(find.text('Confirmed'), findsOneWidget);
+    expect(find.text('Booked'), findsOneWidget);
   });
 
   testWidgets('BookedSlotCard fires onTap when tapped', (
@@ -101,7 +101,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('United Stars'));
+    await tester.tap(find.text('by United'));
     expect(tapped, isTrue);
   });
 }

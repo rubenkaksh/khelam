@@ -22,7 +22,7 @@ class DateChip extends m.StatelessWidget {
       onTap: onTap,
       child: m.AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const m.EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const m.EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: m.BoxDecoration(
           color: selected ? colors.primary : colors.surfaceContainerHighest,
           borderRadius: m.BorderRadius.circular(24),
@@ -31,6 +31,7 @@ class DateChip extends m.StatelessWidget {
               : null,
         ),
         child: m.Column(
+          mainAxisAlignment: m.MainAxisAlignment.center,
           mainAxisSize: m.MainAxisSize.min,
           children: <m.Widget>[
             m.Text(
@@ -44,7 +45,7 @@ class DateChip extends m.StatelessWidget {
               date.day.toString(),
               style: m.Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: selected ? colors.onPrimary : colors.onSurface,
-                fontWeight: m.FontWeight.bold,
+                fontWeight: m.FontWeight.w700,
               ),
             ),
           ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' as m;
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
 import 'package:commons/commons.dart';
@@ -55,7 +56,9 @@ class _BookingConfirmationSheetState extends m.State<BookingConfirmationSheet> {
       setState(() {
         _isValid = nameValid && phoneValid;
         _nameError = nameValid ? null : "Enter the booker's name";
-        _phoneError = phoneValid ? null : 'Enter a valid 10-digit mobile number';
+        _phoneError = phoneValid
+            ? null
+            : 'Enter a valid 10-digit mobile number';
       });
       return;
     }
@@ -79,6 +82,7 @@ class _BookingConfirmationSheetState extends m.State<BookingConfirmationSheet> {
       title: 'Confirm Booking',
       subtitle: '$startTime – $endTime',
       body: m.Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: m.CrossAxisAlignment.stretch,
         children: <m.Widget>[
           TextInput(

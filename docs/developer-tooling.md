@@ -219,6 +219,76 @@ The weekly review also runs:
 
 ---
 
+## Code Intelligence (CodeGraph + Graphify)
+
+Two local indexes make code navigation cheap and accurate. Use them **before
+grep/reading files** — they answer most questions in one call.
+
+| Tool | Index | Best for | Reaches for it when |
+|------|-------|----------|---------------------|
+| **CodeGraph** | `.codegraph/` (per repo) | Symbol source + call paths | "Where is X?", "Who calls it?", "What breaks if I change it?" |
+| **Graphify** | `graphify-out/` (per repo) | Knowledge-graph relationships | "How do these things relate?", cross-file structure |
+
+Both are machine-local build output (gitignored) and refresh automatically after
+every commit via the post-commit hook (see Index Refresh below).
+
+### CodeGraph — first stop for symbol questions
+
+```bash
+# Explore symbols + blast radius + verbatim source in one call:
+codegraph explore "ScheduleCubit, bookSlot"
+# → symbols, callers, covering tests, and the current on-disk source
+
+# One symbol's source + callers, or a whole file with line numbers:
+codegraph node lib/features/booking/widgets/booked_slot_card.dart
+codegraph node BookedSlotCard
+```
+
+Example — finding where a widget lives:
+
+```bash
+codegraph explore "BookedSlotItem BookedSlotCard"
+# → BookedSlotCard (lib/features/booking/widgets/booked_slot_card.dart:6)
+#   — 2 callers in booking_timeline.dart; tests: booked_slot_card_test.dart
+```
+
+Note: exact symbol names hit hardest. If `explore "BookedSlotItem"` finds
+nothing, the name is wrong — ask for the likely real name (it was
+`BookedSlotCard`).
+
+### Graphify — relationships and cross-file structure
+
+```bash
+graphify query "how does the booking flow from tap to API?"   # scoped subgraph
+graphify path "BookingTimeline" "BookedSlotCard"              # shortest relationship path
+graphify explain "BookedSlotCard"                             # one node + its connections
+graphify update .                                             # after editing code (AST-only, free)
+```
+
+Example — relationship path:
+
+```bash
+graphify path "BookingTimeline" "BookedSlotCard"
+# Shortest path (2 hops):
+#   BookingTimeline → m.StatelessWidget ← BookedSlotCard
+```
+
+`graphify query` has a token budget — if output is truncated, narrow the query
+(`--budget` and `context_filter` flags exist) or use exact symbol names.
+
+### Rules of thumb
+
+1. **CodeGraph before grep.** For "where is X / who calls X / what depends on X",
+   `codegraph explore` beats searching. The agent is instructed to do this
+   automatically; the commands are for when you're driving yourself.
+2. **Graphify when it's about how things relate** — query/path/explain.
+3. **After edits**: `graphify update .` (AST-only, no API cost). The post-commit
+   hook does it for you anyway.
+4. **zsh gotcha**: `graphify path "A" "B"` — always quote arguments, and don't
+   chain with bare `===` separators (zsh reads `==` as a glob-ish token).
+
+---
+
 ## Index Refresh (Auto — Nothing to Do)
 
 CodeGraph + Graphify indexes refresh **automatically** after every commit via the
