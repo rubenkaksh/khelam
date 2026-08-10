@@ -83,7 +83,7 @@ class _TurfSelectionViewState extends m.State<TurfSelectionView> {
             onChanged: cubit.selectTurf,
           ),
           const m.SizedBox(height: 24),
-          FilledButton(
+          AppFilledButton(
             text: 'Continue',
             onPressed: state.selectedTurfId == null
                 ? null

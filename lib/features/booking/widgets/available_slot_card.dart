@@ -39,7 +39,7 @@ class AvailableSlotCard extends m.StatelessWidget {
                 ),
               ),
               const m.Spacer(),
-              OutlineButton(text: 'Book Now', onPressed: onTap),
+              AppOutlinedButton(text: 'Book Now', onPressed: onTap),
             ],
           ),
         ),

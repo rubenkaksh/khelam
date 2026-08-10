@@ -144,7 +144,7 @@ class _RegisterViewState extends m.State<RegisterView> {
                               ),
                             ],
                             const m.SizedBox(height: 24),
-                            FilledButton(
+                            AppFilledButton(
                               text: 'Create account',
                               icon: state.isLoading
                                   ? null

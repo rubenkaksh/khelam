@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:commons/commons.dart' hide FilledButton;
+import 'package:commons/commons.dart';
 
 import 'theme/app_palette.dart';
 
