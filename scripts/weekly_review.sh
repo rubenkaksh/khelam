@@ -529,3 +529,7 @@ else
   echo "$(date): ERROR — review agent did not produce $REVIEW_FILE after $MAX_ATTEMPTS attempts" >> "$LOG"
   send_error_report "$REPO_NAME Weekly Review" "Weekly review FAILED after $MAX_ATTEMPTS attempts — check /tmp/weekly-review.log" || true
 fi
+
+# Post-loop state reconciliation (P2): the review just ran — keep
+# LOOP-STATE.json / STATE.md fresh. Never blocks the review.
+bash "$REPO/scripts/sync_loop_state.sh" || true

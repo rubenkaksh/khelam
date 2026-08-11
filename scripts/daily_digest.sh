@@ -277,6 +277,9 @@ main() {
     fi
   done
   log "=== fire done: $sent sent, $failed failed, $skipped skipped ==="
+  # Post-loop state reconciliation (P2): the digest just delivered the board —
+  # keep LOOP-STATE.json / STATE.md fresh. Never blocks the digest.
+  bash "$KHELAM_REPO/scripts/sync_loop_state.sh" || true
 }
 
 main "$@"
