@@ -3,6 +3,24 @@
   "plugin": [
     ".opencode/plugins/graphify.js"
   ],
+  "agent": {
+    "loop-triage": {
+      "command": "opencode run --auto --agent loop-triage",
+      "skill": "loop-triage",
+      "description": "Daily triage reflection agent",
+      "mode": "subagent"
+    },
+    "implementer": {
+      "command": "opencode run --auto --agent implementer",
+      "mode": "subagent",
+      "prompt": "You are the implementer. Follow the repository AGENTS.md rules. Implement the task from STATE.md. No auto-merge."
+    },
+    "verifier": {
+      "command": "opencode run --auto --agent verifier",
+      "mode": "subagent",
+      "prompt": "You are the verifier. Verify the implementer's work. Report findings to STATE.md and the run log. Never merge."
+    }
+  },
   "permission": {
     "read": {
       "*": "allow",
