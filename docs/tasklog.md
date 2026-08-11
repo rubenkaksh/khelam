@@ -21,6 +21,20 @@ _Last updated: 2026-08-11_
 | **Navigation slice (low priority)** — shared router skeleton, revisit only if wanted | backlog 08-01 | Open (low) |
 | **Theme monolith watchpoint** — split `app_component_themes.dart` if `build()` > ~600 lines / feature variants appear | backlog 06-22 | Watchpoint |
 
+## 🔧 Self-improvement — agent-tools/loop E2E (from 2026-08-11 improve-codebase-architecture run; **pick up only with user approval, by priority**)
+| Priority | Card | Test verdict | Status |
+|---|---|---|---|
+| **HIGH** | **C2 — `loop_verify.sh` has NO test harness** (the only verifier with zero tests; P1's 9 fixtures were throwaway). **TOP RECOMMENDATION** | ADD — extract fixture-driven harness (P1 9-fixture suite → re-runnable) | ⏳ Awaiting approval |
+| **HIGH** | **C1 — `VERSION` file is stale/redundant pin** (agent-tools `VERSION=18dbd2a-cut` never updated; real pins live in consumers' `agent-tools.version`; README cites VERSION as the source) | DELETE — zero behavioral impact | ⏳ Awaiting approval |
+| **HIGH** | **C3 — stale "forkable-first" prose** (khelam + forkable AGENTS.md still say canonical = forkable; superseded by the agent-tools pivot 08-11; also misroutes the tripwire doc) | DELETE — docs-only, safe | ⏳ Awaiting approval |
+| **HIGH** | **C4 — daily_triage skill-chain bypass + budget unenforced** (loop-triage skill references loop-constraints/loop-budget, but the L1 default run loads neither; `loop status` says budget.present=true but nothing enforces the 80% cap) | REFACTOR — enforce in `daily_triage.sh` | ⏳ Awaiting approval |
+| **MED-HIGH** | **C5 — `weekly_review.sh` cohesion** (900+ lines, 18 computed lines / 6 helpers / prompt built across 4 functions, runs against two repos; phase boundaries unclear) | REFACTOR — extract review-else branch to module | ⏳ Awaiting approval |
+| **MEDIUM** | **C6 — wrapper collapse** (16 thin wrappers per consumer; merge back to direct `exec`? — needs Grill Gate, user decision) | GRILL GATE before any change | ⏳ Awaiting approval |
+| **MEDIUM** | **C7 — melos workspace machine-local** (`melos.yaml` at `~/projects/khel-service/`, not a git repo — parked 08-08, revisit 08-16) | — (revisit at 08-16 review) | ⏳ Awaiting approval |
+| **MEDIUM** | **C8 — `sync_loop_state.sh` awk coupling** (STATE.md splice via awk getline — fragile) | REFACTOR — python splice | ⏳ Awaiting approval |
+| **LOW** | **C9 — `LOOP.md` broken links** (references missing `../patterns/daily-triage.md` etc.) | FIX — trivial | ⏳ Awaiting approval |
+| **LOW** | **C10 — routing sync tripwire + zoom-out gap** (weekly routing-check greps bare `skill` — misses zoom-out/others; no zoom-out callout in routing doc) | REFINE — tripwire operational; refine copy + routing | ⏳ Awaiting approval |
+
 ## 🟠 Parked (revisit at the 2026-08-16 review unless noted)
 | Card | Revisit | Note |
 |---|---|---|
