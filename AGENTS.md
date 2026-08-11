@@ -18,7 +18,7 @@ Skills load automatically by task — the global **Skill Routing** table in `~/.
 
 ## Project Conventions
 
-- **Base-template tooling**: `scripts/` + the pre-commit gate are synced copies — **canonical versions live in forkable** (forkable-first policy). Pull changes from forkable; never edit them khelam-first. The weekly review's forkable-sync tripwire flags drift mechanically.
+- **Base-template tooling**: `scripts/` + the pre-commit gate are thin wrappers delegating to **agent-tools** (`~/projects/agent-tools`, the tooling canonical — see its AGENTS.md). Consumers pin agent-tools via `scripts/agent-tools.version` (commit sha); the weekly review's `agent_tools_version_check()` flags drift mechanically. Never edit agent-tools scripts khelam-first.
 - **Sandbox/guard**: global `external_directory` allows `~/projects/sandbox/**` + 3 unrelocatables + narrow `/tmp`; everything else asks. This repo is a **temporary L3 test workspace** (see `docs/sandbox/test-window.md`, revoke 08-21). Full policy in forkable's AGENTS.md Sandbox section: never bypass the global deny-list, ask-shift work into `~/projects/sandbox/`, deny-deferral → `~/projects/sandbox/logs/deny-deferred-*.log` (weekly review surveys it).
 - **Integration tests**: `integration_test/*_test.dart` run against the live backend (emulator-5554). Only run when the live path changed or the user asks — the session file records the last verified state.
 - **Commons consumer check**: after any `commons` change (or a consumer pubspec change), run `flutter analyze` in both `khelam` and `forkable` before committing — don't wait for the weekly review.
