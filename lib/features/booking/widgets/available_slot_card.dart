@@ -27,7 +27,9 @@ class AvailableSlotCard extends StatelessWidget {
       // The config palette's cardBackground is a light-theme tint; in dark
       // mode fall back to the scheme's elevated surface so the fill (and
       // the text below) stays contrast-safe.
-      color: isDark ? colors.surfaceContainerHighest : AppPalette.cardBackground,
+      color: isDark
+          ? colors.surfaceContainerHighest
+          : AppPalette.cardBackground,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),

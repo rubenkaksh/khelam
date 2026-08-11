@@ -86,9 +86,6 @@ class AppTheme {
   static ColorScheme get darkColorScheme => ColorScheme.fromSeed(
     seedColor: AppPalette.primary,
     brightness: Brightness.dark,
-    secondary: AppPalette.secondarySeed,
-    tertiary: AppPalette.tertiarySeed,
-    error: AppPalette.errorDark,
   );
 
   // --- theme-config layers (2026-08-09) --------------------------------

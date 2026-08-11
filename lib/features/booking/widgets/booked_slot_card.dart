@@ -13,7 +13,7 @@ class BookedSlotCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
     final String title = item.customerName?.split(' ').first ?? 'N/A';
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -23,7 +23,7 @@ class BookedSlotCard extends StatelessWidget {
           strokeAlign: BorderSide.strokeAlignInside,
         ),
       ),
-      color: colors.secondaryContainer,
+      color: isDark ? colors.primaryContainer : colors.secondaryContainer,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
