@@ -14,6 +14,7 @@ class AvailableSlotCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -23,7 +24,10 @@ class AvailableSlotCard extends StatelessWidget {
           strokeAlign: BorderSide.strokeAlignInside,
         ),
       ),
-      color: AppPalette.cardBackground,
+      // The config palette's cardBackground is a light-theme tint; in dark
+      // mode fall back to the scheme's elevated surface so the fill (and
+      // the text below) stays contrast-safe.
+      color: isDark ? colors.surfaceContainerHighest : AppPalette.cardBackground,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -35,7 +39,7 @@ class AvailableSlotCard extends StatelessWidget {
                 slotTimeRange(slot),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w500,
-                  color: colors.onSecondary,
+                  color: colors.onSurface,
                 ),
               ),
               const Spacer(),

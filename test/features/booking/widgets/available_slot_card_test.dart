@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:khelam/features/booking/models/slot.dart';
 import 'package:khelam/features/booking/models/slot_status.dart';
 import 'package:khelam/features/booking/widgets/available_slot_card.dart';
+import 'package:khelam/ui/core/app_theme.dart';
+import 'package:khelam/ui/core/theme/app_palette.dart';
 
 Slot _slot() => Slot(
   id: 's1',
@@ -40,5 +42,23 @@ void main() {
 
     await tester.tap(find.text('Book Now'));
     expect(tapped, isTrue);
+  });
+
+  testWidgets('dark mode: card uses theme-derived surface + onSurface text (readable)', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark(),
+        home: Scaffold(body: AvailableSlotCard(slot: _slot())),
+      ),
+    );
+
+    final Card card = tester.widget<Card>(find.byType(Card));
+    expect(card.color, isNot(AppPalette.cardBackground), reason: 'light-only tint must not leak into dark mode');
+
+    final Text time = tester.widget<Text>(find.text('7:00 AM – 8:00 AM'));
+    final ColorScheme colors = Theme.of(tester.element(find.byType(Card))).colorScheme;
+    expect(time.style?.color, colors.onSurface);
   });
 }
