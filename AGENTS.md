@@ -2,6 +2,10 @@
 
 Inherits the global software-engineer instructions at `~/.config/opencode/AGENTS.md`: **Flutter Specialization**, **Cost Discipline**, **Work Tracking template**, codegraph/graphify guidance, and the **sidetrack guard**. Project rules below tighten or extend the global rules — they never weaken them (see Precedence & Composition in the global file).
 
+## Skills (automatic routing)
+
+Skills load automatically by task — the global **Skill Routing** table in `~/.config/opencode/AGENTS.md` maps task types to skills (brainstorming before features, diagnose for bugs, flutter-* per task, grill-me for design stress-tests, loop-* for runs, etc.). **Full 46-skill inventory + complete table: `~/projects/agent-tools/docs/skills-inventory.md`.** Want a skill loaded for a task? Just name it — an explicit user mention beats the table.
+
 ## Hard Rule #1 — Daily Session File (khelam lifecycle)
 
 **Always prepare a session file for the day. This is the number one rule; nothing overrides it.** The session template itself is global (Objective / Work Log / Decisions / Environment / Cleanup / Blockers / Next Steps).
