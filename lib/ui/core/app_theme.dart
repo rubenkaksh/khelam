@@ -80,11 +80,12 @@ class AppTheme {
     outline: AppPalette.outline,
   );
 
-  /// Builds the dark [ColorScheme] from the khelam brand seeds.
+  /// Builds the dark [ColorScheme] from the same brand seed as light
+  /// (#097339) so the two brightnesses complement each other. Primary
+  /// derives from the seed's dark tone table (no fixed-tint override).
   static ColorScheme get darkColorScheme => ColorScheme.fromSeed(
-    seedColor: AppPalette.seed,
+    seedColor: AppPalette.primary,
     brightness: Brightness.dark,
-    primary: AppPalette.surfaceTintDark,
     secondary: AppPalette.secondarySeed,
     tertiary: AppPalette.tertiarySeed,
     error: AppPalette.errorDark,

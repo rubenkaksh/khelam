@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 /// Light-scheme values follow the theme config
 /// `docs/superpowers/specs/2026-08-09-theme-config.json` (2026-08-09).
 abstract final class AppPalette {
-  // Brand seeds — back the dark scheme and generated tone baselines.
+  // Brand seeds — the light/dark schemes both derive from `primary`
+  // (#097339); the legacy blue seed is kept for brand reference.
   static const Color seed = Color(0xFF1A5F7A);
   static const Color secondarySeed = Color(0xFF57A773);
   static const Color tertiarySeed = Color(0xFFE8A838);
