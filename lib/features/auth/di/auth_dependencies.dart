@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:commons/commons.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:get_it/get_it.dart';
 
 import '../../../data/storage/preferences.dart';
@@ -22,8 +23,12 @@ abstract final class AuthDependencies {
     // macOS: keep the session in memory only. The sandbox denies keychain
     // access without a keychain-access-groups entitlement, which requires a
     // development certificate — the release DMG is ad-hoc signed.
+    // Web: `Platform` getters throw `UnsupportedError` on the JS runtime and
+    // `flutter_secure_storage` requires a secure context (HTTPS/localhost) —
+    // plain-HTTP deploys throw too. In-memory keeps the session for the tab
+    // lifetime instead.
     locator.registerLazySingleton<AuthTokenStore>(
-      () => AuthTokenStore(persist: !Platform.isMacOS),
+      () => AuthTokenStore(persist: !kIsWeb && !Platform.isMacOS),
     );
     locator.registerLazySingleton<AuthService>(
       () => useMockAuth
