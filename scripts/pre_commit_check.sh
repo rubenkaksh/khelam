@@ -1,50 +1,14 @@
 #!/bin/bash
-# Pre-commit gate (canonical copy lives in forkable/scripts/): blocks the
-# commit if `flutter analyze` or the full `flutter test` suite fails.
-# Installed as .git/hooks/pre-commit (calls this script). Manual run:
-# bash scripts/pre_commit_check.sh
-#
-# Skips when only docs/markdown/scripts changed — doc/script commits don't
-# need a build check. Also see the "Cost Discipline" rules in AGENTS.md: the
-# gate enforces "no commits with known failures" mechanically.
-#
-# Layered gates (loop-engineering spec P1): after the mechanical gate
-# (analyze + suite) passes, scripts/loop_verify.sh runs the SEMANTIC gate —
-# arch/skill-rule compliance (hard-block -> commit rejected + #agent-errors
-# emit) + state consistency (advisory warn). Docs/scripts-only commits skip
-# the build but still run loop_verify (its stage-2 state check applies to
-# markdown commits).
+# Thin wrapper (agent-tools pivot) — canonical logic lives in the shared tool
+# repo (~/projects/agent-tools); pin: scripts/agent-tools.version. This file
+# only resolves the tool repo and delegates — do not add logic here.
 set -euo pipefail
-
-REPO="$(git rev-parse --show-toplevel)"
-cd "$REPO"
-
-CHANGED="$(git diff --cached --name-only)"
-if [ -z "$CHANGED" ]; then
-  exit 0
-fi
-
-# Docs-only commits (sessions, reviews, markdown, shell scripts) skip the gate.
-if ! printf '%s\n' "$CHANGED" | rg -q '\.(dart|yaml|yml)$'; then
-  bash "$REPO/scripts/loop_verify.sh"
-  exit 0
-fi
-
-if ! flutter analyze > /tmp/pre_commit_analyze.log 2>&1; then
-  echo "PRE-COMMIT BLOCKED: flutter analyze failed" >&2
-  cat /tmp/pre_commit_analyze.log >&2
+AGENT_TOOLS="${AGENT_TOOLS:-$HOME/projects/agent-tools}"
+REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+TOOL="$AGENT_TOOLS/scripts/pre_commit_check.sh"
+if [ ! -f "$TOOL" ]; then
+  echo "ERROR: agent-tools missing (expected $AGENT_TOOLS) — clone: git clone https://github.com/rubenkaksh/agent-tools.git \"$AGENT_TOOLS\"" >&2
   exit 1
 fi
-
-if ! flutter test > /tmp/pre_commit_test.log 2>&1; then
-  echo "PRE-COMMIT BLOCKED: flutter test failed (see /tmp/pre_commit_test.log)" >&2
-  tail -20 /tmp/pre_commit_test.log >&2
-  exit 1
-fi
-
-# Inner-loop semantic gate AFTER the mechanical gate passes (arch/skill
-# compliance hard-blocks — set -e propagates the non-zero; state consistency
-# warns only).
-bash "$REPO/scripts/loop_verify.sh"
-
-exit 0
+export REPO AGENT_TOOLS
+exec bash "$TOOL" "$@"
