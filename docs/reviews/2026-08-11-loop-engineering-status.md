@@ -96,6 +96,27 @@ Every line green = the loop stack is healthy and wired.
 
 ---
 
+## Workspace tools — how Melos fits
+
+Melos (`~/projects/khel-service/melos.yaml`, global `dart pub global activate melos`) is an **orchestration layer on top of the system, not part of the loop core**. It batches the three *separate* git repos (khelam, commons, forkable) and exposes the same canonical scripts as convenience commands:
+
+| `melos run ...` | Executes | Loop relevance |
+|---|---|---|
+| `daily` | `bash ./khelam/scripts/dev_daily.sh` | the "centerpiece" closeout loop (that's what the `dev_daily.sh` header comment refers to) |
+| `pre-commit` | `bash scripts/pre_commit_check.sh` (khelam + forkable) | **runs the full gate incl. `loop_verify.sh`** — the two-gate model holds through the melos path |
+| `sync-check` | `dev_daily.sh --sync-only` | pin tripwire |
+| `analyze` / `test` / `bootstrap` / `screenshot` / `refresh` / `hooks` | per-package convenience | unrelated to the loop |
+
+**Independence:** the loop's own machinery — launchd jobs (triage 07:30, digest 08:00, weekly-review), `loop_verify.sh`, `sync_loop_state.sh`, `daily_triage.sh` — is pure bash + launchd and never calls melos. The loop does not require melos; melos is a manual-dev convenience.
+
+**Verified post-pivot (2026-08-11):** `melos run daily -- --dry-run` → SUCCESS (dry-run lists every check incl. `bash -n` on the loop scripts); `melos run sync-check` → SUCCESS (pins ✓ khelam + ✓ forkable @ `210b2c1`). The wrapper indirection (consumer `scripts/` → agent-tools canonical) is transparent to melos.
+
+**Caveats:**
+1. `melos.yaml` is **machine-local** — `~/projects/khel-service/` is not a git repo. Parked tasklog item (due 08-16): commit a generic/cross-device version to forkable.
+2. `melos run pre-commit` prompts **interactively** in non-interactive shells (finding 2026-08-10). Working invocation: `melos exec -c 1 --scope=khelam --scope=forkable -- "bash scripts/pre_commit_check.sh"`.
+
+---
+
 ## Open items / next
 
 | When | What |
