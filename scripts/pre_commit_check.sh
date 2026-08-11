@@ -7,6 +7,13 @@
 # Skips when only docs/markdown/scripts changed — doc/script commits don't
 # need a build check. Also see the "Cost Discipline" rules in AGENTS.md: the
 # gate enforces "no commits with known failures" mechanically.
+#
+# Layered gates (loop-engineering spec P1): after the mechanical gate
+# (analyze + suite) passes, scripts/loop_verify.sh runs the SEMANTIC gate —
+# arch/skill-rule compliance (hard-block -> commit rejected + #agent-errors
+# emit) + state consistency (advisory warn). Docs/scripts-only commits skip
+# the build but still run loop_verify (its stage-2 state check applies to
+# markdown commits).
 set -euo pipefail
 
 REPO="$(git rev-parse --show-toplevel)"
@@ -19,6 +26,7 @@ fi
 
 # Docs-only commits (sessions, reviews, markdown, shell scripts) skip the gate.
 if ! printf '%s\n' "$CHANGED" | rg -q '\.(dart|yaml|yml)$'; then
+  bash "$REPO/scripts/loop_verify.sh"
   exit 0
 fi
 
@@ -33,5 +41,10 @@ if ! flutter test > /tmp/pre_commit_test.log 2>&1; then
   tail -20 /tmp/pre_commit_test.log >&2
   exit 1
 fi
+
+# Inner-loop semantic gate AFTER the mechanical gate passes (arch/skill
+# compliance hard-blocks — set -e propagates the non-zero; state consistency
+# warns only).
+bash "$REPO/scripts/loop_verify.sh"
 
 exit 0
