@@ -18,8 +18,6 @@ _Last updated: 2026-08-11_
 | **Auth-sync debt** — forkable lacks `AuthTokenStore`/secure storage; sync when auth lands forkable-first | backlog 08-07 | Open |
 | **[C5] BookingService drift (remaining)** — `getTurf` hardcoded until backend endpoint exists | backlog 08-01 | Waits on backend |
 | **Turfs endpoint (backend)** — `GET /turfs/:id` missing; `BookingApiService.getTurf` hardcoded | backlog 07-31 | Open — backend gap, blocks [C5] close |
-| **Revenue stat ₹0 in API mode** — backend must include booking details on slots list | backlog 08-01 | Backend gap |
-| **Real home experience** — `home_view.dart` placeholder; design post-login home | backlog 08-01 | Open — needs design |
 | **Navigation slice (low priority)** — shared router skeleton, revisit only if wanted | backlog 08-01 | Open (low) |
 | **Theme monolith watchpoint** — split `app_component_themes.dart` if `build()` > ~600 lines / feature variants appear | backlog 06-22 | Watchpoint |
 
@@ -33,6 +31,8 @@ _Last updated: 2026-08-11_
 
 ## ⚪ Descoped (reopen when user decides)
 - **Google sign-in + credential rotation (Action #1)** — DESCOPED 2026-08-08 (user: google_sign_in had issues, low priority; pick up when he decides). Server client ID `91250679358-frejgd…` is **still leaked in git history + live** — rotation NOT done; reopen this card with the rotation runbook when Google login returns.
+- **Revenue stat ₹0 in API mode** — DESCOPED 2026-08-11 (user decision — backend gap: the slots list endpoint returns no booking object, so revenue sums to ₹0 in API mode). Reopen when the backend includes booking details/amounts on list slots (backlog item 08-01).
+- **Real home experience** — DESCOPED 2026-08-11 (user decision — `home_view.dart` is a placeholder, needs design). Reopen when the post-login home is designed (backlog item 08-01).
 
 ## 📋 Closed / superseded (2026-08-07)
 - **Theme config implementation** (08-09) — CLOSED: user's `gemini-code-1786262983859.json` light Material 3 theme → khelam AppTheme via brainstorming gate (spec `docs/superpowers/specs/2026-08-09-theme-config-design.md`, JSON copy `2026-08-09-theme-config.json`). AppPalette +18 constants (17 JSON slots + cardShadow; `error` → #D9534F); `lightColorScheme` fromSeed(seed #097339) + 14 explicit slots; typography layer (6 styles, role-colored, both brightnesses); light-only card (r24/e2/shadow 0x1A000000)/elevated (pill-100, e0, v16/h24)/outlined (pill-100, outline side, v8/h16) overrides; scaffold canvas #F9FAFA. **SDK deviation**: Flutter 3.32 deprecates `ColorScheme` `background`/`onBackground`/`surfaceVariant` — skipped (inert, zero consumers), background via scaffold, surfaceVariant kept for containerTheme follow-up. Dark untouched; commons untouched. Analyze clean + pre-commit gate green. **Follow-up**: containerTheme widget pass (DateChip/AvailableSlotCard) on the Active card.
