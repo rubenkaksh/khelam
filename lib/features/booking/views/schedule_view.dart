@@ -86,7 +86,7 @@ class _ScheduleViewState extends State<ScheduleView> {
         // the timeline renders, so the date strip and header stay visible
         // instead of a state view replacing the whole body.
         if (state.isLoading && state.slots.isEmpty)
-          const LoadingView()
+          const BookingTimelineSkeleton()
         else if (state.errorMessage case final String error
             when state.slots.isEmpty)
           ErrorView(
@@ -103,8 +103,8 @@ class _ScheduleViewState extends State<ScheduleView> {
         else ...[
           if (state.isLoading && state.slots.isNotEmpty)
             const Padding(
-              padding: EdgeInsets.all(16),
-              child: CircularProgressIndicator(),
+              padding: EdgeInsets.only(top: 16),
+              child: BookingTimelineSkeleton(cardCount: 1),
             ),
           BookingTimeline(
             items: state.slots,

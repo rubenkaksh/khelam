@@ -29,5 +29,5 @@
 
 ## Links
 
-- Pattern: [daily-triage](../../patterns/daily-triage.md)
-- Checklist: [loop-design-checklist](../../docs/loop-design-checklist.md)
+- Pattern: [daily-triage](skills/loop-triage/SKILL.md)
+- Checklist: [loop-engineering design](docs/superpowers/specs/2026-08-11-loop-engineering-design.md)
