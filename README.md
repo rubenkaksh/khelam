@@ -81,3 +81,4 @@ flutter run
 
 See [`test/README.md`](test/README.md) for the test strategy that future agents
 and developers should follow when adding modules.
+<!-- C13 autonomous touch: 2026-08-12T10:48:55 UTC -->

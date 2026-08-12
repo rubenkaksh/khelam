@@ -40,6 +40,7 @@ _Last updated: 2026-08-12_
 |---|---|---|---|---|---|
 | C11 | khelam | 5 | | LOOP.md Links section cleaned: remove the two dead entries (`../../patterns/daily-triage.md`, `../../docs/loop-design-checklist.md` — targets verified nonexistent) or re-point to live docs; commit to a new feature branch + draft-PR only; resolves tasklog C9 | ✅ Done |
 | C12 | khelam + commons | 60 | | LoadingView (commons `lib/src/widgets/feedback.dart`) stops showing the old loader: add `flutter_skeletonizer` to commons pubspec and refactor LoadingView to render a skeleton; create a skeleton widget for the BookingTimeline use case (khelam `lib/features/booking/widgets/booking_timeline.dart`, rendered at `schedule_view.dart:89`/`104-108`) and replace the existing loader usage; `flutter analyze` clean in commons + khelam (+ forkable — commons consumer check); tests green; commit to a new feature branch + draft-PR only; screenshot of the schedule screen posted to #screenshots (`capture_screens.sh schedule` — registry entry exists, initial route, no auth/backend; note the loading state is brief with MockBookingService) | ✅ Done 08-12 — draft-PRs: commons#1 https://github.com/rubenkaksh/commons/pull/1, khelam#2 https://github.com/rubenkaksh/khelam/pull/2 |
+| C13 | khelam | 5 | | one-line timestamp comment appended to README.md; commit to a new feature branch + draft-PR only | ✅ Approved |
 
 ## 🟠 Parked (revisit at the 2026-08-16 review unless noted)
 | Card | Revisit | Note |
