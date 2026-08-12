@@ -5,23 +5,41 @@
 > Source of detail: `docs/backlog.md` (per-item history) + `docs/reviews/review-memory.md` (Open Actions). Cards here link back; do not duplicate their full text.
 > **Discord comms must mirror this structure** (`#daily-overview` + `#weekly-reviews`) so the channels read like this board.
 
-_Last updated: 2026-08-09_
+_Last updated: 2026-08-12_
 
 ## 🔴 Active queue
 | Card | Scope | Effort | Status |
 |---|---|---|---|
-| **Theme + real-user-flow pass** (post-robustness; from 2026-08-08 session objective) | khelam | M | **Theme-config slice DONE 08-09** (spec `2026-08-09-theme-config-design.md` — light palette #097339, typography, card/button themes, canvas #F9FAFA; dark untouched). Remaining: **containerTheme widget pass** (JSON timeSlot/dateTile values → `DateChip`/`AvailableSlotCard`, spec §7 follow-up), then real-user-flow pass |
+| **Theme + real-user-flow pass** (post-robustness; from 2026-08-08 session objective) | khelam | M | **Theme-config slice DONE 08-09** (spec `2026-08-09-theme-config-design.md` — light palette #097339, typography, card/button themes, canvas #F9FAFA; dark untouched; containerTheme follow-up DESCOPED 08-12 — see ⚪). Remaining: **real-user-flow pass** |
 
 ## 🟡 Backlog (open, not scheduled)
 | Card | Source | Status |
 |---|---|---|
-| **Turfs endpoint (backend)** — `GET /turfs/:id` missing; `BookingApiService.getTurf` hardcoded | backlog 07-31 | Open — backend gap, blocks [C5] close |
-| **[C5] BookingService drift (remaining)** — `getTurf` hardcoded until backend endpoint exists | backlog 08-01 | Waits on backend |
-| **Revenue stat ₹0 in API mode** — backend must include booking details on slots list | backlog 08-01 | Backend gap |
-| **Real home experience** — `home_view.dart` placeholder; design post-login home | backlog 08-01 | Open — needs design |
 | **Auth-sync debt** — forkable lacks `AuthTokenStore`/secure storage; sync when auth lands forkable-first | backlog 08-07 | Open |
-| **Theme monolith watchpoint** — split `app_component_themes.dart` if `build()` > ~600 lines / feature variants appear | backlog 06-22 | Watchpoint |
+| **[C5] BookingService drift (remaining)** — `getTurf` hardcoded until backend endpoint exists | backlog 08-01 | Waits on backend |
+| **Turfs endpoint (backend)** — `GET /turfs/:id` missing; `BookingApiService.getTurf` hardcoded | backlog 07-31 | Open — backend gap, blocks [C5] close |
 | **Navigation slice (low priority)** — shared router skeleton, revisit only if wanted | backlog 08-01 | Open (low) |
+| **Theme monolith watchpoint** — split `app_component_themes.dart` if `build()` > ~600 lines / feature variants appear | backlog 06-22 | Watchpoint |
+
+## 🔧 Self-improvement — agent-tools/loop E2E (from 2026-08-11 improve-codebase-architecture run; **pick up only with user approval, by priority**)
+| Priority | Card | Test verdict | Status |
+|---|---|---|---|
+| **HIGH** | **C2 — `loop_verify.sh` has NO test harness** (the only verifier with zero tests; P1's 9 fixtures were throwaway). **TOP RECOMMENDATION** | ADD — extract fixture-driven harness (P1 9-fixture suite → re-runnable) | ⏳ Awaiting approval → ✅ **DONE 08-11** (agent-tools `7b7d73a`) |
+| **HIGH** | **C1 — `VERSION` file is stale/redundant pin** (agent-tools `VERSION=18dbd2a-cut` never updated; real pins live in consumers' `agent-tools.version`; README cites VERSION as the source) | DELETE — zero behavioral impact | ⏳ Awaiting approval → ✅ **DONE 08-11** (agent-tools `7b7d73a`) |
+| **HIGH** | **C3 — stale "forkable-first" prose** (khelam + forkable AGENTS.md still say canonical = forkable; superseded by the agent-tools pivot 08-11; also misroutes the tripwire doc) | DELETE — docs-only, safe | ⏳ Awaiting approval → ✅ **DONE 08-11** (agent-tools `7b7d73a`) |
+| **HIGH** | **C4 — daily_triage skill-chain bypass + budget unenforced** (loop-triage skill references loop-constraints/loop-budget, but the L1 default run loads neither; `loop status` says budget.present=true but nothing enforces the 80% cap) | REFACTOR — enforce in `daily_triage.sh` | ⏳ Awaiting approval → ✅ **DONE 08-11** (agent-tools `7b7d73a`) |
+| **MED-HIGH** | **C5 — `weekly_review.sh` cohesion** (900+ lines, 18 computed lines / 6 helpers / prompt built across 4 functions, runs against two repos; phase boundaries unclear) | REFACTOR — extract review-else branch to module | ⏳ Awaiting approval |
+| **MEDIUM** | **C6 — wrapper collapse** (16 thin wrappers per consumer; merge back to direct `exec`? — needs Grill Gate, user decision) | GRILL GATE before any change | ⏳ Awaiting approval |
+| **MEDIUM** | **C7 — melos workspace machine-local** (`melos.yaml` at `~/projects/khel-service/`, not a git repo — parked 08-08, revisit 08-16) | — (revisit at 08-16 review) | ⏳ Awaiting approval |
+| **MEDIUM** | **C8 — `sync_loop_state.sh` awk coupling** (STATE.md splice via awk getline — fragile) | REFACTOR — python splice | ⏳ Awaiting approval |
+| **LOW** | **C9 — `LOOP.md` broken links** (references missing `../patterns/daily-triage.md` etc. — targets verified nonexistent 08-12) | FIX — trivial → **autonomous card C11 (🤖 queue)** | ⏳ Awaiting approval → ✅ **DONE 08-12** (autonomous C11, draft-PR) |
+| **LOW** | **C10 — routing sync tripwire + zoom-out gap** (weekly routing-check greps bare `skill` — misses zoom-out/others; no zoom-out callout in routing doc) | REFINE — tripwire operational; refine copy + routing | ⏳ Awaiting approval |
+
+## 🤖 Autonomous queue (executor-owned — user flips ⏳ → ✅ Approved + fills Estimate + Done when)
+| Card | Scope | Estimate (min) | Depends on | Done when | Status |
+|---|---|---|---|---|---|
+| C11 | khelam | 5 | | LOOP.md Links section cleaned: remove the two dead entries (`../../patterns/daily-triage.md`, `../../docs/loop-design-checklist.md` — targets verified nonexistent) or re-point to live docs; commit to a new feature branch + draft-PR only; resolves tasklog C9 | ✅ Done 08-12 — re-pointed to `skills/loop-triage/SKILL.md` + `docs/superpowers/specs/2026-08-11-loop-engineering-design.md` ([draft-PR #1](https://github.com/rubenkaksh/khelam/pull/1)) |
+| C12 | khelam + commons | 60 | | LoadingView (commons `lib/src/widgets/feedback.dart`) stops showing the old loader: add `flutter_skeletonizer` to commons pubspec and refactor LoadingView to render a skeleton; create a skeleton widget for the BookingTimeline use case (khelam `lib/features/booking/widgets/booking_timeline.dart`, rendered at `schedule_view.dart:89`/`104-108`) and replace the existing loader usage; `flutter analyze` clean in commons + khelam (+ forkable — commons consumer check); tests green; commit to a new feature branch + draft-PR only; screenshot of the schedule screen posted to #screenshots (`capture_screens.sh schedule` — registry entry exists, initial route, no auth/backend; note the loading state is brief with MockBookingService) | ✅ Approved |
 
 ## 🟠 Parked (revisit at the 2026-08-16 review unless noted)
 | Card | Revisit | Note |
@@ -32,7 +50,10 @@ _Last updated: 2026-08-09_
 | **Melos workspace → generic/cross-device** (parked 08-08) | **2026-08-16** | melos.yaml/pubspec.yaml currently machine-local at `~/projects/khel-service/` (not a git repo). Parked for: commit canonical config to forkable + make it **generic so any device that clones forkable/khelam can bootstrap** (paths/env-var indirection for repo locations, not just this machine) — see session 08-08 Decisions |
 
 ## ⚪ Descoped (reopen when user decides)
+- **containerTheme widget pass** (theme spec §7 follow-up — JSON timeSlot/dateTile values → `DateChip`/`AvailableSlotCard`) — DESCOPED 2026-08-12 (user decision: replaced by the autonomous skeletonizer card, see 🤖 queue C12).
 - **Google sign-in + credential rotation (Action #1)** — DESCOPED 2026-08-08 (user: google_sign_in had issues, low priority; pick up when he decides). Server client ID `91250679358-frejgd…` is **still leaked in git history + live** — rotation NOT done; reopen this card with the rotation runbook when Google login returns.
+- **Revenue stat ₹0 in API mode** — DESCOPED 2026-08-11 (user decision — backend gap: the slots list endpoint returns no booking object, so revenue sums to ₹0 in API mode). Reopen when the backend includes booking details/amounts on list slots (backlog item 08-01).
+- **Real home experience** — DESCOPED 2026-08-11 (user decision — `home_view.dart` is a placeholder, needs design). Reopen when the post-login home is designed (backlog item 08-01).
 
 ## 📋 Closed / superseded (2026-08-07)
 - **Theme config implementation** (08-09) — CLOSED: user's `gemini-code-1786262983859.json` light Material 3 theme → khelam AppTheme via brainstorming gate (spec `docs/superpowers/specs/2026-08-09-theme-config-design.md`, JSON copy `2026-08-09-theme-config.json`). AppPalette +18 constants (17 JSON slots + cardShadow; `error` → #D9534F); `lightColorScheme` fromSeed(seed #097339) + 14 explicit slots; typography layer (6 styles, role-colored, both brightnesses); light-only card (r24/e2/shadow 0x1A000000)/elevated (pill-100, e0, v16/h24)/outlined (pill-100, outline side, v8/h16) overrides; scaffold canvas #F9FAFA. **SDK deviation**: Flutter 3.32 deprecates `ColorScheme` `background`/`onBackground`/`surfaceVariant` — skipped (inert, zero consumers), background via scaffold, surfaceVariant kept for containerTheme follow-up. Dark untouched; commons untouched. Analyze clean + pre-commit gate green. **Follow-up**: containerTheme widget pass (DateChip/AvailableSlotCard) on the Active card.

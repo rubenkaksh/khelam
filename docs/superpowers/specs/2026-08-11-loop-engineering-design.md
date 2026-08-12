@@ -1,6 +1,6 @@
 # Loop-Engineering Architecture — Design (Grill-Gate Locked)
 
-- **Status**: DECISIONS LOCKED via Grill Gate (2026-08-10, @architect `ses_013fe2b54ffeoBI4tkvsCWUScZ`, 2 question rounds + §2B empty-resume). **Implementation NOT started** — user: "Record only, don't implement" (2026-08-10). Implementation begins on user go-ahead.
+- **Status**: DECISIONS LOCKED via Grill Gate (2026-08-10, @architect `ses_013fe2b54ffeoBI4tkvsCWUScZ`, 2 question rounds + §2B empty-resume). **IMPLEMENTED 2026-08-11 (user go-ahead)** — P1 inner-loop verifier, P2 scaffold + state sync, P3 daily triage, P4 formalization all shipped; canonical repo `~/projects/agent-tools` (forkable-first: consumers pull scripts byte-identical + pin via `scripts/agent-tools.version`). Per-phase acceptance bars checked off below at ship time; OA#14 CLOSED.
 - **Source**: `docs/sandbox/gemini-code-1786370796569.md` (user's "most core vision").
 - **This spec is the durable record** — a fresh session must be able to implement the full plan from this file alone (session files may be summarized).
 

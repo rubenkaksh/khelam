@@ -5,8 +5,8 @@ Work items not yet scheduled into a plan. Each entry links its source (review/se
 ## From the 2026-08-01 architecture review (`601ec7b`)
 
 - **[C5] BookingService adapter drift** — three owners of turf identity: mock ignores the requested `turfId` (returns `turf-a`), API `getTurf` returns hardcoded strings with no HTTP call, cubit hardcodes dev turf id `44444444-4444-4444-4444-444444444441`. Also decide the fate of `ScheduleSlotItem.booking` (filled by mock, always null via API; `customerName` overlaps). Fix: mock honors requested id, API `getTurf` calls a real endpoint once it exists, one place owns turf identity.
-- **Revenue stat is ₹0 in API mode** — `DayStats.revenue` sums `item.booking?.totalAmount`, but the slots list endpoint returns no booking object. Backend must include booking details (or amounts) on list slots before the revenue card is meaningful.
-- **Real home experience** — `lib/features/home/views/home_view.dart` is a placeholder (welcome + schedule link). Design the actual post-login home.
+- **Revenue stat is ₹0 in API mode — DESCOPED (user 2026-08-11)** — `DayStats.revenue` sums `item.booking?.totalAmount`, but the slots list endpoint returns no booking object. Backend must include booking details (or amounts) on list slots before the revenue card is meaningful. Reopen when backend work is scheduled.
+- **Real home experience — DESCOPED (user 2026-08-11)** — `lib/features/home/views/home_view.dart` is a placeholder (welcome + schedule link). Design the actual post-login home. Reopen when home design is wanted.
 
 ## From the 2026-07-31 session
 

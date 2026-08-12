@@ -5,7 +5,7 @@
 set -euo pipefail
 AGENT_TOOLS="${AGENT_TOOLS:-$HOME/projects/agent-tools}"
 REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-TOOL="$AGENT_TOOLS/scripts/capture_screens.sh"
+TOOL="$AGENT_TOOLS/scripts/sync_loop_state.sh"
 if [ ! -f "$TOOL" ]; then
   echo "ERROR: agent-tools missing (expected $AGENT_TOOLS) — clone: git clone https://github.com/rubenkaksh/agent-tools.git \"$AGENT_TOOLS\"" >&2
   exit 1
