@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:commons/commons.dart';
 import 'package:khelam/features/booking/bloc/schedule_cubit.dart';
 import 'package:khelam/features/booking/booking_service.dart';
 import 'package:khelam/features/booking/models/schedule_slot_item.dart';
@@ -122,7 +121,7 @@ void main() {
     );
   });
 
-  testWidgets('shows the loading view in the content slot while loading', (
+  testWidgets('shows the timeline skeleton in the content slot while loading', (
     WidgetTester tester,
   ) async {
     final ScheduleCubit cubit = ScheduleCubit(
@@ -138,10 +137,30 @@ void main() {
       reason: 'date strip must stay visible while loading',
     );
     expect(
-      find.byType(LoadingView),
+      find.byType(BookingTimelineSkeleton),
       findsOneWidget,
-      reason: 'loading view renders in the content slot',
+      reason: 'skeleton renders in the content slot while loading',
+    );
+    expect(
+      find.byType(CircularProgressIndicator),
+      findsNothing,
+      reason: 'old spinner must not render while loading',
     );
     expect(find.byType(BookingTimeline), findsNothing);
+  });
+
+  testWidgets('BookingTimelineSkeleton renders the requested card count', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: BookingTimelineSkeleton(cardCount: 3)),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(BookingTimelineSkeleton), findsOneWidget);
+    // Two placeholder texts per card (time + 'Book Now') turn into bones.
+    expect(find.text('Book Now'), findsNWidgets(3));
   });
 }
