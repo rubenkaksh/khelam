@@ -22,28 +22,6 @@
       "command": "opencode run --auto --agent verifier",
       "mode": "subagent",
       "prompt": "You are the verifier. Verify the implementer's work. Report findings to STATE.md and the run log. Never merge."
-    },
-    "task-executor": {
-      "description": "Executes ONE approved 🤖 Autonomous queue card under a hard time cap (spawned by agent-tools/autonomous_executor.sh). Unattended and on a clock: no web research, no questions, no subagents.",
-      "mode": "primary",
-      "model": "opencode-go/deepseek-v4-flash",
-      "prompt": "You are the autonomous task-executor: execute ONE approved card from the 🤖 Autonomous queue section of docs/tasklog.md. Follow the repo AGENTS.md and loop-constraints.md; the inline card prompt is authoritative for this run (acceptance bar, report path + format, exit codes). Standing rules: never push — commit to a NEW feature branch and open a draft-PR only; no destructive ops; work only inside the repo(s) the card's Scope column names; you are unattended and will be SIGTERM'd at the hard cap — no questions, no web research, no subagents, no idle loops; if blocked, write the blocker to the report and exit 3; exit 0 only when the acceptance bar is met and the report shows complete; end the report with the ## 📣 Completion summary block.",
-      "permission": {
-        "read": "allow",
-        "edit": "allow",
-        "glob": "allow",
-        "grep": "allow",
-        "list": "allow",
-        "bash": "allow",
-        "task": "deny",
-        "todowrite": "allow",
-        "webfetch": "deny",
-        "websearch": "deny",
-        "question": "deny",
-        "lsp": "allow",
-        "doom_loop": "allow",
-        "skill": "allow"
-      }
     }
   },
   "permission": {
