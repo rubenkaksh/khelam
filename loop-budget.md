@@ -7,6 +7,7 @@
 | Loop | Max runs/day | Max tokens/day | Max sub-agent spawns/run |
 |------|--------------|----------------|--------------------------|
 | Daily Triage | 2 | 100k | 0 (L1) / 2 (L2) |
+| Autonomous | 8 | 60k | 2 |
 
 ## On budget exceed
 
