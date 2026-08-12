@@ -5,12 +5,12 @@
 > Source of detail: `docs/backlog.md` (per-item history) + `docs/reviews/review-memory.md` (Open Actions). Cards here link back; do not duplicate their full text.
 > **Discord comms must mirror this structure** (`#daily-overview` + `#weekly-reviews`) so the channels read like this board.
 
-_Last updated: 2026-08-11_
+_Last updated: 2026-08-12_
 
 ## 🔴 Active queue
 | Card | Scope | Effort | Status |
 |---|---|---|---|
-| **Theme + real-user-flow pass** (post-robustness; from 2026-08-08 session objective) | khelam | M | **Theme-config slice DONE 08-09** (spec `2026-08-09-theme-config-design.md` — light palette #097339, typography, card/button themes, canvas #F9FAFA; dark untouched). Remaining: **containerTheme widget pass** (JSON timeSlot/dateTile values → `DateChip`/`AvailableSlotCard`, spec §7 follow-up), then real-user-flow pass |
+| **Theme + real-user-flow pass** (post-robustness; from 2026-08-08 session objective) | khelam | M | **Theme-config slice DONE 08-09** (spec `2026-08-09-theme-config-design.md` — light palette #097339, typography, card/button themes, canvas #F9FAFA; dark untouched; containerTheme follow-up DESCOPED 08-12 — see ⚪). Remaining: **real-user-flow pass** |
 
 ## 🟡 Backlog (open, not scheduled)
 | Card | Source | Status |
@@ -32,8 +32,14 @@ _Last updated: 2026-08-11_
 | **MEDIUM** | **C6 — wrapper collapse** (16 thin wrappers per consumer; merge back to direct `exec`? — needs Grill Gate, user decision) | GRILL GATE before any change | ⏳ Awaiting approval |
 | **MEDIUM** | **C7 — melos workspace machine-local** (`melos.yaml` at `~/projects/khel-service/`, not a git repo — parked 08-08, revisit 08-16) | — (revisit at 08-16 review) | ⏳ Awaiting approval |
 | **MEDIUM** | **C8 — `sync_loop_state.sh` awk coupling** (STATE.md splice via awk getline — fragile) | REFACTOR — python splice | ⏳ Awaiting approval |
-| **LOW** | **C9 — `LOOP.md` broken links** (references missing `../patterns/daily-triage.md` etc.) | FIX — trivial | ⏳ Awaiting approval |
+| **LOW** | **C9 — `LOOP.md` broken links** (references missing `../patterns/daily-triage.md` etc. — targets verified nonexistent 08-12) | FIX — trivial → **autonomous card C11 (🤖 queue)** | ⏳ Awaiting approval → ✅ **DONE 08-12** (autonomous C11, draft-PR) |
 | **LOW** | **C10 — routing sync tripwire + zoom-out gap** (weekly routing-check greps bare `skill` — misses zoom-out/others; no zoom-out callout in routing doc) | REFINE — tripwire operational; refine copy + routing | ⏳ Awaiting approval |
+
+## 🤖 Autonomous queue (executor-owned — user flips ⏳ → ✅ Approved + fills Estimate + Done when)
+| Card | Scope | Estimate (min) | Depends on | Done when | Status |
+|---|---|---|---|---|---|
+| C11 | khelam | 5 | | LOOP.md Links section cleaned: remove the two dead entries (`../../patterns/daily-triage.md`, `../../docs/loop-design-checklist.md` — targets verified nonexistent) or re-point to live docs; commit to a new feature branch + draft-PR only; resolves tasklog C9 | ✅ Done 08-12 — re-pointed to `skills/loop-triage/SKILL.md` + `docs/superpowers/specs/2026-08-11-loop-engineering-design.md` (draft-PR)
+| C12 | khelam + commons | 60 | | LoadingView (commons `lib/src/widgets/feedback.dart`) stops showing the old loader: add `flutter_skeletonizer` to commons pubspec and refactor LoadingView to render a skeleton; create a skeleton widget for the BookingTimeline use case (khelam `lib/features/booking/widgets/booking_timeline.dart`, rendered at `schedule_view.dart:89`/`104-108`) and replace the existing loader usage; `flutter analyze` clean in commons + khelam (+ forkable — commons consumer check); tests green; commit to a new feature branch + draft-PR only; screenshot of the schedule screen posted to #screenshots (`capture_screens.sh schedule` — registry entry exists, initial route, no auth/backend; note the loading state is brief with MockBookingService) | ✅ Approved |
 
 ## 🟠 Parked (revisit at the 2026-08-16 review unless noted)
 | Card | Revisit | Note |
@@ -44,6 +50,7 @@ _Last updated: 2026-08-11_
 | **Melos workspace → generic/cross-device** (parked 08-08) | **2026-08-16** | melos.yaml/pubspec.yaml currently machine-local at `~/projects/khel-service/` (not a git repo). Parked for: commit canonical config to forkable + make it **generic so any device that clones forkable/khelam can bootstrap** (paths/env-var indirection for repo locations, not just this machine) — see session 08-08 Decisions |
 
 ## ⚪ Descoped (reopen when user decides)
+- **containerTheme widget pass** (theme spec §7 follow-up — JSON timeSlot/dateTile values → `DateChip`/`AvailableSlotCard`) — DESCOPED 2026-08-12 (user decision: replaced by the autonomous skeletonizer card, see 🤖 queue C12).
 - **Google sign-in + credential rotation (Action #1)** — DESCOPED 2026-08-08 (user: google_sign_in had issues, low priority; pick up when he decides). Server client ID `91250679358-frejgd…` is **still leaked in git history + live** — rotation NOT done; reopen this card with the rotation runbook when Google login returns.
 - **Revenue stat ₹0 in API mode** — DESCOPED 2026-08-11 (user decision — backend gap: the slots list endpoint returns no booking object, so revenue sums to ₹0 in API mode). Reopen when the backend includes booking details/amounts on list slots (backlog item 08-01).
 - **Real home experience** — DESCOPED 2026-08-11 (user decision — `home_view.dart` is a placeholder, needs design). Reopen when the post-login home is designed (backlog item 08-01).
