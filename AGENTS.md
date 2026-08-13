@@ -30,6 +30,21 @@ Skills load automatically by task — the global **Skill Routing** table in `~/.
 - **Session Objective convention**: when working on a declared feature, the session Objective line MUST be `Feature: docs/features/<name>/README.md — <task>` (machine-parseable by the analytics collector for the `feature_parent` column); otherwise plain `<task>`.
 - **Grill Gate (inherited from global AGENTS.md)**: major drift — breaking changes, major diversion from a locked plan/spec, mid-task "also do X" scope changes — escalates to a full @architect brainstorm + grill-me session before any conclusion; minor drift stays a one-line `[nudge]`. See `### Major drift escalation — Architect Grill Gate` in `~/.config/opencode/AGENTS.md`.
 
+## RTK (dry-run)
+
+[rtk](https://github.com/rtk-ai/rtk) (v0.42.4) is a CLI proxy that compresses shell command output for AI agents, reducing token usage by 60-90%. It runs **alongside** existing tooling — does NOT replace scripts/, agent-tools, or the pre-commit gate.
+
+**Setup**: OpenCode plugin installed at `~/.config/opencode/plugins/rtk.ts` (global). The plugin transparently rewrites bash commands via `rtk rewrite` — no workflow change needed.
+
+**Usage**:
+- Explicit: `rtk git status`, `rtk proxy flutter analyze`, `rtk proxy flutter test`
+- Transparent: OpenCode plugin auto-rewrites commands — just use normal commands
+- Check savings: `rtk gain --all`
+
+**Data collection**: `bash scripts/rtk_metrics.sh` saves daily JSON to `docs/rtk-data/YYYY-MM-DD.json`. Idempotent (overwrites same-day). C17 will analyze accumulated data to compare with baseline analytics.
+
+**Dry-run status**: Active as of 2026-08-13. Underlying tools still execute — rtk only filters their output. No hooks replace existing infrastructure. See `docs/rtk-data/README.md` for full details.
+
 ## Loop Mode (loop-engineering scaffold, spec 2026-08-11)
 
 The daily-triage loop (scaffold: STATE.md, LOOP.md, loop-budget.md, loop-constraints.md, skills/loop-triage/) runs report-only by default:
