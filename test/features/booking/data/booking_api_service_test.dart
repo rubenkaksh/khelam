@@ -34,17 +34,30 @@ void main() {
       },
     ];
 
-    test('getTurf returns dummy turf data for the requested id', () async {
+    test('getTurf fetches GET /turfs/:id and parses snake_case fields', () async {
       final _RecordingAdapter adapter = _RecordingAdapter(
-        (RequestOptions options) async => _jsonResponse(<dynamic>[]),
+        (RequestOptions options) async => _jsonResponse(<String, dynamic>{
+          'id': 'turf-1',
+          'name': 'Turf A',
+          'address': 'Sector 12, Sports Complex',
+          'cover_image_url': 'https://example.test/turf-a.jpg',
+          'price_per_hour': 500,
+          'advance_amount': 250,
+          'rating': 4.5,
+        }),
       );
       final BookingApiService service = _service(adapter);
 
       final TurfSummary turf = await service.getTurf('turf-1');
 
+      expect(adapter.lastRequest?.path, '/turfs/turf-1');
       expect(turf.id, 'turf-1');
-      expect(turf.name, isNotEmpty);
-      expect(turf.address, isNotEmpty);
+      expect(turf.name, 'Turf A');
+      expect(turf.address, 'Sector 12, Sports Complex');
+      expect(turf.coverImageUrl, 'https://example.test/turf-a.jpg');
+      expect(turf.pricePerHour, 500.0);
+      expect(turf.advanceAmount, 250.0);
+      expect(turf.rating, 4.5);
     });
 
     test(

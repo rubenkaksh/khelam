@@ -5,25 +5,23 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:commons/commons.dart';
 
-import 'package:khelam/features/booking/data/mock_turfs_repository.dart';
 import 'package:khelam/features/booking/data/turfs_api_repository.dart';
 
 void main() {
   group('TurfsApiRepository', () {
-    test('falls back to the two known turfs while GET /turfs is missing', () async {
+    test('propagates a 404 as AppClientException (no dummy fallback)', () async {
       final Dio dio = Dio(BaseOptions(baseUrl: 'http://localhost'));
       dio.httpClientAdapter = _ThrowingAdapter.failure(
         statusCode: 404,
       );
       final TurfsApiRepository repository = _repository(dio);
 
-      // The 404 maps to an AppClientException; only that case serves the
-      // known turfs (endpoint not shipped yet).
-      final turfs = await repository.getTurfs();
-
-      expect(turfs, hasLength(2));
-      expect(turfs.first.id, MockTurfsRepository.firstTurfId);
-      expect(turfs.last.id, MockTurfsRepository.secondTurfId);
+      // The real GET /turfs endpoint is the only source: a 404 surfaces the
+      // typed client error instead of stale dummy turfs.
+      await expectLater(
+        () => repository.getTurfs(),
+        throwsA(isA<AppClientException>()),
+      );
     });
 
     test('propagates offline failures instead of serving stale dummy data', () async {

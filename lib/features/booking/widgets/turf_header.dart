@@ -39,6 +39,32 @@ class TurfHeader extends StatelessWidget {
                       color: colors.onSurfaceVariant,
                     ),
                   ),
+                if (turf.pricePerHour != null || turf.rating != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: <Widget>[
+                      if (turf.pricePerHour case final double price) ...[
+                        Text(
+                          _formatPrice(price),
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                color: colors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      if (turf.rating case final double rating) ...[
+                        Icon(Icons.star_rounded, size: 14, color: colors.tertiary),
+                        const SizedBox(width: 2),
+                        Text(
+                          rating.toStringAsFixed(1),
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -56,5 +82,12 @@ class TurfHeader extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  static String _formatPrice(double price) {
+    final String whole = price == price.roundToDouble()
+        ? price.toStringAsFixed(0)
+        : price.toStringAsFixed(2);
+    return '₹$whole/hr';
   }
 }

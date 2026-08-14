@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$TurfSummary {
 
- String get id; String get name; String? get address;
+ String get id; String get name; String? get address;@JsonKey(name: 'cover_image_url') String? get coverImageUrl;@JsonKey(name: 'price_per_hour') double? get pricePerHour;@JsonKey(name: 'advance_amount') double? get advanceAmount; double? get rating;
 /// Create a copy of TurfSummary
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $TurfSummaryCopyWith<TurfSummary> get copyWith => _$TurfSummaryCopyWithImpl<Turf
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TurfSummary&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.address, address) || other.address == address));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TurfSummary&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.address, address) || other.address == address)&&(identical(other.coverImageUrl, coverImageUrl) || other.coverImageUrl == coverImageUrl)&&(identical(other.pricePerHour, pricePerHour) || other.pricePerHour == pricePerHour)&&(identical(other.advanceAmount, advanceAmount) || other.advanceAmount == advanceAmount)&&(identical(other.rating, rating) || other.rating == rating));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,address);
+int get hashCode => Object.hash(runtimeType,id,name,address,coverImageUrl,pricePerHour,advanceAmount,rating);
 
 @override
 String toString() {
-  return 'TurfSummary(id: $id, name: $name, address: $address)';
+  return 'TurfSummary(id: $id, name: $name, address: $address, coverImageUrl: $coverImageUrl, pricePerHour: $pricePerHour, advanceAmount: $advanceAmount, rating: $rating)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $TurfSummaryCopyWith<$Res>  {
   factory $TurfSummaryCopyWith(TurfSummary value, $Res Function(TurfSummary) _then) = _$TurfSummaryCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String? address
+ String id, String name, String? address,@JsonKey(name: 'cover_image_url') String? coverImageUrl,@JsonKey(name: 'price_per_hour') double? pricePerHour,@JsonKey(name: 'advance_amount') double? advanceAmount, double? rating
 });
 
 
@@ -65,12 +65,16 @@ class _$TurfSummaryCopyWithImpl<$Res>
 
 /// Create a copy of TurfSummary
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? address = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? address = freezed,Object? coverImageUrl = freezed,Object? pricePerHour = freezed,Object? advanceAmount = freezed,Object? rating = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,address: freezed == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,coverImageUrl: freezed == coverImageUrl ? _self.coverImageUrl : coverImageUrl // ignore: cast_nullable_to_non_nullable
+as String?,pricePerHour: freezed == pricePerHour ? _self.pricePerHour : pricePerHour // ignore: cast_nullable_to_non_nullable
+as double?,advanceAmount: freezed == advanceAmount ? _self.advanceAmount : advanceAmount // ignore: cast_nullable_to_non_nullable
+as double?,rating: freezed == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 
@@ -155,10 +159,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String? address)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String? address, @JsonKey(name: 'cover_image_url')  String? coverImageUrl, @JsonKey(name: 'price_per_hour')  double? pricePerHour, @JsonKey(name: 'advance_amount')  double? advanceAmount,  double? rating)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TurfSummary() when $default != null:
-return $default(_that.id,_that.name,_that.address);case _:
+return $default(_that.id,_that.name,_that.address,_that.coverImageUrl,_that.pricePerHour,_that.advanceAmount,_that.rating);case _:
   return orElse();
 
 }
@@ -176,10 +180,10 @@ return $default(_that.id,_that.name,_that.address);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String? address)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String? address, @JsonKey(name: 'cover_image_url')  String? coverImageUrl, @JsonKey(name: 'price_per_hour')  double? pricePerHour, @JsonKey(name: 'advance_amount')  double? advanceAmount,  double? rating)  $default,) {final _that = this;
 switch (_that) {
 case _TurfSummary():
-return $default(_that.id,_that.name,_that.address);case _:
+return $default(_that.id,_that.name,_that.address,_that.coverImageUrl,_that.pricePerHour,_that.advanceAmount,_that.rating);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -196,10 +200,10 @@ return $default(_that.id,_that.name,_that.address);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String? address)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String? address, @JsonKey(name: 'cover_image_url')  String? coverImageUrl, @JsonKey(name: 'price_per_hour')  double? pricePerHour, @JsonKey(name: 'advance_amount')  double? advanceAmount,  double? rating)?  $default,) {final _that = this;
 switch (_that) {
 case _TurfSummary() when $default != null:
-return $default(_that.id,_that.name,_that.address);case _:
+return $default(_that.id,_that.name,_that.address,_that.coverImageUrl,_that.pricePerHour,_that.advanceAmount,_that.rating);case _:
   return null;
 
 }
@@ -211,12 +215,16 @@ return $default(_that.id,_that.name,_that.address);case _:
 @JsonSerializable()
 
 class _TurfSummary implements TurfSummary {
-  const _TurfSummary({required this.id, required this.name, this.address});
+  const _TurfSummary({required this.id, required this.name, this.address, @JsonKey(name: 'cover_image_url') this.coverImageUrl, @JsonKey(name: 'price_per_hour') this.pricePerHour, @JsonKey(name: 'advance_amount') this.advanceAmount, this.rating});
   factory _TurfSummary.fromJson(Map<String, dynamic> json) => _$TurfSummaryFromJson(json);
 
 @override final  String id;
 @override final  String name;
 @override final  String? address;
+@override@JsonKey(name: 'cover_image_url') final  String? coverImageUrl;
+@override@JsonKey(name: 'price_per_hour') final  double? pricePerHour;
+@override@JsonKey(name: 'advance_amount') final  double? advanceAmount;
+@override final  double? rating;
 
 /// Create a copy of TurfSummary
 /// with the given fields replaced by the non-null parameter values.
@@ -231,16 +239,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TurfSummary&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.address, address) || other.address == address));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TurfSummary&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.address, address) || other.address == address)&&(identical(other.coverImageUrl, coverImageUrl) || other.coverImageUrl == coverImageUrl)&&(identical(other.pricePerHour, pricePerHour) || other.pricePerHour == pricePerHour)&&(identical(other.advanceAmount, advanceAmount) || other.advanceAmount == advanceAmount)&&(identical(other.rating, rating) || other.rating == rating));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,address);
+int get hashCode => Object.hash(runtimeType,id,name,address,coverImageUrl,pricePerHour,advanceAmount,rating);
 
 @override
 String toString() {
-  return 'TurfSummary(id: $id, name: $name, address: $address)';
+  return 'TurfSummary(id: $id, name: $name, address: $address, coverImageUrl: $coverImageUrl, pricePerHour: $pricePerHour, advanceAmount: $advanceAmount, rating: $rating)';
 }
 
 
@@ -251,7 +259,7 @@ abstract mixin class _$TurfSummaryCopyWith<$Res> implements $TurfSummaryCopyWith
   factory _$TurfSummaryCopyWith(_TurfSummary value, $Res Function(_TurfSummary) _then) = __$TurfSummaryCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String? address
+ String id, String name, String? address,@JsonKey(name: 'cover_image_url') String? coverImageUrl,@JsonKey(name: 'price_per_hour') double? pricePerHour,@JsonKey(name: 'advance_amount') double? advanceAmount, double? rating
 });
 
 
@@ -268,12 +276,16 @@ class __$TurfSummaryCopyWithImpl<$Res>
 
 /// Create a copy of TurfSummary
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? address = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? address = freezed,Object? coverImageUrl = freezed,Object? pricePerHour = freezed,Object? advanceAmount = freezed,Object? rating = freezed,}) {
   return _then(_TurfSummary(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,address: freezed == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,coverImageUrl: freezed == coverImageUrl ? _self.coverImageUrl : coverImageUrl // ignore: cast_nullable_to_non_nullable
+as String?,pricePerHour: freezed == pricePerHour ? _self.pricePerHour : pricePerHour // ignore: cast_nullable_to_non_nullable
+as double?,advanceAmount: freezed == advanceAmount ? _self.advanceAmount : advanceAmount // ignore: cast_nullable_to_non_nullable
+as double?,rating: freezed == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 

@@ -51,10 +51,8 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 500));
 
-    // First-time user: dropdown + Continue.
-    await tester.tap(find.byType(DropdownButtonFormField<String>));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(MockTurfsRepository.firstTurfId).last);
+    // First-time user: turf cards + Continue.
+    await tester.tap(find.text('Turf A'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
@@ -70,9 +68,9 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 500));
 
-    // First-time landing: no stored turf, dropdown + Continue shown.
+    // First-time landing: no stored turf, turf cards + Continue shown.
     expect(find.text('Select Turf'), findsOneWidget);
-    expect(find.text('Choose your turf'), findsOneWidget);
+    expect(find.text('Turf A'), findsOneWidget);
     expect(find.text('Continue'), findsOneWidget);
   });
 
