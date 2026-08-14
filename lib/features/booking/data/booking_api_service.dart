@@ -23,18 +23,14 @@ class BookingApiService implements BookingService {
   final DioApiClient _apiClient;
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
 
-  /// Dummy turf data until a turfs endpoint exists on the backend.
-  static const String _dummyTurfName = 'Turf A';
-  static const String _dummyTurfAddress = 'Sector 12, Sports Complex';
-
   @override
   Future<TurfSummary> getTurf(String turfId) async {
-    // TODO: replace with a real GET /turfs/:id call once the endpoint exists.
-    return TurfSummary(
-      id: turfId,
-      name: _dummyTurfName,
-      address: _dummyTurfAddress,
-    );
+    try {
+      final Map<String, dynamic> json = await _apiClient.getJson('/turfs/$turfId');
+      return TurfSummary.fromJson(json);
+    } on DioException catch (e) {
+      throw _apiClient.mapDioException(e);
+    }
   }
 
   @override
