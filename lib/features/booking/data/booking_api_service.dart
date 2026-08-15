@@ -118,9 +118,11 @@ class BookingApiService implements BookingService {
         endTime: _timeOnDate(slot.endTime, date),
       ),
       // The slots list endpoint returns no booking details; the booker's
-      // display name arrives as `bookedBy`.
+      // display name arrives as `bookedBy` (customer-entered name, C20)
+      // and the callable contact as `bookedByContact` (customer phone).
       booking: null,
       customerName: json['bookedBy'] as String?,
+      bookedByContact: json['bookedByContact'] as String?,
     );
   }
 
