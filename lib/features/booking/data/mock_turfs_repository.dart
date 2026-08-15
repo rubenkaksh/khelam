@@ -1,9 +1,9 @@
 import '../models/turf_summary.dart';
 import 'turfs_repository.dart';
 
-/// Returns the two known turfs. Until the backend ships a real `/turfs`
-/// endpoint this list is also the fallback data source of
-/// [TurfsApiRepository].
+/// Returns the two known turfs. Serves as the dev/mock-mode data source
+/// (see booking_dependencies) — the real [TurfsApiRepository] talks only to
+/// the backend `GET /turfs` endpoint.
 class MockTurfsRepository implements TurfsRepository {
   MockTurfsRepository();
 

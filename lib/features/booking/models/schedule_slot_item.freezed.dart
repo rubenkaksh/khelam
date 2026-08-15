@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ScheduleSlotItem {
 
- Slot get slot; Booking? get booking; String? get customerName;
+ Slot get slot; Booking? get booking; String? get customerName; String? get bookedByContact;
 /// Create a copy of ScheduleSlotItem
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $ScheduleSlotItemCopyWith<ScheduleSlotItem> get copyWith => _$ScheduleSlotItemCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ScheduleSlotItem&&(identical(other.slot, slot) || other.slot == slot)&&(identical(other.booking, booking) || other.booking == booking)&&(identical(other.customerName, customerName) || other.customerName == customerName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ScheduleSlotItem&&(identical(other.slot, slot) || other.slot == slot)&&(identical(other.booking, booking) || other.booking == booking)&&(identical(other.customerName, customerName) || other.customerName == customerName)&&(identical(other.bookedByContact, bookedByContact) || other.bookedByContact == bookedByContact));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,slot,booking,customerName);
+int get hashCode => Object.hash(runtimeType,slot,booking,customerName,bookedByContact);
 
 @override
 String toString() {
-  return 'ScheduleSlotItem(slot: $slot, booking: $booking, customerName: $customerName)';
+  return 'ScheduleSlotItem(slot: $slot, booking: $booking, customerName: $customerName, bookedByContact: $bookedByContact)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $ScheduleSlotItemCopyWith<$Res>  {
   factory $ScheduleSlotItemCopyWith(ScheduleSlotItem value, $Res Function(ScheduleSlotItem) _then) = _$ScheduleSlotItemCopyWithImpl;
 @useResult
 $Res call({
- Slot slot, Booking? booking, String? customerName
+ Slot slot, Booking? booking, String? customerName, String? bookedByContact
 });
 
 
@@ -65,11 +65,12 @@ class _$ScheduleSlotItemCopyWithImpl<$Res>
 
 /// Create a copy of ScheduleSlotItem
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? slot = null,Object? booking = freezed,Object? customerName = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? slot = null,Object? booking = freezed,Object? customerName = freezed,Object? bookedByContact = freezed,}) {
   return _then(_self.copyWith(
 slot: null == slot ? _self.slot : slot // ignore: cast_nullable_to_non_nullable
 as Slot,booking: freezed == booking ? _self.booking : booking // ignore: cast_nullable_to_non_nullable
 as Booking?,customerName: freezed == customerName ? _self.customerName : customerName // ignore: cast_nullable_to_non_nullable
+as String?,bookedByContact: freezed == bookedByContact ? _self.bookedByContact : bookedByContact // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -176,10 +177,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Slot slot,  Booking? booking,  String? customerName)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Slot slot,  Booking? booking,  String? customerName,  String? bookedByContact)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ScheduleSlotItem() when $default != null:
-return $default(_that.slot,_that.booking,_that.customerName);case _:
+return $default(_that.slot,_that.booking,_that.customerName,_that.bookedByContact);case _:
   return orElse();
 
 }
@@ -197,10 +198,10 @@ return $default(_that.slot,_that.booking,_that.customerName);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Slot slot,  Booking? booking,  String? customerName)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Slot slot,  Booking? booking,  String? customerName,  String? bookedByContact)  $default,) {final _that = this;
 switch (_that) {
 case _ScheduleSlotItem():
-return $default(_that.slot,_that.booking,_that.customerName);case _:
+return $default(_that.slot,_that.booking,_that.customerName,_that.bookedByContact);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -217,10 +218,10 @@ return $default(_that.slot,_that.booking,_that.customerName);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Slot slot,  Booking? booking,  String? customerName)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Slot slot,  Booking? booking,  String? customerName,  String? bookedByContact)?  $default,) {final _that = this;
 switch (_that) {
 case _ScheduleSlotItem() when $default != null:
-return $default(_that.slot,_that.booking,_that.customerName);case _:
+return $default(_that.slot,_that.booking,_that.customerName,_that.bookedByContact);case _:
   return null;
 
 }
@@ -232,12 +233,13 @@ return $default(_that.slot,_that.booking,_that.customerName);case _:
 @JsonSerializable()
 
 class _ScheduleSlotItem implements ScheduleSlotItem {
-  const _ScheduleSlotItem({required this.slot, this.booking, this.customerName});
+  const _ScheduleSlotItem({required this.slot, this.booking, this.customerName, this.bookedByContact});
   factory _ScheduleSlotItem.fromJson(Map<String, dynamic> json) => _$ScheduleSlotItemFromJson(json);
 
 @override final  Slot slot;
 @override final  Booking? booking;
 @override final  String? customerName;
+@override final  String? bookedByContact;
 
 /// Create a copy of ScheduleSlotItem
 /// with the given fields replaced by the non-null parameter values.
@@ -252,16 +254,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ScheduleSlotItem&&(identical(other.slot, slot) || other.slot == slot)&&(identical(other.booking, booking) || other.booking == booking)&&(identical(other.customerName, customerName) || other.customerName == customerName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ScheduleSlotItem&&(identical(other.slot, slot) || other.slot == slot)&&(identical(other.booking, booking) || other.booking == booking)&&(identical(other.customerName, customerName) || other.customerName == customerName)&&(identical(other.bookedByContact, bookedByContact) || other.bookedByContact == bookedByContact));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,slot,booking,customerName);
+int get hashCode => Object.hash(runtimeType,slot,booking,customerName,bookedByContact);
 
 @override
 String toString() {
-  return 'ScheduleSlotItem(slot: $slot, booking: $booking, customerName: $customerName)';
+  return 'ScheduleSlotItem(slot: $slot, booking: $booking, customerName: $customerName, bookedByContact: $bookedByContact)';
 }
 
 
@@ -272,7 +274,7 @@ abstract mixin class _$ScheduleSlotItemCopyWith<$Res> implements $ScheduleSlotIt
   factory _$ScheduleSlotItemCopyWith(_ScheduleSlotItem value, $Res Function(_ScheduleSlotItem) _then) = __$ScheduleSlotItemCopyWithImpl;
 @override @useResult
 $Res call({
- Slot slot, Booking? booking, String? customerName
+ Slot slot, Booking? booking, String? customerName, String? bookedByContact
 });
 
 
@@ -289,11 +291,12 @@ class __$ScheduleSlotItemCopyWithImpl<$Res>
 
 /// Create a copy of ScheduleSlotItem
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? slot = null,Object? booking = freezed,Object? customerName = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? slot = null,Object? booking = freezed,Object? customerName = freezed,Object? bookedByContact = freezed,}) {
   return _then(_ScheduleSlotItem(
 slot: null == slot ? _self.slot : slot // ignore: cast_nullable_to_non_nullable
 as Slot,booking: freezed == booking ? _self.booking : booking // ignore: cast_nullable_to_non_nullable
 as Booking?,customerName: freezed == customerName ? _self.customerName : customerName // ignore: cast_nullable_to_non_nullable
+as String?,bookedByContact: freezed == bookedByContact ? _self.bookedByContact : bookedByContact // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

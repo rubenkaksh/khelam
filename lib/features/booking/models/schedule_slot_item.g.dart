@@ -13,6 +13,7 @@ _ScheduleSlotItem _$ScheduleSlotItemFromJson(Map<String, dynamic> json) =>
           ? null
           : Booking.fromJson(json['booking'] as Map<String, dynamic>),
       customerName: json['customerName'] as String?,
+      bookedByContact: json['bookedByContact'] as String?,
     );
 
 Map<String, dynamic> _$ScheduleSlotItemToJson(_ScheduleSlotItem instance) =>
@@ -20,4 +21,5 @@ Map<String, dynamic> _$ScheduleSlotItemToJson(_ScheduleSlotItem instance) =>
       'slot': instance.slot,
       'booking': instance.booking,
       'customerName': instance.customerName,
+      'bookedByContact': instance.bookedByContact,
     };

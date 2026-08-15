@@ -34,17 +34,24 @@ void main() {
       },
     ];
 
-    test('getTurf returns dummy turf data for the requested id', () async {
+    test('getTurf returns local dummy turf without a network call', () async {
       final _RecordingAdapter adapter = _RecordingAdapter(
-        (RequestOptions options) async => _jsonResponse(<dynamic>[]),
+        (RequestOptions options) async => _jsonResponse(<String, dynamic>{
+          'id': 'turf-1',
+          'name': 'Turf A',
+          'address': 'Sector 12, Sports Complex',
+        }),
       );
       final BookingApiService service = _service(adapter);
 
       final TurfSummary turf = await service.getTurf('turf-1');
 
+      // Reverted 2026-08-15 (user decision): the schedule screen stays
+      // slots-only — no /turfs/:id round-trip before loading slots.
+      expect(adapter.lastRequest, isNull);
       expect(turf.id, 'turf-1');
-      expect(turf.name, isNotEmpty);
-      expect(turf.address, isNotEmpty);
+      expect(turf.name, 'Turf A');
+      expect(turf.address, 'Sector 12, Sports Complex');
     });
 
     test(

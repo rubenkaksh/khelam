@@ -73,7 +73,7 @@ void main() {
     );
   }
 
-  testWidgets('first-time user sees the dropdown and a disabled Continue', (
+  testWidgets('first-time user sees turf cards and a disabled Continue', (
     WidgetTester tester,
   ) async {
     final TurfSelectionCubit cubit = buildCubit();
@@ -81,7 +81,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Select Turf'), findsOneWidget);
-    expect(find.text('Choose your turf'), findsOneWidget);
+    expect(find.text('Turf A'), findsOneWidget);
+    expect(find.text('Turf B'), findsOneWidget);
 
     final FilledButton continueButton = tester.widget<FilledButton>(
       find.ancestor(
@@ -92,20 +93,15 @@ void main() {
     expect(continueButton.onPressed, isNull);
   });
 
-  testWidgets('selecting a turf enables Continue; confirming lands on the schedule', (
+  testWidgets('selecting a turf card enables Continue; confirming lands on the schedule', (
     WidgetTester tester,
   ) async {
     final TurfSelectionCubit cubit = buildCubit();
     await tester.pumpWidget(app(cubit));
     await tester.pumpAndSettle();
 
-    // Raw turf ids are the dropdown labels.
-    await tester.tap(find.byType(DropdownButtonFormField<String>));
-    await tester.pumpAndSettle();
-    expect(find.text(firstTurf.id), findsWidgets);
-    expect(find.text(secondTurf.id), findsWidgets);
-
-    await tester.tap(find.text(firstTurf.id).last);
+    // Turf cards are labelled by name; tap to select.
+    await tester.tap(find.text(firstTurf.name));
     await tester.pumpAndSettle();
 
     final FilledButton continueButton = tester.widget<FilledButton>(
@@ -123,7 +119,7 @@ void main() {
     expect(preferences.storedTurfId, firstTurf.id);
   });
 
-  testWidgets('a stored turf auto-advances past the dropdown', (
+  testWidgets('a stored turf auto-advances past the turf list', (
     WidgetTester tester,
   ) async {
     preferences.storedTurfId = secondTurf.id;
@@ -132,7 +128,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('SCHEDULE_PLACEHOLDER'), findsOneWidget);
-    expect(find.text('Choose your turf'), findsNothing);
+    expect(find.text(secondTurf.name), findsNothing);
   });
 
   testWidgets('load failure shows the error view; retry recovers', (
@@ -146,11 +142,11 @@ void main() {
     expect(find.text('Could not load turfs.'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
 
-    // The endpoint is back: retry loads the dropdown.
+    // The endpoint is back: retry loads the turf cards.
     repository.shouldThrow = false;
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Choose your turf'), findsOneWidget);
+    expect(find.text(firstTurf.name), findsOneWidget);
   });
 }

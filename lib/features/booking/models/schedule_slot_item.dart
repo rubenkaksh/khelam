@@ -12,6 +12,7 @@ abstract class ScheduleSlotItem with _$ScheduleSlotItem {
     required Slot slot,
     Booking? booking,
     String? customerName,
+    String? bookedByContact,
   }) = _ScheduleSlotItem;
 
   factory ScheduleSlotItem.fromJson(Map<String, dynamic> json) =>
