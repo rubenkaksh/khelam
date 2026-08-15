@@ -23,14 +23,20 @@ class BookingApiService implements BookingService {
   final DioApiClient _apiClient;
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
 
+  /// Dummy turf data — the schedule screen's header renders from this without
+  /// an extra network round-trip. The real `/turfs/:id` endpoint exists on the
+  /// backend (C20) but the schedule flow stays slots-only (`GET /slots?turfId=`)
+  /// per user decision 2026-08-15: one request, no blocking turf fetch first.
+  static const String _dummyTurfName = 'Turf A';
+  static const String _dummyTurfAddress = 'Sector 12, Sports Complex';
+
   @override
   Future<TurfSummary> getTurf(String turfId) async {
-    try {
-      final Map<String, dynamic> json = await _apiClient.getJson('/turfs/$turfId');
-      return TurfSummary.fromJson(json);
-    } on DioException catch (e) {
-      throw _apiClient.mapDioException(e);
-    }
+    return TurfSummary(
+      id: turfId,
+      name: _dummyTurfName,
+      address: _dummyTurfAddress,
+    );
   }
 
   @override
